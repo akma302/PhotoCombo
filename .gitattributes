@@ -1,0 +1,4 @@
+# Keep Kotlin sources compatible with SourceHygieneTest on every platform.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.jar binary

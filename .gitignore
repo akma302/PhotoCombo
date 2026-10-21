@@ -1,0 +1,22 @@
+# Local IDE settings and caches
+.idea/
+*.iml
+.gradle/
+.kotlin/
+
+# Generated build output (including legacy Android)
+build/
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Machine-specific SDK paths and signing credentials
+local.properties
+*.jks
+*.keystore
+keystore.properties
+
+# Local OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
