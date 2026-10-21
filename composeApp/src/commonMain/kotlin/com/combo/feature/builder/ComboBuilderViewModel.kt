@@ -32,6 +32,7 @@ import com.combo.feature.builder.draft.toDraft
 import com.combo.feature.builder.draft.toDrafts
 import com.combo.feature.builder.draft.toEntities
 import com.combo.feature.builder.draft.toSnap
+import com.combo.feature.builder.draft.trimmedToFrames
 import com.combo.feature.builder.history.DraftHistory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -516,21 +517,22 @@ class ComboBuilderViewModel(
         _state.update { it.copy(saving = true) }
         // Драфты мутабельны и мутируются на главном потоке — читаем их ЗДЕСЬ, до ухода
         // на IO, иначе в комбо может попасть полу-изменённая рамка.
+        val finalized = snapshot().trimmedToFrames()
         val id = s.comboId ?: ids.newId()
         val now = clock.nowMillis()
         val created = if (createdAt > 0) createdAt else now
         val combo = ComboEntity(
             id = id,
             name = s.name.ifBlank { "Combo" },
-            canvasWidth = s.canvasW.toInt(),
-            canvasHeight = s.canvasH.toInt(),
+            canvasWidth = finalized.canvasW.toInt(),
+            canvasHeight = finalized.canvasH.toInt(),
             background = s.background,
             createdAt = created,
             updatedAt = now,
         )
         // Поля рамок и фото собирает `toEntities()`: enum'ы — через `.name` (enum'ы в базе
         // хранятся строками), zIndex — по индексу в списке.
-        val items = s.items.toEntities(id)
+        val items = finalized.items.map { it.toDraft() }.toEntities(id)
         viewModelScope.launch(ioDispatcher) {
             try {
                 comboRepo.saveCombo(combo, items)
