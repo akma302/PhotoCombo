@@ -2,6 +2,7 @@ package com.combo.ui
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -24,7 +25,12 @@ import com.combo.feature.library.LIB_CREATE_COMBO_TAG
 import com.combo.feature.library.LIB_SELECT_TAG
 import com.combo.feature.library.PHOTO_CELL_TAG_PREFIX
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
@@ -43,6 +49,7 @@ class AppNavViewModelTest : UiTestBase() {
     private fun appKoin(
         photoRepo: FakePhotoRepository,
         comboRepo: FakeComboRepository = FakeComboRepository(),
+        bitmapSource: BitmapSource = StubBitmapSource(),
     ): KoinApplication = trackKoin(
         koinApplication {
             modules(
@@ -50,7 +57,7 @@ class AppNavViewModelTest : UiTestBase() {
                 module {
                     single<PhotoRepository> { photoRepo }
                     single<ComboRepository> { comboRepo }
-                    single<BitmapSource> { StubBitmapSource() }
+                    single<BitmapSource> { bitmapSource }
                     single<ImagePicker> { FakeImagePicker() }
                     single<ImageCodec> { StubImageCodec() }
                     single<IdGenerator> { IdGenerator { "gen-1" } }
@@ -65,6 +72,31 @@ class AppNavViewModelTest : UiTestBase() {
         setContent {
             KoinIsolatedContext(koin) { AppNav(backDispatcher) }
         }
+    }
+
+    @Test
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun clickingPhotoWithLibraryAlreadyLoadedOpensItsPage() = runComposeUiTest {
+        // Оконный Main ставит задачи в очередь, как desktop-приложение.
+        Dispatchers.setMain(Dispatchers.Swing)
+        val photos = (1..6).map { photoEntity("p$it", "photo-$it.jpg") }
+        val requested = java.util.concurrent.ConcurrentLinkedQueue<String>()
+        val source = object : BitmapSource {
+            override suspend fun get(photoId: String, requiredPx: Int) =
+                StubBitmapSource().get(photoId, requiredPx).also { requested.add(photoId) }
+        }
+        setAppNavContent(appKoin(FakePhotoRepository(photos), bitmapSource = source))
+        waitUntil(timeoutMillis = 5_000) {
+            onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + "p5").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        onNodeWithTag(PHOTO_CELL_TAG_PREFIX + "p5").performClick()
+        waitForIdle()
+
+        onNodeWithText("photo-5.jpg").assertIsDisplayed()
+        onNodeWithText("photo-1.jpg").assertDoesNotExist()
+        assertTrue("выбранное фото загружено", requested.contains("p5"))
+        assertFalse("просмотр не должен начинать загрузку с нулевой страницы", requested.contains("p1"))
     }
 
     @Test
