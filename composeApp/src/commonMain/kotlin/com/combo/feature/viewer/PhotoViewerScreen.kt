@@ -44,21 +44,18 @@ fun PhotoViewerScreen(
     vm: PhotoViewerViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsState()
-    // Список фото приходит асинхронно (Flow из Room), поэтому при первой композиции
-    // startIndex ещё 0, а rememberPagerState запоминает initialPage только один раз.
-    // Чтобы открывалось нажатое фото, а не первое, один раз переходим на реальный
-    // индекс, как только список загружен.
-    val pagerState = rememberPagerState(initialPage = 0) { state.photos.size }
-    val startIndex = remember(state.photos, photoId) {
-        state.photos.indexOfFirst { it.id == photoId }.coerceAtLeast(0)
-    }
-    var initialPageApplied by remember(photoId) { mutableStateOf(false) }
-    LaunchedEffect(startIndex, initialPageApplied) {
-        if (!initialPageApplied && state.photos.isNotEmpty()) {
-            pagerState.scrollToPage(startIndex)
-            initialPageApplied = true
+    // Pager создаётся только с загруженным списком: initialPage должен сразу указывать
+    // на выбранное фото, до первого измерения и запуска загрузки соседних страниц.
+    if (state.photos.isEmpty()) {
+        Scaffold(topBar = {
+            TopAppBar(navigationIcon = { BackNavIcon(onBack) }, title = { Text("") })
+        }) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding))
         }
+        return
     }
+    val startIndex = state.photos.indexOfFirst { it.id == photoId }.coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = startIndex) { state.photos.size }
 
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
