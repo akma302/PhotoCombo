@@ -69,6 +69,9 @@ fun PhotoGrid(
     cellHeight: Dp? = null,
     isSelected: (PhotoEntity) -> Boolean = { false },
     onCellLongClick: ((PhotoEntity) -> Unit)? = null,
+    thumbnail: @Composable (PhotoEntity, Modifier) -> Unit = { photo, imageModifier ->
+        ThumbImage(photo.id, imageModifier)
+    },
 ) {
     // Обработчик может смениться при рекомпозиции родителя, а pointerInput нет: без
     // обёртки замыкание внутри осталось бы старым.
@@ -131,8 +134,8 @@ fun PhotoGrid(
             ) {
                 // Заливка ячейки различается у экранов намеренно: библиотеке нужны
                 // квадратные превью, диалогу — миниатюра заданной высоты.
-                ThumbImage(
-                    photo.id,
+                thumbnail(
+                    photo,
                     if (cellHeight == null) {
                         Modifier.fillMaxSize().aspectRatio(1f)
                     } else {
