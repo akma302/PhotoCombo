@@ -11,6 +11,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -19,11 +21,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.combo.ui.common.designsystem.primitives.PcSurface
 import com.combo.ui.common.designsystem.primitives.PcText
+import com.combo.ui.common.designsystem.primitives.pcPopupAppearance
 import com.combo.ui.common.designsystem.theme.PcTheme
 import kotlinx.coroutines.delay
 
@@ -50,7 +55,9 @@ fun PcTooltip(text: String, modifier: Modifier = Modifier, enabled: Boolean = tr
         if (visible) {
             Popup(popupPositionProvider = remember(gap) { PcAnchorPosition(gap, above = true) },
                 properties = PopupProperties(focusable = false)) {
-                PcSurface(shape = PcTheme.shapes.small, borderColor = PcTheme.colors.border,
+                PcSurface(modifier = Modifier.pcPopupAppearance()
+                    .dropShadow(PcTheme.shapes.small, Shadow(radius = 18.dp, color = PcTheme.colors.shadow, offset = DpOffset(0.dp, 4.dp))),
+                    shape = PcTheme.shapes.small, borderColor = PcTheme.colors.border,
                     borderWidth = PcTheme.strokes.border) {
                     PcText(text, Modifier.padding(horizontal = PcTheme.spacing.sm, vertical = PcTheme.spacing.xs),
                         style = PcTheme.typography.caption)
