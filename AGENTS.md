@@ -13,6 +13,7 @@ Guidance for AI agents (and humans) working in this repository. Read it fully be
 
 - `Instructions.md` is the project spec and single source of truth (Russian). Its preamble binds agents: implement `[СОГЛАСОВАНО]`/`[ДИЗАЙН]` sections without changing signatures; never implement `[БЭКЛОГ]` (§15) without an explicit task. If a task contradicts the spec, flag it and propose a spec edit instead of silently diverging.
 - `README.md` mirrors the architecture; `USER_GUIDE.md` describes behavior for end users. Trust code/config over both when they conflict, then fix the document.
+- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) is the versioned visual specification and component contract for the custom UI. Read it before designing or implementing shared UI or migrating a screen. Its status distinguishes target design from implemented behavior; it does not override product or storage invariants.
 - The spec's §5 (package layout) predates the modular layout described below. Until the owner updates §5, the "Project structure" section of `README.md` is authoritative for packages.
 
 ## Build & verify (Windows / PowerShell)
@@ -73,7 +74,7 @@ If you need a new dependency that breaks a rule, move the code (shared enums to 
 ## Conventions
 
 - Gestures are hand-rolled `awaitEachGesture` loops dispatching phase events (`START|CHANGE|END|CANCEL`) to the ViewModel; do not replace them with `detectTransformGestures` (it lacks completion callbacks, which undo requires). The editor's loop is a single `pointerInput(Unit)` block: everything composition-dependent is read through `State` wrappers, never added as keys.
-- Material icons come from `material-icons-extended` (the core set lacks Undo/Redo/AddAPhoto/etc. used here).
+- Existing UI still uses `material-icons-extended`. New design-system UI uses original Kotlin `ImageVector` icons from `PcIcons`, following `docs/DESIGN_SYSTEM.md`; do not introduce icon packs, SVG parsers or third-party UI libraries. Existing screens migrate separately.
 - Limits from `Const.kt` are policy (§14), not suggestions: MAX_ITEMS=10, pan-clamp, zoom bounds, deletion blocking for photos used in combos.
 - Pure logic (geometry, editing operations, history, mappers, gesture classification) must stay free of Android/Compose UI types so it can be tested on the plain JVM. Put new logic there, not into composables or ViewModels.
 
