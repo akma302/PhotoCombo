@@ -21,7 +21,7 @@
       <stop offset="0" stop-color="#DCE1E6" stop-opacity=".35"/><stop offset=".5" stop-color="#DCE1E6" stop-opacity=".09"/><stop offset="1" stop-color="#DCE1E6" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="whiteHalo" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".35"/><stop offset=".5" stop-color="#FFFFFF" stop-opacity=".09"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0" stop-color="#DCE1E6" stop-opacity=".35"/><stop offset=".5" stop-color="#DCE1E6" stop-opacity=".09"/><stop offset="1" stop-color="#DCE1E6" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="dangerInner" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
       <stop offset="0" stop-color="#FF9CA5" stop-opacity=".14"/><stop offset="1" stop-color="#FF9CA5" stop-opacity="0"/>

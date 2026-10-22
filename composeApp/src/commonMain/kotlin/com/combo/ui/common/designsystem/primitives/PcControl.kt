@@ -77,7 +77,8 @@ fun Modifier.pcControlSurface(
         )
         val haloHeight = focus.haloHeight.toPx()
         val halo = Brush.verticalGradient(
-            listOf(glowColor.copy(alpha = glowColor.alpha * focus.haloAlpha), Color.Transparent),
+            listOf(glowColor.copy(alpha = glowColor.alpha * focus.haloAlpha),
+                glowColor.copy(alpha = glowColor.alpha * focus.haloAlpha * 0.25f), Color.Transparent),
             startY = size.height, endY = size.height + haloHeight,
         )
         onDrawWithContent {
