@@ -130,7 +130,7 @@ private fun PickPhotoCell(photo: PhotoEntity, selected: Boolean, multi: Boolean,
                 contentColor = PcTheme.colors.onAccent,
                 shape = PcTheme.shapes.small,
             ) {
-                PcIcon(PcIcons.Check, contentDescription = "Selected", modifier = Modifier.padding(PcTheme.spacing.xs))
+                PcIcon(PcIcons.Check, modifier = Modifier.padding(PcTheme.spacing.xs))
             }
         }
     }

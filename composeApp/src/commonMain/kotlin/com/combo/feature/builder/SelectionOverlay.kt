@@ -13,7 +13,7 @@ import com.combo.core.render.CanvasTransform
 
 /**
  * Оверлей выделенной рамки — в ЭКРАННЫХ координатах: сдвиг есть, масштаба нет (рамка
- * обводится ровно по своим экранным границам, а её углы двигаются пальцем). Поэтому он
+ * обводится ровно по своим экранным границам, а её грани изменяются жестом). Поэтому он
  * нарисован на стороне экрана, а не внутри `drawCombo`: у того весь блок обёрнут в
  * `scale`, и обводка вышла бы толще ровно во столько раз, во сколько увеличен вид.
  *
@@ -50,7 +50,7 @@ internal fun DrawScope.drawSelectionOverlay(
                 style = Stroke(width = 2.dp.toPx()),
             )
             if (state.mode == EditMode.BORDER) {
-                listOf(r.left to r.top, r.right to r.top, r.left to r.bottom, r.right to r.bottom)
+                listOf(r.center.x to r.top, r.right to r.center.y, r.center.x to r.bottom, r.left to r.center.y)
                     .forEach { (x, y) ->
                         drawCircle(
                             color = color,

@@ -71,6 +71,7 @@ fun PcTextField(
                         focusColor = if (error == null) colors.accent else colors.danger,
                         glowColor = if (error == null) colors.accent else colors.danger,
                     ),
+                singleLine = !showLabel,
                 enabled = enabled,
                 readOnly = readOnly,
                 textStyle = PcTheme.typography.body.copy(color = colors.text),

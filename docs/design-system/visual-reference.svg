@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="850" viewBox="0 0 1120 850" role="img" aria-labelledby="title desc">
-  <title id="title">PhotoCombo design system — Graphite tone v0.5</title>
+  <title id="title">PhotoCombo design system — Graphite tone v0.6</title>
   <desc id="desc">Graphite palette with flat tonal focus and a 2 dp lower strip. No gradient or outer glow. This is a specification illustration.</desc>
   <defs>
     <style>
@@ -40,7 +40,7 @@
   </defs>
   <rect width="1120" height="850" fill="#202126"/>
   <text class="heading" x="32" y="42">PhotoCombo · Visual system</text>
-  <text class="sub" x="32" y="65">Graphite tone / v0.5 · Flat focus / Ruby danger · Visual specification</text>
+  <text class="sub" x="32" y="65">Graphite tone / v0.6 · Flat focus / Ruby danger · Visual specification</text>
   <text class="section" x="32" y="107">Palette</text>
 
   <rect x="32" y="126" width="30" height="30" rx="4" fill="#18191D"/>

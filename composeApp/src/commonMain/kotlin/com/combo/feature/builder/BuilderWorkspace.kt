@@ -5,6 +5,7 @@ import com.combo.ui.common.designsystem.theme.PcTheme
 import com.combo.ui.common.designsystem.primitives.PcSurface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
@@ -22,15 +23,16 @@ internal val BUILDER_WIDE_MIN = 760.dp
 @Composable
 internal fun BuilderWorkspace(
     wide: Boolean,
+    inspectorExpanded: Boolean = true,
     modifier: Modifier = Modifier,
     canvas: @Composable () -> Unit,
     inspector: @Composable () -> Unit,
 ) {
     val border = PcTheme.colors.border
     Layout(
-        modifier = modifier,
+        modifier = modifier.clipToBounds(),
         content = {
-            PcSurface(Modifier.fillMaxSize()) { canvas() }
+            PcSurface(Modifier.fillMaxSize(), color = PcTheme.colors.workspace) { canvas() }
             PcSurface(
                 modifier = Modifier.testTag(BUILDER_INSPECTOR_TAG).drawWithContent {
                     drawContent()
@@ -47,12 +49,13 @@ internal fun BuilderWorkspace(
         } else {
             measurables[1].measure(Constraints(minWidth = width, maxWidth = width, maxHeight = minOf(height / 2, 224.dp.roundToPx())))
         }
+        val panelWidth = if (wide && inspectorExpanded) panel.width else 0
         val drawing = measurables[0].measure(
-            Constraints.fixed(if (wide) width - panel.width else width, if (wide) height else height - panel.height),
+            Constraints.fixed(if (wide) width - panelWidth else width, if (wide) height else height - panel.height),
         )
         layout(width, height) {
             drawing.placeRelative(0, 0)
-            panel.placeRelative(if (wide) drawing.width else 0, if (wide) 0 else drawing.height)
+            panel.placeRelative(if (wide) width - panelWidth else 0, if (wide) 0 else drawing.height)
         }
     }
 }

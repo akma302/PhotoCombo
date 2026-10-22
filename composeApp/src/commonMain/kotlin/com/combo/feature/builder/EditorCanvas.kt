@@ -15,7 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -102,6 +107,10 @@ private fun EditorCanvas(
     curHandlePx: State<Float>,
     modifier: Modifier = Modifier,
 ) {
+    val textMeasurer = rememberTextMeasurer()
+    val labelStyle = PcTheme.typography.caption.copy(color = PcTheme.colors.onAccent)
+    val frameIndex = state.items.indexOfFirst { it.id == state.selectedItemId }
+    val label = if (frameIndex >= 0) textMeasurer.measure(AnnotatedString("Frame ${frameIndex + 1}"), labelStyle) else null
     Box(modifier.fillMaxSize().background(PcTheme.colors.workspace)) {
         Canvas(
             modifier = Modifier
@@ -147,6 +156,19 @@ private fun EditorCanvas(
                 state.items.mapNotNull { if (loaded == 0) null else vm.frameFor(it) },
             )
             drawSelectionOverlay(state, transform, primaryColor)
+            val selected = state.items.firstOrNull { it.id == state.selectedItemId }
+            if (label != null && selected != null) {
+                val frame = selected.border().rect()
+                val left = (transform.origin.x + frame.left * transform.scale).coerceAtLeast(0f)
+                val top = (transform.origin.y + frame.top * transform.scale).coerceAtLeast(0f)
+                val inset = 4.dp.toPx()
+                clipRect(transform.origin.x, transform.origin.y,
+                    transform.origin.x + state.canvasW * transform.scale,
+                    transform.origin.y + state.canvasH * transform.scale) {
+                    drawRect(primaryColor, Offset(left, top), Size(label.size.width + inset * 2, label.size.height + inset * 2))
+                    drawText(label, topLeft = Offset(left + inset, top + inset))
+                }
+            }
         }
     }
 }

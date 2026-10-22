@@ -43,6 +43,7 @@ fun ComboBuilderScreen(
     val bitmaps by vm.bitmaps.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     var showExitDialog by remember { mutableStateOf(false) }
+    var inspectorExpanded by remember { mutableStateOf(true) }
     var pickMode by remember { mutableStateOf(BuilderPickMode.NONE) }
 
     fun requestExit() {
@@ -64,6 +65,7 @@ fun ComboBuilderScreen(
                     if (state.loaded) {
                         BuilderWorkspace(
                             wide = wide,
+                            inspectorExpanded = inspectorExpanded,
                             modifier = Modifier.fillMaxSize(),
                             canvas = { EditorViewport(vm, state, bitmaps, Modifier.padding(if (wide) 32.dp else 20.dp)) },
                             inspector = { BuilderInspector(state, wide, vm::onEvent) { pickMode = BuilderPickMode.REPLACE } },
@@ -81,7 +83,7 @@ fun ComboBuilderScreen(
                     }
                 }
                 PcDivider()
-                BuilderViewControls(state, vm::onEvent)
+                BuilderViewControls(state, vm::onEvent, if (wide) ({ inspectorExpanded = !inspectorExpanded }) else null, inspectorExpanded)
             }
         }
     }
