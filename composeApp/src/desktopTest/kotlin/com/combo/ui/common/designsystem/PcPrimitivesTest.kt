@@ -9,6 +9,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.LayoutDirection
@@ -28,8 +31,10 @@ import org.junit.Test
 @OptIn(ExperimentalTestApi::class)
 class PcPrimitivesTest {
     @Test
-    fun focusRingExtendsOutsideControlAndDisabledAlphaIncludesContent() = runSkikoComposeUiTest {
+    fun focusStripPreservesBoundsAndDisabledAlphaIncludesContent() = runSkikoComposeUiTest {
+        lateinit var inputMode: InputModeManager
         setContent {
+            inputMode = LocalInputModeManager.current
             PcTheme(motion = PcMotion(reducedMotion = true)) {
                 PcSurface(Modifier.size(300.dp, 160.dp).testTag("surface"), color = PcTheme.colors.app) {
                     Column(Modifier.padding(16.dp)) {
@@ -41,10 +46,12 @@ class PcPrimitivesTest {
         }
         val enabled = onNodeWithTag("enabled")
         val before = enabled.fetchSemanticsNode().boundsInRoot
+        runOnIdle { inputMode.requestInputMode(InputMode.Keyboard) }
         enabled.requestFocus()
         val image = onNodeWithTag("surface").captureToImage().toPixelMap()
         assertEquals(before, enabled.fetchSemanticsNode().boundsInRoot)
-        assertEquals(PcColors.Dark.accent, image[(before.left - 3).toInt(), before.center.y.toInt()])
+        assertEquals(PcColors.Dark.app, image[(before.left - 3).toInt(), before.center.y.toInt()])
+        assertEquals(PcColors.Dark.onAccent, image[before.center.x.toInt(), (before.bottom - 1).toInt()])
         val disabled = onNodeWithTag("disabled").captureToImage().toPixelMap()[8, 16]
         assertTrue(disabled.red < PcColors.Dark.accent.red)
         assertTrue(disabled.red > PcColors.Dark.app.red)
