@@ -14,10 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -31,6 +27,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.combo.ui.common.designsystem.icons.PcIcons
+import com.combo.ui.common.designsystem.primitives.PcIcon
+import com.combo.ui.common.designsystem.theme.PcTheme
 import com.combo.data.PhotoEntity
 
 /**
@@ -143,10 +142,10 @@ fun PhotoGrid(
                     },
                 )
                 if (selected) {
-                    Icon(
-                        Icons.Default.CheckCircle,
+                    PcIcon(
+                        PcIcons.Check,
                         contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = PcTheme.colors.accent,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(6.dp),
@@ -154,7 +153,7 @@ fun PhotoGrid(
                     Box(
                         Modifier
                             .matchParentSize()
-                            .border(3.dp, MaterialTheme.colorScheme.primary),
+                            .border(3.dp, PcTheme.colors.accent),
                     )
                 }
             }
