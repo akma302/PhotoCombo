@@ -134,7 +134,7 @@ class AppNavViewModelTest : UiTestBase() {
             onAllNodesWithText("Trip").fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(
-            "плеера нет: кнопки Play быть не должно",
+            "список комбо не предлагает неподдерживаемое действие Play",
             onAllNodesWithContentDescription("Play").fetchSemanticsNodes().isEmpty(),
         )
 

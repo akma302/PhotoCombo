@@ -107,7 +107,7 @@ private fun StaticPreview(vm: ComboListViewModel, combo: ComboWithItems, modifie
     val frames = rememberFrames(vm, combo, state.images.size + state.photos.size)
     val canvasW = combo.combo.canvasWidth.toFloat()
     val canvasH = combo.combo.canvasHeight.toFloat()
-    // Фон такой же, как в билдере и плеере. Ключи remember должны покрывать всё, от чего
+    // Фон такой же, как в билдере. Ключи remember должны покрывать всё, от чего
     // зависит результат: у Auto-фона это ещё и положение с размером рамок, поэтому
     // одних `photos.size` и спецификации мало, и в ключ добавлен `updatedAt` (он
     // меняется при любой правке комбо).

@@ -4,13 +4,10 @@
 .gradle/
 .kotlin/
 
-# Generated build output (including legacy Android)
+# Generated build output
 build/
-.cxx/
-.externalNativeBuild/
-captures/
 
-# Machine-specific SDK paths and signing credentials
+# Machine-specific configuration and signing credentials
 local.properties
 *.jks
 *.keystore

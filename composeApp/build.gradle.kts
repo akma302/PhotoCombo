@@ -32,7 +32,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                // Main-диспетчер корутин на desktop (нужен viewModelScope в следующих фазах).
+                // Main-диспетчер корутин на desktop (нужен viewModelScope).
                 implementation(libs.kotlinx.coroutines.swing)
             }
         }

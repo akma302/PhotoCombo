@@ -10,7 +10,7 @@ import com.combo.core.background.FrameInput
 import com.combo.core.background.ResolvedBackground
 
 /**
- * Единственная отрисовка фона комбо — её зовут билдер, плеер и превью списка, иначе
+ * Единственная отрисовка фона комбо — её зовут билдер и превью списка, иначе
  * WYSIWYG-разъезд неизбежен (как с `drawItem()`).
  */
 fun DrawScope.drawComboBackground(bg: ResolvedBackground, topLeft: Offset, size: Size) {
@@ -40,13 +40,13 @@ fun resolveBackground(spec: BackgroundSpec, input: BackgroundInput): ResolvedBac
     com.combo.core.background.BackgroundResolver.Default.resolve(spec, input)
 
 /**
- * Фон одного комбо по данным репозитория (плеер и превью списка). Вход для стратегии
+ * Фон одного комбо по данным репозитория (превью списка). Вход для стратегии
  * собирается здесь, чтобы экраны не делали это по-разному. Ключи `remember` у вызывающего
  * должны покрывать всё, от чего зависит результат: положение и размер рамок, состав
  * фото, спецификацию фона и `updatedAt` (он меняется при любой правке комбо).
  *
  * Перегрузка с [Float] — для билдера, у которого холст живёт во Float: обрезать его до
- * Int перед расчётом веса значило бы вносить в фон погрешность, которой нет у плеера.
+ * Int перед расчётом веса значило бы вносить в фон погрешность относительно превью списка.
  */
 fun comboBackgroundOf(
     canvasW: Int,
