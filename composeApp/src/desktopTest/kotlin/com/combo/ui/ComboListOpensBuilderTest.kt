@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -59,7 +60,7 @@ class ComboListOpensBuilderTest : UiTestBase() {
             ),
         )
         waitUntil(timeoutMillis = 5_000) {
-            onAllNodesWithText("Trip").fetchSemanticsNodes().isNotEmpty()
+            onAllNodesWithTag("combo_card_c1").fetchSemanticsNodes().isNotEmpty()
         }
         onNodeWithTag(NEW_COMBO_TAG).assertIsDisplayed().performClick()
         waitForIdle()
