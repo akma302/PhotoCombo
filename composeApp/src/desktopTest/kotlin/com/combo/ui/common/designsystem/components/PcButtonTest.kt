@@ -12,6 +12,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -64,6 +66,7 @@ class PcButtonTest {
         assertEquals(colors.panel, surface("Secondary"))
         assertEquals(colors.app, surface("Ghost"))
         assertEquals(colors.app, surface("Danger"))
+        assertEquals(colors.dangerFill, surface("DangerFilled"))
         val secondary = onNodeWithTag("Secondary")
         secondary.performMouseInput { moveTo(center) }
         assertEquals(colors.hover, surface("Secondary"))
@@ -71,6 +74,38 @@ class PcButtonTest {
         assertEquals(colors.pressed, surface("Secondary"))
         secondary.performMouseInput { release(); moveTo(Offset(-10f, -10f)) }
         assertEquals(colors.panel, surface("Secondary"))
+    }
+
+    @Test
+    fun rubyFilledButtonKeepsItsFillAndReadableFocusWhileActivatingOnce() = runSkikoComposeUiTest(Size(400f, 240f)) {
+        val colors = PcColors.Dark
+        var clicks = 0
+        setContent {
+            PcTheme(motion = PcMotion(reducedMotion = true)) {
+                Box(Modifier.padding(24.dp)) {
+                    PcButton("Delete", { clicks++ }, Modifier.testTag("ruby"), PcButtonVariant.DangerFilled)
+                }
+            }
+        }
+        val button = onNodeWithTag("ruby")
+        fun surface() = button.captureToImage().toPixelMap()[8, 16]
+        assertEquals(colors.dangerFill, surface())
+        button.performMouseInput { moveTo(center) }
+        assertEquals(lerp(colors.dangerFill, colors.onDanger, 0.08f), surface())
+        button.performMouseInput { press() }
+        assertEquals(lerp(colors.dangerFill, colors.workspace, 0.12f), surface())
+        button.performMouseInput { release(); moveTo(Offset(-10f, -10f)) }
+        assertEquals(1, clicks)
+        button.requestFocus().performKeyInput { pressKey(Key.Enter) }
+        assertEquals(2, clicks)
+        assertEquals(colors.dangerFill, surface())
+        val pixels = button.captureToImage().toPixelMap()
+        assertEquals(colors.onDanger, pixels[pixels.width / 2, pixels.height - 1])
+        fun contrast(foreground: Color, background: Color) =
+            (foreground.luminance() + 0.05f) / (background.luminance() + 0.05f)
+        assertTrue(contrast(colors.onDanger, colors.dangerFill) >= 4.5f)
+        assertTrue(contrast(colors.onDanger, lerp(colors.dangerFill, colors.onDanger, 0.08f)) >= 4.5f)
+        assertTrue(contrast(colors.danger, colors.panel) >= 4.5f)
     }
 
     @Test

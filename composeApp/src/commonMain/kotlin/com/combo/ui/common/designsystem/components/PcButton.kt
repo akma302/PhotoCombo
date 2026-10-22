@@ -36,7 +36,7 @@ import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.primitives.pcControlSurface
 import com.combo.ui.common.designsystem.theme.PcTheme
 
-enum class PcButtonVariant { Primary, Secondary, Ghost, Danger }
+enum class PcButtonVariant { Primary, Secondary, Ghost, Danger, DangerFilled }
 
 /** Кнопка сохраняет размер и доступное имя во время выполнения действия. */
 @Composable
@@ -54,28 +54,44 @@ fun PcButton(
     val pressed by interactionSource.collectIsPressedAsState()
     val colors = PcTheme.colors
     val primary = variant == PcButtonVariant.Primary
+    val dangerFilled = variant == PcButtonVariant.DangerFilled
+    val filled = primary || dangerFilled
     val normal = when (variant) {
         PcButtonVariant.Primary -> colors.accent
         PcButtonVariant.Secondary -> colors.panel
+        PcButtonVariant.DangerFilled -> colors.dangerFill
         PcButtonVariant.Ghost, PcButtonVariant.Danger -> Color.Transparent
     }
     val background = when {
         !enabled || busy -> normal
-        pressed -> if (primary) lerp(colors.accent, colors.onAccent, 0.12f) else colors.pressed
-        hovered -> if (primary) lerp(colors.accent, colors.text, 0.08f) else colors.hover
+        pressed -> when {
+            primary -> lerp(colors.accent, colors.onAccent, 0.12f)
+            dangerFilled -> lerp(colors.dangerFill, colors.workspace, 0.12f)
+            else -> colors.pressed
+        }
+        hovered -> when {
+            primary -> lerp(colors.accent, colors.text, 0.08f)
+            dangerFilled -> lerp(colors.dangerFill, colors.onDanger, 0.08f)
+            else -> colors.hover
+        }
         else -> normal
     }
     val foreground = when (variant) {
         PcButtonVariant.Primary -> colors.onAccent
         PcButtonVariant.Danger -> colors.danger
+        PcButtonVariant.DangerFilled -> colors.onDanger
         else -> colors.text
     }
     PcControlLayout(
         modifier.pcControlSurface(
             interactionSource, background, enabled,
             borderColor = if (variant == PcButtonVariant.Secondary) colors.border else Color.Transparent,
-            keepFocusedFill = primary,
-            focusColor = if (primary) colors.onAccent else colors.accent,
+            keepFocusedFill = filled,
+            focusColor = when {
+                primary -> colors.onAccent
+                dangerFilled -> colors.onDanger
+                else -> colors.accent
+            },
             focusEnabled = enabled && !busy,
         ).clickable(interactionSource = interactionSource, indication = null,
             enabled = enabled && !busy, role = Role.Button, onClick = onClick)
@@ -87,7 +103,7 @@ fun PcButton(
                 horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm)) {
                 if (icon != null) PcIcon(icon, tint = foreground)
                 PcText(text, color = foreground,
-                    style = if (primary) PcTheme.typography.controlStrong else PcTheme.typography.control)
+                    style = if (filled) PcTheme.typography.controlStrong else PcTheme.typography.control)
             }
             if (busy) {
                 Box(Modifier.matchParentSize().wrapContentSize(unbounded = true),
