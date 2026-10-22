@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,7 +73,8 @@ fun <T> PcSelect(
     require(selected >= 0) { "Selected value must be present in options" }
     require(contentDescription.isNotBlank()) { "PcSelect requires an accessible name" }
     var expanded by remember { mutableStateOf(false) }
-    var active by remember { mutableIntStateOf(selected) }
+    var activeValue by remember { mutableStateOf(value) }
+    val active = options.indexOfFirst { it.value == activeValue }.takeIf { it >= 0 } ?: selected
     var anchorWidth by remember { mutableIntStateOf(0) }
     var restoreFocus by remember { mutableStateOf(false) }
     val anchorFocus = remember { FocusRequester() }
@@ -89,12 +91,15 @@ fun <T> PcSelect(
     val menuMinWidth = with(density) { anchorWidth.toDp() }.coerceAtMost(maxWidth)
     val menuMaxWidth = minOf(360.dp, maxWidth).coerceAtLeast(menuMinWidth)
     fun close() { expanded = false; restoreFocus = true }
-    fun open() { if (enabled) { active = selected; expanded = true } }
+    fun open() { if (enabled) { activeValue = value; expanded = true } }
     fun pick(index: Int) {
         close()
         if (enabled && options[index].value != value) onValueChange(options[index].value)
     }
     LaunchedEffect(enabled) { if (!enabled) expanded = false }
+    LaunchedEffect(options.map { it.value }, activeValue) {
+        if (options.none { it.value == activeValue }) activeValue = value
+    }
     LaunchedEffect(expanded, restoreFocus) {
         if (!expanded && restoreFocus) {
             withFrameNanos { }
@@ -125,11 +130,16 @@ fun <T> PcSelect(
                     stateDescription = if (expanded) "Expanded" else "Collapsed"
                 },
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm)) {
-                options[selected].icon?.let { PcIcon(it) }
-                PcText(options[selected].label, Modifier.weight(1f, fill = false), style = PcTheme.typography.control)
-                PcIcon(PcIcons.ChevronDown)
+            BoxWithConstraints {
+                val boundedWidth = constraints.hasBoundedWidth
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm)) {
+                    options[selected].icon?.let { PcIcon(it) }
+                    PcText(options[selected].label,
+                        if (boundedWidth) Modifier.weight(1f, fill = false) else Modifier,
+                        style = PcTheme.typography.control)
+                    PcIcon(PcIcons.ChevronDown)
+                }
             }
         }
         if (expanded && enabled) {
@@ -146,11 +156,14 @@ fun <T> PcSelect(
                                 if (event.type == KeyEventType.KeyUp) close()
                                 true
                             } else if (key == Key.DirectionUp || key == Key.DirectionDown || key == Key.MoveHome || key == Key.MoveEnd) {
-                                if (event.type == KeyEventType.KeyDown) active = when (key) {
-                                    Key.MoveHome -> 0
-                                    Key.MoveEnd -> options.lastIndex
-                                    Key.DirectionUp -> (active - 1 + options.size) % options.size
-                                    else -> (active + 1) % options.size
+                                if (event.type == KeyEventType.KeyDown) {
+                                    val next = when (key) {
+                                        Key.MoveHome -> 0
+                                        Key.MoveEnd -> options.lastIndex
+                                        Key.DirectionUp -> (active - 1 + options.size) % options.size
+                                        else -> (active + 1) % options.size
+                                    }
+                                    activeValue = options[next].value
                                 }
                                 true
                             } else if (key == Key.Enter || key == Key.NumPadEnter || key == Key.Spacebar) {
@@ -167,7 +180,7 @@ fun <T> PcSelect(
                             val rowPressed by rowSource.collectIsPressedAsState()
                             PcControlLayout(
                                 Modifier.fillMaxWidth().focusRequester(optionFocus[index])
-                                    .onFocusChanged { if (it.isFocused) active = index }
+                                    .onFocusChanged { if (it.isFocused) activeValue = option.value }
                                     .pcControlSurface(rowSource, when {
                                         rowPressed -> colors.pressed
                                         rowHovered || active == index -> colors.hover
