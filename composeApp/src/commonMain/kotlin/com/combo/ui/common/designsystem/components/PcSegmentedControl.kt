@@ -1,11 +1,13 @@
 package com.combo.ui.common.designsystem.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -57,7 +59,10 @@ fun <T> PcSegmentedControl(
     val colors = PcTheme.colors
     val minimumTarget = PcTheme.minimumTarget
     Layout(
-        modifier = modifier.selectableGroup().background(colors.app, PcTheme.shapes.group),
+        modifier = modifier.selectableGroup()
+            .background(colors.app, PcTheme.shapes.group)
+            .border(PcTheme.strokes.border, colors.border, PcTheme.shapes.group)
+            .padding(PcTheme.sizes.segmentInset),
         content = {
             options.forEachIndexed { index, option ->
                 val source = remember(option.value) { MutableInteractionSource() }
@@ -104,6 +109,7 @@ fun <T> PcSegmentedControl(
                         .pcControlSurface(source, background, enabled)
                         .padding(horizontal = PcTheme.spacing.md, vertical = PcTheme.spacing.xs),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     option.icon?.let {
                         PcIcon(it, tint = textColor)
