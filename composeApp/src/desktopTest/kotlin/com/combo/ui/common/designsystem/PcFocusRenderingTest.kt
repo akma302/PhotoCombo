@@ -32,6 +32,7 @@ import com.combo.ui.common.designsystem.components.PcSegmentedControl
 import com.combo.ui.common.designsystem.theme.PcTheme
 import com.combo.ui.common.designsystem.tokens.PcColors
 import com.combo.ui.common.designsystem.tokens.PcMotion
+import com.combo.ui.common.designsystem.tokens.PcFocus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -40,6 +41,27 @@ import kotlin.math.floor
 @OptIn(ExperimentalTestApi::class)
 class PcFocusRenderingTest {
     private val colors = PcColors.Dark
+
+    @Test
+    fun defaultFocusIsFlatInsideAndDoesNotLightPixelsOutside() = runSkikoComposeUiTest(Size(400f, 180f)) {
+        lateinit var inputMode: InputModeManager
+        setContent {
+            inputMode = LocalInputModeManager.current
+            PcTheme(motion = PcMotion(reducedMotion = true)) {
+                Box(Modifier.testTag("scene").background(colors.workspace).padding(20.dp)) {
+                    PcButton("Action", {}, Modifier.width(180.dp).testTag("button"))
+                }
+            }
+        }
+        runOnIdle { inputMode.requestInputMode(InputMode.Keyboard) }
+        val button = onNodeWithTag("button").requestFocus()
+        val scene = onNodeWithTag("scene")
+        val bounds = button.fetchSemanticsNode().boundsInRoot.translate(-scene.fetchSemanticsNode().boundsInRoot.topLeft)
+        val pixels = scene.captureToImage().toPixelMap()
+        assertEquals(colors.accent, pixels.sample(bounds.center.x, bounds.bottom - 1f))
+        for (depth in listOf(3f, 6f, 10f)) assertEquals(colors.focusFill, pixels.sample(bounds.left + 15f, bounds.bottom - depth))
+        for (depth in listOf(1f, 2f, 4f)) assertEquals(colors.workspace, pixels.sample(bounds.center.x, bounds.bottom + depth))
+    }
 
     @Test
     fun lowerEdgeIsOpaqueWithFadingInnerLightAndBottomHaloAcrossScalesAndDirections() {
@@ -52,7 +74,7 @@ class PcFocusRenderingTest {
                 setContent {
                     inputMode = LocalInputModeManager.current
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                        PcTheme(motion = PcMotion(reducedMotion = true)) {
+                        PcTheme(motion = PcMotion(reducedMotion = true), focus = PcFocus(innerAlpha = 0.14f, haloAlpha = 0.35f)) {
                             Box(Modifier.testTag("scene").background(colors.workspace).padding(24.dp)) {
                                 PcButton("Action", { clicks++ }, Modifier.width(150.dp).testTag("button"))
                             }
@@ -147,7 +169,7 @@ class PcFocusRenderingTest {
     fun mouseEditingKeepsErrorBorderStripeAndHalo() = runSkikoComposeUiTest(Size(400f, 220f)) {
         val text = mutableStateOf("")
         setContent {
-            PcTheme(motion = PcMotion(reducedMotion = true)) {
+            PcTheme(motion = PcMotion(reducedMotion = true), focus = PcFocus(innerAlpha = 0.14f, haloAlpha = 0.35f)) {
                 Box(Modifier.testTag("scene").background(colors.workspace).padding(20.dp)) {
                     PcTextField(text.value, { text.value = it }, "Name", Modifier.width(200.dp).testTag("field"), error = "Required")
                 }
@@ -173,7 +195,7 @@ class PcFocusRenderingTest {
         lateinit var inputMode: InputModeManager
         setContent {
             inputMode = LocalInputModeManager.current
-            PcTheme(motion = PcMotion(reducedMotion = true)) {
+            PcTheme(motion = PcMotion(reducedMotion = true), focus = PcFocus(innerAlpha = 0.14f, haloAlpha = 0.35f)) {
                 Box(Modifier.testTag("scene").background(colors.workspace).padding(20.dp)) {
                     PcButton("Save", {}, Modifier.width(180.dp).testTag("button"),
                         variant = PcButtonVariant.Primary, enabled = enabled.value, busy = busy.value)

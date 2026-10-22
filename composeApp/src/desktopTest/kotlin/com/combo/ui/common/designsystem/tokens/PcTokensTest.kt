@@ -73,8 +73,8 @@ class PcTokensTest {
         val focus = PcFocus()
         assertEquals(10.dp, focus.gradientHeight)
         assertEquals(4.dp, focus.haloHeight)
-        assertEquals(0.14f, focus.innerAlpha)
-        assertEquals(0.35f, focus.haloAlpha)
+        assertEquals(0f, focus.innerAlpha)
+        assertEquals(0f, focus.haloAlpha)
     }
 
     @Test
