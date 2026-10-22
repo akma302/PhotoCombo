@@ -53,8 +53,8 @@ class BuilderInspectorCompositionTest {
         assertEquals(16f, fit.left, 1f)
         assertEquals(224f, fill.right, 1f)
         assertEquals(fit.width, fill.width, 1f)
-        assertTrue(frame.left - fit.left in 0f..3f)
-        assertTrue(fill.right - photo.right in 0f..3f)
+        assertEquals(3f, frame.left - fit.left, 0.01f)
+        assertEquals(3f, fill.right - photo.right, 0.01f)
         val auto = bounds(TOOL_TAG_AUTOFIT)
         assertEquals(fit.left, auto.left, 1f)
         val autoLabel = onNodeWithText("Always fit", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot

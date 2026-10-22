@@ -93,8 +93,8 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         waitForIdle()
     }
 
-    private fun ComposeUiTest.capture(name: String) {
-        val bitmap = onNodeWithTag("adaptive_builder_root").captureToImage()
+    private fun ComposeUiTest.capture(name: String, tag: String = "adaptive_builder_root") {
+        val bitmap = onNodeWithTag(tag).captureToImage()
         val bytes = Image.makeFromBitmap(bitmap.asSkiaBitmap()).use { image ->
             checkNotNull(image.encodeToData(EncodedImageFormat.PNG)).use { it.bytes }
         }
@@ -150,8 +150,10 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
                     onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_MODE_FRAME).performClick()
                     capture("builder-ds-$windowWidth-$density-$font")
+                    if (windowWidth == 1200) capture("builder-inspector-frame-$density-$font", BUILDER_INSPECTOR_TAG)
                     onNodeWithTag(TOOL_TAG_MODE_PHOTO).performClick()
                     capture("builder-ds-photo-$windowWidth-$density-$font")
+                    if (windowWidth == 1200) capture("builder-inspector-photo-$density-$font", BUILDER_INSPECTOR_TAG)
                 }
             }
         }

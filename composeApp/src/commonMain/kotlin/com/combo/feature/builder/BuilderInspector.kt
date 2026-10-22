@@ -64,7 +64,7 @@ internal fun BuilderInspector(
             BuilderIconButton(PcIcons.Close, "Deselect frame", { onEvent(BuilderEvent.CanvasTapped) }, enabled = enabled)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(if (wide) 19.dp else 12.dp)) {
-            Column(if (wide) Modifier.fillMaxWidth() else Modifier.width(184.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(if (wide) Modifier.fillMaxWidth() else Modifier.width(200.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (wide) InspectorLabel("Mouse edits")
                 PcSegmentedControl(
                     options = listOf(PcOption(EditMode.EDIT, "Frame", PcIcons.Frame), PcOption(EditMode.BORDER, "Photo", PcIcons.Crop)),
