@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import com.combo.core.image.ImageCodec
 import com.combo.domain.PhotoRepository
@@ -32,7 +33,7 @@ import org.koin.compose.koinInject
  * файл десятки раз.
  */
 @Composable
-fun ThumbImage(photoId: String, modifier: Modifier = Modifier) {
+fun ThumbImage(photoId: String, modifier: Modifier = Modifier, placeholderColor: Color = MaterialTheme.colorScheme.surfaceVariant) {
     val repo = koinInject<PhotoRepository>()
     val codec = koinInject<ImageCodec>()
     val ioDispatcher = koinInject<CoroutineDispatcher>()
@@ -47,6 +48,6 @@ fun ThumbImage(photoId: String, modifier: Modifier = Modifier) {
     } else {
         // Заглушка на тот же modifier: иначе до загрузки миниатюры ячейка схлопывалась бы
         // в ноль и по ней нельзя было бы ни попасть, ни положить testTag.
-        Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant))
+        Box(modifier.background(placeholderColor))
     }
 }

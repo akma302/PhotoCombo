@@ -35,18 +35,21 @@ fun PcTextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     error: String? = null,
+    showLabel: Boolean = true,
 ) {
     val source = remember { MutableInteractionSource() }
     val colors = PcTheme.colors
     val labelOpacity = if (enabled) 1f else PcTheme.opacity.disabled
     Column {
-        PcText(
-            label,
-            modifier = Modifier.alpha(labelOpacity).clearAndSetSemantics {},
-            color = colors.textSecondary,
-            style = PcTheme.typography.label,
-        )
-        Spacer(Modifier.height(PcTheme.spacing.xs))
+        if (showLabel) {
+            PcText(
+                label,
+                modifier = Modifier.alpha(labelOpacity).clearAndSetSemantics {},
+                color = colors.textSecondary,
+                style = PcTheme.typography.label,
+            )
+            Spacer(Modifier.height(PcTheme.spacing.xs))
+        }
         CompositionLocalProvider(
             LocalTextSelectionColors provides TextSelectionColors(
                 handleColor = colors.accent,
@@ -68,6 +71,7 @@ fun PcTextField(
                         focusColor = if (error == null) colors.accent else colors.danger,
                         glowColor = if (error == null) colors.accent else colors.danger,
                     ),
+                singleLine = !showLabel,
                 enabled = enabled,
                 readOnly = readOnly,
                 textStyle = PcTheme.typography.body.copy(color = colors.text),

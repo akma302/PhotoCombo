@@ -13,6 +13,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.combo.di.appModule
 import com.combo.di.desktopModule
 import com.combo.di.viewModelModule
+import com.combo.ui.common.PcDesktopTheme
 import com.combo.ui.AppNav
 import com.combo.ui.common.BackDispatcher
 import org.koin.core.context.startKoin
@@ -52,7 +53,7 @@ fun main() {
         ) {
             window.minimumSize = Dimension(420, 700)
             MaterialTheme {
-                AppNav(backDispatcher)
+                PcDesktopTheme { AppNav(backDispatcher) }
             }
         }
     }

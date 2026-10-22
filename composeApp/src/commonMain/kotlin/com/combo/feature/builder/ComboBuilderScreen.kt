@@ -5,8 +5,15 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Scaffold
+import com.combo.ui.common.designsystem.primitives.PcDivider
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.Alignment
+import com.combo.ui.common.designsystem.primitives.PcSurface
+import com.combo.ui.common.designsystem.primitives.PcText
+import com.combo.ui.common.designsystem.components.PcIconButton
+import com.combo.ui.common.designsystem.icons.PcIcons
+import com.combo.ui.common.designsystem.theme.PcTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -16,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import com.combo.ui.common.CollectMessages
 import com.combo.ui.common.RegisterBackHandler
@@ -35,6 +43,7 @@ fun ComboBuilderScreen(
     val bitmaps by vm.bitmaps.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     var showExitDialog by remember { mutableStateOf(false) }
+    var inspectorExpanded by remember { mutableStateOf(true) }
     var pickMode by remember { mutableStateOf(BuilderPickMode.NONE) }
 
     fun requestExit() {
@@ -46,32 +55,35 @@ fun ComboBuilderScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= BUILDER_WIDE_MIN
-        Scaffold(
-            topBar = {
-                Column {
-                    BuilderTopBar(state, wide, ::requestExit, vm::onEvent)
-                    HorizontalDivider()
-                    BuilderCanvasToolbar(state, vm::onEvent) { pickMode = BuilderPickMode.ADD }
-                    HorizontalDivider()
+        PcSurface(Modifier.fillMaxSize(), color = PcTheme.colors.app) {
+            Column(Modifier.fillMaxSize()) {
+                BuilderTopBar(state, wide, ::requestExit, vm::onEvent)
+                PcDivider()
+                BuilderCanvasToolbar(state, vm::onEvent) { pickMode = BuilderPickMode.ADD }
+                PcDivider()
+                Box(Modifier.weight(1f)) {
+                    if (state.loaded) {
+                        BuilderWorkspace(
+                            wide = wide,
+                            inspectorExpanded = inspectorExpanded,
+                            modifier = Modifier.fillMaxSize(),
+                            canvas = { EditorViewport(vm, state, bitmaps, Modifier.padding(if (wide) 32.dp else 20.dp)) },
+                            inspector = { BuilderInspector(state, wide, vm::onEvent) { pickMode = BuilderPickMode.REPLACE } },
+                        )
+                    }
+                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter)) { message ->
+                        PcSurface(Modifier.padding(PcTheme.spacing.md), shape = PcTheme.shapes.control) {
+                            Row(Modifier.padding(PcTheme.spacing.md),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm)) {
+                                PcText(message.visuals.message, Modifier.weight(1f))
+                                PcIconButton(PcIcons.Close, "Dismiss message", { message.dismiss() })
+                            }
+                        }
+                    }
                 }
-            },
-            snackbarHost = { SnackbarHost(snackbar) },
-            bottomBar = {
-                Column {
-                    HorizontalDivider()
-                    BuilderViewControls(state, vm::onEvent)
-                }
-            },
-        ) { padding ->
-            if (!state.loaded) {
-                Box(Modifier.fillMaxSize().padding(padding))
-            } else {
-                BuilderWorkspace(
-                    wide = wide,
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    canvas = { EditorViewport(vm, state, bitmaps) },
-                    inspector = { BuilderInspector(state, wide, vm::onEvent) { pickMode = BuilderPickMode.REPLACE } },
-                )
+                PcDivider()
+                BuilderViewControls(state, vm::onEvent, if (wide) ({ inspectorExpanded = !inspectorExpanded }) else null, inspectorExpanded)
             }
         }
     }
