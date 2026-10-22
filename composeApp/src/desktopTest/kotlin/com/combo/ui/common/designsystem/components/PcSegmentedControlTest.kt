@@ -17,6 +17,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
@@ -114,5 +116,18 @@ class PcSegmentedControlTest {
         val longHeight = onNodeWithText("A long option label").fetchSemanticsNode().boundsInRoot.height
         val shortHeight = onNodeWithText("Short").fetchSemanticsNode().boundsInRoot.height
         assertEquals(longHeight, shortHeight)
+    }
+
+    @Test
+    fun `touch track adds inset around full sized option targets`() = runComposeUiTest {
+        setContent {
+            PcTheme(density = PcDensity.Touch) {
+                PcSegmentedControl(options, 1, {}, Modifier.testTag("segments"))
+            }
+        }
+        onNodeWithTag("segments").assertHeightIsEqualTo(50.dp)
+        options.forEach {
+            onNodeWithText(it.label).assertHeightIsAtLeast(44.dp).assertWidthIsAtLeast(44.dp)
+        }
     }
 }

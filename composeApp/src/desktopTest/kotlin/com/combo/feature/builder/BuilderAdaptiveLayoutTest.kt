@@ -93,8 +93,8 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         waitForIdle()
     }
 
-    private fun ComposeUiTest.capture(name: String) {
-        val bitmap = onNodeWithTag("adaptive_builder_root").captureToImage()
+    private fun ComposeUiTest.capture(name: String, tag: String = "adaptive_builder_root") {
+        val bitmap = onNodeWithTag(tag).captureToImage()
         val bytes = Image.makeFromBitmap(bitmap.asSkiaBitmap()).use { image ->
             checkNotNull(image.encodeToData(EncodedImageFormat.PNG)).use { it.bytes }
         }
@@ -148,9 +148,33 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
                     onNodeWithTag(TOOL_TAG_SAVE).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_ADD_ITEM).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsDisplayed()
+                    onNodeWithTag(TOOL_TAG_MODE_FRAME).performClick()
                     capture("builder-ds-$windowWidth-$density-$font")
+                    if (windowWidth == 1200) capture("builder-inspector-frame-$density-$font", BUILDER_INSPECTOR_TAG)
+                    onNodeWithTag(TOOL_TAG_MODE_PHOTO).performClick()
+                    capture("builder-ds-photo-$windowWidth-$density-$font")
+                    if (windowWidth == 1200) capture("builder-inspector-photo-$density-$font", BUILDER_INSPECTOR_TAG)
                 }
             }
+        }
+    }
+
+    @Test
+    fun settingsKeepAddAtTheTrailingEdgeAndStatusBesideTheName() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        val name = onNodeWithTag(TOOL_TAG_NAME).fetchSemanticsNode().boundsInRoot
+        val status = onNodeWithText("Unsaved changes").fetchSemanticsNode().boundsInRoot
+        assertTrue("статус рядом с именем, а не у истории", status.left - name.right < 32f)
+        for (windowWidth in listOf(1200, 420)) {
+            resize(windowWidth)
+            val root = onNodeWithTag("adaptive_builder_root").fetchSemanticsNode().boundsInRoot
+            val add = onNodeWithTag(TOOL_TAG_ADD_ITEM).fetchSemanticsNode().boundsInRoot
+            val format = onNodeWithTag(TOOL_TAG_ASPECT).fetchSemanticsNode().boundsInRoot
+            val background = onNodeWithTag(TOOL_TAG_BACKGROUND).fetchSemanticsNode().boundsInRoot
+            assertEquals("кнопка добавления у правого края панели", root.right - 16f, add.right, 1f)
+            assertTrue("меню не перекрываются", format.right <= background.left)
+            assertTrue("добавление не перекрывает меню", add.top >= background.bottom || add.left >= background.right)
         }
     }
 

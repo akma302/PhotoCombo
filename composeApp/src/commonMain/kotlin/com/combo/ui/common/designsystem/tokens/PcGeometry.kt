@@ -24,6 +24,7 @@ data class PcSizes(
     val iconLarge: Dp = 20.dp,
     val focusOffset: Dp = 2.dp,
     val minimumTarget: Dp = 34.dp,
+    val segmentInset: Dp = 3.dp,
 )
 
 @Immutable

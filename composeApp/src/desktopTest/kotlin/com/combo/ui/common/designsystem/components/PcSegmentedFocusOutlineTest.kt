@@ -56,7 +56,7 @@ class PcSegmentedFocusOutlineTest {
         val results = mutableListOf<TextLayoutResult>()
         onNodeWithText("Whole canvas").performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
         assertEquals(1, results.single().lineCount)
-        onNodeWithTag("segments").assertHeightIsEqualTo(34.dp)
+        onNodeWithTag("segments").assertHeightIsEqualTo(40.dp)
     }
 
     private fun verifyOutline(label: String) = runComposeUiTest {

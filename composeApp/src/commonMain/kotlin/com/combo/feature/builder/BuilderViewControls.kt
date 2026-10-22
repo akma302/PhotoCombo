@@ -1,5 +1,6 @@
 package com.combo.feature.builder
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,7 +26,7 @@ import kotlin.math.roundToInt
 @Composable
 internal fun BuilderViewControls(state: BuilderUiState, onEvent: (BuilderEvent) -> Unit, onToggleInspector: (() -> Unit)? = null, inspectorExpanded: Boolean = true) {
     fun zoom(factor: Float) = onEvent(BuilderEvent.ViewportZoom(factor, Offset(state.screenW / 2f, state.screenH / 2f)))
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
+    BoxWithConstraints(Modifier.fillMaxWidth().background(PcTheme.colors.panel)) {
         val showHint = maxWidth >= 640.dp
         Row(
             Modifier.fillMaxWidth().heightIn(min = 42.dp).padding(horizontal = 12.dp, vertical = 4.dp),

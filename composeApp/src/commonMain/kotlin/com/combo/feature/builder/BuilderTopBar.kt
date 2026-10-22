@@ -1,5 +1,6 @@
 package com.combo.feature.builder
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,11 +25,11 @@ import com.combo.ui.common.designsystem.theme.PcTheme
 @Composable
 internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> Unit, onEvent: (BuilderEvent) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 57.dp).padding(horizontal = 8.dp, vertical = 6.dp),
+        Modifier.fillMaxWidth().background(PcTheme.colors.panel).heightIn(min = 57.dp).padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BuilderIconButton(PcIcons.Back, "Back", onBack)
-        Box(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+        Box((if (wide) Modifier.width(190.dp) else Modifier.weight(1f)).padding(horizontal = 8.dp)) {
             PcTextField(
                 value = state.name,
                 onValueChange = { onEvent(BuilderEvent.SetName(it)) },
@@ -46,6 +47,7 @@ internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> U
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
         }
+        if (wide) Spacer(Modifier.weight(1f))
         BuilderIconButton(PcIcons.Undo, "Undo", { onEvent(BuilderEvent.Undo) }, enabled = state.canUndo && !state.saving)
         BuilderIconButton(PcIcons.Redo, "Redo", { onEvent(BuilderEvent.Redo) }, enabled = state.canRedo && !state.saving)
         Spacer(Modifier.width(8.dp))
