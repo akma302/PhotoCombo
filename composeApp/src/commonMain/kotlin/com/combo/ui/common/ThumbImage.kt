@@ -3,7 +3,7 @@ package com.combo.ui.common
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.MaterialTheme
+import com.combo.ui.common.designsystem.theme.PcTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,7 +33,7 @@ import org.koin.compose.koinInject
  * файл десятки раз.
  */
 @Composable
-fun ThumbImage(photoId: String, modifier: Modifier = Modifier, placeholderColor: Color = MaterialTheme.colorScheme.surfaceVariant) {
+fun ThumbImage(photoId: String, modifier: Modifier = Modifier, placeholderColor: Color = PcTheme.colors.workspace) {
     val repo = koinInject<PhotoRepository>()
     val codec = koinInject<ImageCodec>()
     val ioDispatcher = koinInject<CoroutineDispatcher>()

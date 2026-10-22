@@ -116,7 +116,7 @@ private fun ComboPreview(
     preview: @Composable (ComboWithItems, Modifier) -> Unit,
 ) {
     PcSurface(modifier.aspectRatio(
-        (combo.combo.canvasWidth.toFloat() / combo.combo.canvasHeight).coerceIn(0.4f, 2.5f)),
+        combo.combo.canvasWidth.toFloat() / combo.combo.canvasHeight),
         color = PcTheme.colors.workspace, shape = PcTheme.shapes.small) {
         preview(combo, Modifier.fillMaxSize().clip(PcTheme.shapes.small))
     }
@@ -136,7 +136,7 @@ private fun ComboDetails(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             PcIconButton(PcIcons.Delete, "Delete", { onDelete(combo.combo.id) },
                 Modifier.testTag("combo_delete_${combo.combo.id}"))
-            PcIconButton(PcIcons.Frame, "Edit", { onOpenBuilder(combo.combo.id) },
+            PcIconButton(PcIcons.Edit, "Edit", { onOpenBuilder(combo.combo.id) },
                 Modifier.testTag("combo_edit_${combo.combo.id}"))
         }
     }
