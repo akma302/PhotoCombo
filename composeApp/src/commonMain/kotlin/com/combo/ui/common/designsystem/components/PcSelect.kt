@@ -40,6 +40,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
@@ -84,6 +86,7 @@ fun <T> PcSelect(
     val hovered by source.collectIsHoveredAsState()
     val pressed by source.collectIsPressedAsState()
     val colors = PcTheme.colors
+    val inputMode = LocalInputModeManager.current
     val density = LocalDensity.current
     val window = LocalWindowInfo.current.containerSize
     val gap = with(density) { PcTheme.spacing.xs.roundToPx() }
@@ -114,7 +117,10 @@ fun <T> PcSelect(
                 .focusRequester(anchorFocus)
                 .onPreviewKeyEvent { event ->
                     if (enabled && (event.key == Key.DirectionDown || event.key == Key.DirectionUp)) {
-                        if (event.type == KeyEventType.KeyDown) open()
+                        if (event.type == KeyEventType.KeyDown) {
+                            inputMode.requestInputMode(InputMode.Keyboard)
+                            open()
+                        }
                         true
                     } else false
                 }
@@ -153,6 +159,7 @@ fun <T> PcSelect(
                         .dropShadow(PcTheme.shapes.control, Shadow(radius = 18.dp, color = colors.shadow, offset = DpOffset(0.dp, 4.dp)))
                         .semantics { paneTitle = contentDescription }
                         .onPreviewKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) inputMode.requestInputMode(InputMode.Keyboard)
                             val key = event.key
                             if (key == Key.Escape) {
                                 if (event.type == KeyEventType.KeyUp) close()

@@ -23,6 +23,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.constrainHeight
@@ -44,11 +47,13 @@ fun Modifier.pcControlSurface(
     keepFocusedFill: Boolean = false,
     focusColor: Color = PcTheme.colors.accent,
     glowColor: Color = PcTheme.colors.accent,
+    focusEnabled: Boolean = enabled,
 ): Modifier {
     val focused by interactionSource.collectIsFocusedAsState()
     val pressed by interactionSource.collectIsPressedAsState()
-    val keyboard = LocalInputModeManager.current.inputMode == InputMode.Keyboard
-    val visibleFocus = enabled && focused && (focusOnPointer || keyboard)
+    val inputMode = LocalInputModeManager.current
+    val keyboard = inputMode.inputMode == InputMode.Keyboard
+    val visibleFocus = enabled && focusEnabled && focused && (focusOnPointer || keyboard)
     val fill by animateColorAsState(
         if (visibleFocus && !keepFocusedFill && !pressed) PcTheme.colors.focusFill else background,
         tween(PcTheme.motion.effectiveFeedbackMillis),
@@ -58,7 +63,10 @@ fun Modifier.pcControlSurface(
     val focusWidth = PcTheme.strokes.focus
     val focus = PcTheme.focus
     val opacity = if (enabled) 1f else PcTheme.opacity.disabled
-    return graphicsLayer { alpha = opacity }.drawWithCache {
+    return onPreviewKeyEvent { event ->
+        if (enabled && event.type == KeyEventType.KeyDown) inputMode.requestInputMode(InputMode.Keyboard)
+        false
+    }.graphicsLayer { alpha = opacity }.drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
         val clip = Path().apply { addOutline(outline) }
         val lineHeight = focusWidth.toPx().coerceAtMost(size.height)
@@ -74,12 +82,12 @@ fun Modifier.pcControlSurface(
         )
         onDrawWithContent {
             drawOutline(outline, fill)
-            if (enabled && focusProgress > 0f && !keepFocusedFill) clipPath(clip) {
+            if (enabled && focusEnabled && focusProgress > 0f && !keepFocusedFill) clipPath(clip) {
                 drawRect(inner, Offset(0f, gradientTop), Size(size.width, size.height - gradientTop), alpha = focusProgress)
             }
             if (borderColor.alpha > 0f) drawOutline(outline, borderColor, style = Stroke(borderWidth.toPx()))
             drawContent()
-            if (enabled && focusProgress > 0f) {
+            if (enabled && focusEnabled && focusProgress > 0f) {
                 val inset = lineHeight.coerceAtMost(size.width / 2)
                 drawRoundRect(halo, Offset(inset, size.height), Size((size.width - inset * 2).coerceAtLeast(0f), haloHeight),
                     cornerRadius = CornerRadius(haloHeight / 2), alpha = focusProgress)
