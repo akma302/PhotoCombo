@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import com.combo.ui.common.CollectMessages
 import com.combo.ui.common.RegisterBackHandler
@@ -64,7 +65,7 @@ fun ComboBuilderScreen(
                         BuilderWorkspace(
                             wide = wide,
                             modifier = Modifier.fillMaxSize(),
-                            canvas = { EditorViewport(vm, state, bitmaps) },
+                            canvas = { EditorViewport(vm, state, bitmaps, Modifier.padding(if (wide) 32.dp else 20.dp)) },
                             inspector = { BuilderInspector(state, wide, vm::onEvent) { pickMode = BuilderPickMode.REPLACE } },
                         )
                     }
