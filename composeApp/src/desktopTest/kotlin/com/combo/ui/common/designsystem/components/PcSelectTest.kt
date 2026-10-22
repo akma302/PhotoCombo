@@ -1,6 +1,9 @@
 package com.combo.ui.common.designsystem.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -11,7 +14,9 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import com.combo.ui.common.designsystem.theme.PcTheme
 import org.junit.Assert.assertEquals
@@ -21,6 +26,57 @@ import org.junit.Test
 class PcSelectTest {
     private val options = listOf(PcOption(10, "Original"), PcOption(20, "Square"), PcOption(30, "Wide"))
     private fun option(label: String) = hasText(label) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+
+    @Test
+    fun reorderingOpenOptionsKeepsTheSameActiveValueForEnter() = runSkikoComposeUiTest(Size(500f, 350f)) {
+        val choices = mutableStateOf(options)
+        var picked = -1
+        setContent {
+            PcTheme { PcSelect(10, choices.value, { picked = it }, "Format", Modifier.testTag("select")) }
+        }
+        onNodeWithTag("select").performClick()
+        onNode(option("Original")).performKeyInput { pressKey(Key.DirectionDown) }
+        onNode(option("Square")).assertIsFocused()
+        runOnIdle { choices.value = listOf(options[1], options[0], options[2]) }
+        onNode(option("Square")).assertIsFocused().performKeyInput { pressKey(Key.Enter) }
+        assertEquals(20, picked)
+    }
+
+    @Test
+    fun removingActiveOptionFallsBackToSelectedValueAndCanContinueNavigating() = runSkikoComposeUiTest(Size(500f, 350f)) {
+        val choices = mutableStateOf(options)
+        var picked = -1
+        setContent {
+            PcTheme { PcSelect(10, choices.value, { picked = it }, "Format", Modifier.testTag("select")) }
+        }
+        onNodeWithTag("select").performClick()
+        onNode(option("Original")).performKeyInput { pressKey(Key.MoveEnd) }
+        onNode(option("Wide")).assertIsFocused()
+        runOnIdle { choices.value = listOf(options[0], options[1]) }
+        onNode(option("Original")).assertIsFocused()
+        onNode(option("Original")).performKeyInput { pressKey(Key.DirectionDown) }
+        onNode(option("Square")).assertIsFocused().performKeyInput { pressKey(Key.Enter) }
+        assertEquals(20, picked)
+    }
+
+    @Test
+    fun unconstrainedRowKeepsAnchorLabelOnOneVisibleLine() = runSkikoComposeUiTest(Size(500f, 350f)) {
+        setContent {
+            PcTheme {
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    PcSelect(10, options, {}, "Format", Modifier.testTag("select"))
+                }
+            }
+        }
+        onNodeWithTag("select").assertHeightIsEqualTo(34.dp)
+        val layouts = mutableListOf<TextLayoutResult>()
+        onNodeWithText("Original", useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertEquals(1, layouts.single().lineCount)
+        org.junit.Assert.assertTrue(layouts.single().size.width > 0)
+        // При бесконечной ширине paragraph.width хранит Infinity; проверяем границу настоящей строки.
+        org.junit.Assert.assertTrue(layouts.single().getLineRight(0) <= layouts.single().size.width)
+    }
 
     @Test
     fun outsidePointerDismissesMenuAndRestoresAnchorFocus() = runSkikoComposeUiTest(Size(500f, 350f)) {
