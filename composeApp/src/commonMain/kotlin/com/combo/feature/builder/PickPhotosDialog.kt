@@ -1,19 +1,39 @@
 package com.combo.feature.builder
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.combo.data.PhotoEntity
-import com.combo.ui.common.PhotoGrid
+import com.combo.ui.common.ThumbImage
+import com.combo.ui.common.designsystem.components.PcButton
+import com.combo.ui.common.designsystem.components.PcButtonVariant
+import com.combo.ui.common.designsystem.components.PcDialog
+import com.combo.ui.common.designsystem.icons.PcIcons
+import com.combo.ui.common.designsystem.primitives.PcIcon
+import com.combo.ui.common.designsystem.primitives.PcSurface
+import com.combo.ui.common.designsystem.primitives.pcControlSurface
+import com.combo.ui.common.designsystem.theme.PcTheme
 
 /**
  * Окно выбора фото из библиотеки. Одно окно на два действия:
@@ -28,7 +48,7 @@ import com.combo.ui.common.PhotoGrid
  * Список кандидатов собирает вызывающий ([BuilderPhotoPicker]): какие фото уместны — его
  * решение, окно только показывает их и возвращает выбор.
  *
- * Раскладка: три колонки — значения [PhotoGrid] по умолчанию.
+ * Три колонки сохраняют стабильные ключи фото и отметки при изменении размера окна.
  *
  * @param multi `true` — выбор нескольких фото с подтверждением, `false` — одно фото касанием.
  * @param maxPick сколько фото можно отметить (в режиме `multi = false` не используется).
@@ -45,42 +65,73 @@ internal fun PickPhotosDialog(
 ) {
     var picked by remember { mutableStateOf(emptyList<String>()) }
 
-    AlertDialog(
+    PcDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {
+        title = title,
+        actions = {
+            PcButton(text = "Cancel", onClick = onDismiss, variant = PcButtonVariant.Ghost)
             if (multi) {
-                TextButton(
+                PcButton(
+                    text = if (picked.isEmpty()) "Add" else "Add ${picked.size}",
+                    variant = PcButtonVariant.Primary,
+                    icon = PcIcons.Add,
                     enabled = picked.isNotEmpty(),
                     onClick = {
                         val byId = candidates.associateBy { it.id }
                         onConfirm(picked.mapNotNull { byId[it] })
                     },
                     modifier = Modifier.testTag(DIALOG_TAG_PICK_CONFIRM),
-                ) { Text(if (picked.isEmpty()) "Add" else "Add ${picked.size}") }
+                )
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-        title = { Text(title) },
-        text = {
-            PhotoGrid(
-                photos = candidates,
-                modifier = Modifier.height(320.dp),
-                cellTag = { addPhotoCellTag(it.id) },
-                cellPadding = 4.dp,
-                cellHeight = 90.dp,
-                isSelected = { it.id in picked },
-                onCellClick = { photo ->
-                    if (!multi) {
-                        onConfirm(listOf(photo))
-                    } else if (photo.id in picked) {
-                        picked = picked - photo.id
-                    } else if (picked.size < maxPick) {
-                        picked = picked + photo.id
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxWidth().height(320.dp),
+            horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm),
+        ) {
+            items(candidates, key = { it.id }) { photo ->
+                val selected = photo.id in picked
+                PickPhotoCell(photo, selected, multi) {
+                    when {
+                        !multi -> onConfirm(listOf(photo))
+                        selected -> picked = picked - photo.id
+                        picked.size < maxPick -> picked = picked + photo.id
                     }
-                },
-            )
-        },
-    )
+                }
+            }
+        }
+    }
+}
+
+/** Миниатюра целиком доступна с клавиатуры; отметка не создаёт второго действия. */
+@Composable
+private fun PickPhotoCell(photo: PhotoEntity, selected: Boolean, multi: Boolean, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val gesture = if (multi) {
+        Modifier.toggleable(selected, source, indication = null, role = Role.Checkbox) { onClick() }
+    } else {
+        Modifier.clickable(source, indication = null, role = Role.Button, onClick = onClick)
+    }
+    Box(
+        Modifier.fillMaxWidth().height(90.dp)
+            .pcControlSurface(source, PcTheme.colors.workspace)
+            .then(gesture)
+            .semantics { contentDescription = photo.originalName ?: photo.fileName }
+            .testTag(addPhotoCellTag(photo.id)),
+    ) {
+        ThumbImage(photo.id, Modifier.matchParentSize(), placeholderColor = PcTheme.colors.workspace)
+        if (selected) {
+            Box(Modifier.matchParentSize().border(PcTheme.strokes.selection, PcTheme.colors.accent))
+            PcSurface(
+                modifier = Modifier.align(Alignment.TopEnd).padding(PcTheme.spacing.xs),
+                color = PcTheme.colors.accent,
+                contentColor = PcTheme.colors.onAccent,
+                shape = PcTheme.shapes.small,
+            ) {
+                PcIcon(PcIcons.Check, contentDescription = "Selected", modifier = Modifier.padding(PcTheme.spacing.xs))
+            }
+        }
+    }
 }
