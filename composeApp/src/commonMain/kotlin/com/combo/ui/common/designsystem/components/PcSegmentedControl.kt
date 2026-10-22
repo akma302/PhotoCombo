@@ -2,6 +2,7 @@ package com.combo.ui.common.designsystem.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.zIndex
 import com.combo.ui.common.designsystem.primitives.PcIcon
 import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.primitives.pcControlSurface
@@ -57,6 +59,7 @@ fun <T> PcSegmentedControl(
                 val source = remember(option.value) { MutableInteractionSource() }
                 val hovered by source.collectIsHoveredAsState()
                 val pressed by source.collectIsPressedAsState()
+                val focused by source.collectIsFocusedAsState()
                 val selected = option.value == value
                 val background = when {
                     !enabled -> if (selected) colors.panel else colors.app
@@ -68,6 +71,7 @@ fun <T> PcSegmentedControl(
                 val textColor = if (selected) colors.accent else colors.text
                 Row(
                     modifier = Modifier
+                        .zIndex(if (focused) 1f else 0f)
                         .focusRequester(requesters[index])
                         .onPreviewKeyEvent { event ->
                             val direction = when (event.key) {
@@ -110,7 +114,8 @@ fun <T> PcSegmentedControl(
         },
     ) { measurables, constraints ->
         val target = minimumTarget.roundToPx()
-        val naturalWidth = measurables.sumOf { maxOf(target, it.maxIntrinsicWidth(Constraints.Infinity)) }
+        val widest = measurables.maxOf { maxOf(target, it.maxIntrinsicWidth(Constraints.Infinity)) }
+        val naturalWidth = (widest.toLong() * measurables.size).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         val width = constraints.constrainWidth(naturalWidth)
         val baseWidth = width / measurables.size
         val remainder = width % measurables.size
