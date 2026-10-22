@@ -20,14 +20,14 @@ class PcIconsTest {
         PcIcons.Check, PcIcons.Close, PcIcons.ChevronDown, PcIcons.Photo,
         PcIcons.ReplacePhoto, PcIcons.Delete, PcIcons.LayerUp, PcIcons.LayerDown,
         PcIcons.WholeCanvas, PcIcons.AspectRatio, PcIcons.Palette, PcIcons.Frame,
-        PcIcons.Crop, PcIcons.Info, PcIcons.Warning,
+        PcIcons.Crop, PcIcons.Info, PcIcons.Warning, PcIcons.Edit,
     )
 
     @Test
     fun `all public vectors are cached and have distinct artwork`() {
         val first = icons()
         val second = icons()
-        assertEquals(20, first.size)
+        assertEquals(21, first.size)
         first.zip(second).forEach { (a, b) -> assertSame(a.name, a, b) }
         assertEquals(first.size, first.map { it.name }.toSet().size)
         assertEquals(first.size, first.map { (it.root[0] as VectorPath).pathData }.toSet().size)
