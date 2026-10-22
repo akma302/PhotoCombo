@@ -54,6 +54,7 @@ import com.combo.ui.common.designsystem.primitives.PcIcon
 import com.combo.ui.common.designsystem.primitives.PcSurface
 import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.primitives.pcControlSurface
+import com.combo.ui.common.designsystem.primitives.pcPopupAppearance
 import com.combo.ui.common.designsystem.theme.PcTheme
 
 /** Значение принадлежит вызывающему; меню хранит только раскрытие и позицию клавиатурного выбора. */
@@ -138,6 +139,7 @@ fun <T> PcSelect(
                 PcSurface(
                     modifier = Modifier.widthIn(min = menuMinWidth, max = menuMaxWidth)
                         .heightIn(max = minOf(320.dp, maxHeight))
+                        .pcPopupAppearance()
                         .dropShadow(PcTheme.shapes.control, Shadow(radius = 18.dp, color = colors.shadow, offset = DpOffset(0.dp, 4.dp)))
                         .semantics { paneTitle = contentDescription }
                         .onPreviewKeyEvent { event ->

@@ -18,6 +18,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -29,8 +31,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpOffset
 import com.combo.ui.common.designsystem.primitives.PcSurface
 import com.combo.ui.common.designsystem.primitives.PcText
+import com.combo.ui.common.designsystem.primitives.pcPopupAppearance
 import com.combo.ui.common.designsystem.theme.PcTheme
 
 /** Платформенный модальный слой удерживает ввод; наружу передаются только слоты и состояние. */
@@ -50,6 +54,8 @@ fun PcDialog(
     PcPlatformDialog(onDismissRequest, dismissOnClickOutside) {
         PcSurface(
             modifier = modifier.widthIn(max = 480.dp).padding(PcTheme.spacing.xl)
+                .pcPopupAppearance()
+                .dropShadow(PcTheme.shapes.dialog, Shadow(radius = 40.dp, color = PcTheme.colors.shadow, offset = DpOffset(0.dp, 10.dp)))
                 .semantics { paneTitle = title }
                 .onPreviewKeyEvent { event ->
                     if (event.key == Key.Escape) {
