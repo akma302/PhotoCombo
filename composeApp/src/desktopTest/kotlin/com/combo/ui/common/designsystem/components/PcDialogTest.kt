@@ -17,6 +17,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runSkikoComposeUiTest
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.dp
 import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.theme.PcTheme
@@ -25,6 +27,23 @@ import org.junit.Test
 
 @OptIn(ExperimentalTestApi::class)
 class PcDialogTest {
+    @Test
+    fun escapeDismissesEvenWhenEveryActionIsDisabled() = runSkikoComposeUiTest(Size(600f, 400f)) {
+        val open = mutableStateOf(true)
+        var dismissals = 0
+        setContent {
+            PcTheme {
+                if (open.value) PcDialog("Waiting", { dismissals++; open.value = false }, actions = {
+                    PcCheckbox(false, {}, "Unavailable", enabled = false)
+                }) { PcText("No enabled controls") }
+            }
+        }
+        val dialog = onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, "Waiting"))
+        dialog.assertIsFocused().performKeyInput { pressKey(Key.Escape) }
+        assertEquals(1, dismissals)
+        onNodeWithText("Waiting").assertDoesNotExist()
+    }
+
     @Test
     fun dialogReceivesAndTrapsFocusAndEscapeRestoresInitiator() = runSkikoComposeUiTest(Size(600f, 400f)) {
         val open = mutableStateOf(false)
