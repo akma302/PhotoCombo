@@ -1,13 +1,13 @@
 package com.combo.feature.builder
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.combo.ui.common.RegisterBackHandler
+import com.combo.ui.common.designsystem.components.PcButton
+import com.combo.ui.common.designsystem.components.PcButtonVariant
+import com.combo.ui.common.designsystem.components.PcDialog
+import com.combo.ui.common.designsystem.primitives.PcText
 
 /**
  * Диалог выхода из редактора с несохранёнными изменениями.
@@ -34,30 +34,32 @@ internal fun ExitDialog(
 ) {
     RegisterBackHandler { onKeepEditing() }
 
-    AlertDialog(
+    PcDialog(
         onDismissRequest = onKeepEditing,
-        title = { Text("Save changes?") },
-        text = { Text("The combo has unsaved changes.") },
-        confirmButton = {
-            TextButton(
+        title = "Save changes?",
+        actions = {
+            PcButton(
+                text = "Keep editing",
                 enabled = !state.saving,
+                modifier = Modifier.testTag(DIALOG_TAG_KEEP),
+                onClick = onKeepEditing,
+                variant = PcButtonVariant.Ghost,
+            )
+            PcButton(
+                text = "Discard",
+                enabled = !state.saving,
+                modifier = Modifier.testTag(DIALOG_TAG_DISCARD),
+                onClick = onDiscard,
+                variant = PcButtonVariant.Danger,
+            )
+            PcButton(
+                text = "Save",
+                enabled = !state.saving,
+                busy = state.saving,
                 modifier = Modifier.testTag(DIALOG_TAG_SAVE),
                 onClick = onSave,
-            ) { Text("Save") }
+                variant = PcButtonVariant.Primary,
+            )
         },
-        dismissButton = {
-            Row {
-                TextButton(
-                    enabled = !state.saving,
-                    modifier = Modifier.testTag(DIALOG_TAG_DISCARD),
-                    onClick = onDiscard,
-                ) { Text("Discard") }
-                TextButton(
-                    enabled = !state.saving,
-                    modifier = Modifier.testTag(DIALOG_TAG_KEEP),
-                    onClick = onKeepEditing,
-                ) { Text("Keep editing") }
-            }
-        },
-    )
+    ) { PcText("The combo has unsaved changes.") }
 }
