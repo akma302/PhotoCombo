@@ -1,5 +1,9 @@
 package com.combo.ui.common.designsystem.components
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
@@ -7,9 +11,22 @@ import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import com.combo.ui.common.designsystem.theme.PcTheme
 
-/** Команды переносятся целиком на новую строку; у группы нет состояния выбора. */
+/** Команды переносятся целиком; при ограниченной высоте доступны через прокрутку. */
 @Composable
 fun PcActionGroup(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    BoxWithConstraints(modifier) {
+        if (constraints.hasBoundedHeight) {
+            val gutter = PcTheme.sizes.focusOffset + PcTheme.strokes.focus
+            PcActionFlow(Modifier.verticalScroll(rememberScrollState()).padding(gutter), content)
+        } else {
+            PcActionFlow(Modifier, content)
+        }
+    }
+}
+
+/** Поток измеряет полную высоту; ограничение и прокрутка принадлежат внешней области. */
+@Composable
+private fun PcActionFlow(modifier: Modifier, content: @Composable () -> Unit) {
     val gap = PcTheme.spacing.sm
     Layout(content, modifier) { measurables, constraints ->
         val space = gap.roundToPx()
