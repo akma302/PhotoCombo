@@ -148,9 +148,31 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
                     onNodeWithTag(TOOL_TAG_SAVE).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_ADD_ITEM).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsDisplayed()
+                    onNodeWithTag(TOOL_TAG_MODE_FRAME).performClick()
                     capture("builder-ds-$windowWidth-$density-$font")
+                    onNodeWithTag(TOOL_TAG_MODE_PHOTO).performClick()
+                    capture("builder-ds-photo-$windowWidth-$density-$font")
                 }
             }
+        }
+    }
+
+    @Test
+    fun settingsKeepAddAtTheTrailingEdgeAndStatusBesideTheName() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        val name = onNodeWithTag(TOOL_TAG_NAME).fetchSemanticsNode().boundsInRoot
+        val status = onNodeWithText("Unsaved changes").fetchSemanticsNode().boundsInRoot
+        assertTrue("статус рядом с именем, а не у истории", status.left - name.right < 32f)
+        for (windowWidth in listOf(1200, 420)) {
+            resize(windowWidth)
+            val root = onNodeWithTag("adaptive_builder_root").fetchSemanticsNode().boundsInRoot
+            val add = onNodeWithTag(TOOL_TAG_ADD_ITEM).fetchSemanticsNode().boundsInRoot
+            val format = onNodeWithTag(TOOL_TAG_ASPECT).fetchSemanticsNode().boundsInRoot
+            val background = onNodeWithTag(TOOL_TAG_BACKGROUND).fetchSemanticsNode().boundsInRoot
+            assertEquals("кнопка добавления у правого края панели", root.right - 16f, add.right, 1f)
+            assertTrue("меню не перекрываются", format.right <= background.left)
+            assertTrue("добавление не перекрывает меню", add.top >= background.bottom || add.left >= background.right)
         }
     }
 

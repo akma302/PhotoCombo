@@ -1,17 +1,21 @@
 package com.combo.feature.builder
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.combo.Const
 import com.combo.core.background.BackgroundPresets
 import com.combo.core.render.AspectPresets
 import com.combo.core.render.CanvasFormat
-import com.combo.ui.common.designsystem.components.PcActionGroup
+import com.combo.ui.common.designsystem.theme.PcTheme
 import com.combo.ui.common.designsystem.components.PcButton
 import com.combo.ui.common.designsystem.components.PcOption
 import com.combo.ui.common.designsystem.components.PcSelect
@@ -26,7 +30,7 @@ internal fun BuilderCanvasToolbar(state: BuilderUiState, onEvent: (BuilderEvent)
     val formats = if (format in AspectPresets.all) AspectPresets.all else listOf(format) + AspectPresets.all
     val backgrounds = if (state.background in BackgroundPresets.cycle) BackgroundPresets.cycle
         else listOf(state.background) + BackgroundPresets.cycle
-    PcActionGroup(Modifier.fillMaxWidth().heightIn(min = 51.dp).padding(horizontal = 12.dp, vertical = 4.dp)) {
+    BuilderSettingsLayout(Modifier.fillMaxWidth().background(PcTheme.colors.panel).heightIn(min = 51.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
         PcSelect(
             value = format,
             options = formats.map { PcOption(it, AspectPresets.label(it.w, it.h), PcIcons.AspectRatio) },
@@ -50,6 +54,35 @@ internal fun BuilderCanvasToolbar(state: BuilderUiState, onEvent: (BuilderEvent)
             modifier = Modifier.testTag(TOOL_TAG_ADD_ITEM),
             icon = PcIcons.Add,
         )
+    }
+}
+
+/** Поля сохраняют порядок при переносе, добавление фото прижато к правому краю строки. */
+@Composable
+private fun BuilderSettingsLayout(modifier: Modifier, content: @Composable () -> Unit) {
+    val gap = PcTheme.spacing.md
+    val rowGap = PcTheme.spacing.sm
+    Layout(content, modifier) { measurables, constraints ->
+        val children = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
+        val spacing = gap.roundToPx()
+        val width = constraints.constrainWidth(children.sumOf { it.width } + spacing * (children.size - 1).coerceAtLeast(0))
+        val positions = mutableListOf<Pair<Int, Int>>()
+        var x = 0
+        var y = 0
+        var rowHeight = 0
+        for ((index, child) in children.withIndex()) {
+            if (x > 0 && child.width > width - x) {
+                y += rowHeight + rowGap.roundToPx()
+                x = 0
+                rowHeight = 0
+            }
+            positions += (if (index == children.lastIndex) width - child.width else x) to y
+            x += child.width + spacing
+            rowHeight = maxOf(rowHeight, child.height)
+        }
+        layout(width, constraints.constrainHeight(y + rowHeight)) {
+            children.forEachIndexed { index, child -> child.placeRelative(positions[index].first, positions[index].second) }
+        }
     }
 }
 
