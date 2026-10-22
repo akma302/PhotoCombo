@@ -46,6 +46,7 @@ fun <T> PcSegmentedControl(
     onValueChange: (T) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    optionModifier: (T) -> Modifier = { Modifier },
 ) {
     require(options.isNotEmpty()) { "PcSegmentedControl needs at least one option" }
     require(options.map { it.value }.distinct().size == options.size) { "Option values must be distinct" }
@@ -73,7 +74,7 @@ fun <T> PcSegmentedControl(
                 }
                 val textColor = if (selected) colors.accent else colors.text
                 Row(
-                    modifier = Modifier
+                    modifier = optionModifier(option.value)
                         .zIndex(if (focused) 1f else 0f)
                         .focusRequester(requesters[index])
                         .onPreviewKeyEvent { event ->

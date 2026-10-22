@@ -5,7 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import com.combo.ui.common.designsystem.theme.PcTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -59,7 +59,7 @@ internal fun EditorViewport(
 
     val density = LocalDensity.current
     val handlePx = with(density) { 24.dp.toPx() }
-    val primaryColor = MaterialTheme.colorScheme.primary
+    val primaryColor = PcTheme.colors.accent
 
     // Блоки pointerInput ниже запускаются ОДИН раз (ключ Unit) — иначе смена выделения
     // или режима посреди жеста перезапускала бы блок, обрывая жест без END (терялись
@@ -102,7 +102,7 @@ private fun EditorCanvas(
     curHandlePx: State<Float>,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))) {
+    Box(modifier.fillMaxSize().background(PcTheme.colors.workspace)) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
