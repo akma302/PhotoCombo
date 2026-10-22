@@ -133,8 +133,31 @@ class ArchitectureRulesTest {
                     "domain не импортирует feature/ui",
                 )
             }
-            if (s.pkg == "com.combo.ui.common") {
+            if (s.pkg == "com.combo.ui.common" || s.pkg.startsWith("com.combo.ui.common.")) {
                 forbid(listOf("com.combo.feature"), "ui.common не импортирует feature")
+            }
+            val ds = "com.combo.ui.common.designsystem"
+            if (s.pkg == ds || s.pkg.startsWith("$ds.")) {
+                val part = s.pkg.removePrefix("$ds.").substringBefore('.')
+                val allowedParts = when (part) {
+                    "tokens", "icons" -> setOf(part)
+                    "theme" -> setOf("tokens", "theme")
+                    "primitives" -> setOf("tokens", "theme", "primitives", "icons")
+                    "components" -> setOf("tokens", "theme", "primitives", "icons", "components")
+                    else -> emptySet()
+                }
+                for (imp in s.allImports.ifEmpty { s.imports }) {
+                    val ownImport = imp.startsWith("$ds.")
+                    val illegalInternal = ownImport && imp.removePrefix("$ds.").substringBefore('.') !in allowedParts
+                    val illegalApplication = imp.startsWith("com.combo.") && !ownImport
+                    val illegalExternal = !imp.startsWith("com.combo.") &&
+                        !imp.startsWith("kotlin.") && !imp.startsWith("kotlinx.coroutines.") &&
+                        !imp.startsWith("androidx.compose.")
+                    val material = imp.startsWith("androidx.compose.material")
+                    if (illegalInternal || illegalApplication || illegalExternal || material) {
+                        problems += "${s.label}: [независимая DS и направление tokens ← theme ← primitives ← components] import $imp"
+                    }
+                }
             }
             if (featureRoot != null) {
                 forbid(otherFeatures, "feature.X не импортирует feature.Y")
@@ -338,6 +361,42 @@ class ArchitectureRulesTest {
             "c" to emptySet(),
         )
         assertTrue(cycles(acyclic).isEmpty())
+    }
+
+    @Test
+    fun `design system dependencies are constrained at every level`() {
+        val ds = "com.combo.ui.common.designsystem"
+        val forbidden = listOf(
+            "tokens" to "$ds.theme.PcTheme",
+            "theme" to "$ds.components.PcButton",
+            "primitives" to "$ds.components.PcButton",
+            "icons" to "$ds.tokens.PcColors",
+            "components" to "com.combo.core.model.FramingMode",
+            "components" to "com.combo.domain.PhotoRepository",
+            "components" to "com.combo.ui.common.BackDispatcher",
+            "components" to "org.koin.compose.koinInject",
+            "components" to "androidx.lifecycle.ViewModel",
+            "components" to "androidx.compose.material3.Button",
+            "icons" to "androidx.compose.material.icons.Icons",
+        )
+        forbidden.forEach { (part, imp) ->
+            assertTrue("$part must reject $imp", violationsIn(listOf(
+                Source(part, "$ds.$part", listOf(imp), allImports = listOf(imp)),
+            )).isNotEmpty())
+        }
+        val legal = listOf(
+            "theme" to "$ds.tokens.PcColors",
+            "primitives" to "$ds.theme.PcTheme",
+            "components" to "$ds.primitives.PcText",
+            "components" to "$ds.icons.PcIcons",
+            "icons" to "androidx.compose.ui.graphics.vector.ImageVector",
+        )
+        legal.forEach { (part, imp) ->
+            assertEquals(emptyList<String>(), violationsIn(listOf(
+                Source(part, "$ds.$part", listOf(imp), allImports = listOf(imp)),
+            )))
+        }
+        assertTrue(violationsIn(listOf(Source("nested", "$ds.components", listOf("com.combo.feature.viewer.Viewer")))).isNotEmpty())
     }
 
     /** Ребро идёт в самый длинный известный пакет, а не в «псевдопакет» из имени функции. */
