@@ -131,7 +131,7 @@ class AppNavViewModelTest : UiTestBase() {
 
         onNodeWithText("Combos").performClick()
         waitUntil(timeoutMillis = 5_000) {
-            onAllNodesWithText("Trip").fetchSemanticsNodes().isNotEmpty()
+            onAllNodesWithTag("combo_card_c1").fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(
             "список комбо не предлагает неподдерживаемое действие Play",
