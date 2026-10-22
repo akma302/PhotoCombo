@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="850" viewBox="0 0 1120 850" role="img" aria-labelledby="title desc">
-  <title id="title">PhotoCombo design system — Dark v0.1</title>
-  <desc id="desc">Dark palette, button states, mode selector, action group, checkboxes, select and text fields. This is a specification illustration; runtime components and icons will be implemented in Compose.</desc>
+  <title id="title">PhotoCombo design system — Dark v0.2</title>
+  <desc id="desc">Dark palette, button states, mode selector, action group, checkboxes, select and text fields. This is a specification illustration; actual Compose components and icons are demonstrated in the live gallery.</desc>
   <defs>
     <style>
       text { font-family: 'Segoe UI', sans-serif; font-size: 13px; fill: #F0F0F5; }
@@ -22,7 +22,7 @@
   </defs>
   <rect width="1120" height="850" fill="#202126"/>
   <text class="heading" x="32" y="42">PhotoCombo · Visual system</text>
-  <text class="sub" x="32" y="65">Dark / v0.1 · Target specification · Component implementation follows separately</text>
+  <text class="sub" x="32" y="65">Dark / v0.2 · Visual specification · Live Compose gallery available in the project</text>
   <text class="section" x="32" y="107">Palette</text>
 
   <rect x="32" y="126" width="30" height="30" rx="4" fill="#18191D"/>

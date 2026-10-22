@@ -23,7 +23,8 @@ Desktop-просмотр фото создаёт pager после получен
 | `README.md` | Архитектура и устройство кода (этот файл) |
 | `USER_GUIDE.md` | Руководство пользователя: что делает приложение и как им пользоваться |
 | `AGENTS.md` | Правила работы с репозиторием для ИИ-агентов и разработчиков |
-| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Визуальная спецификация: токены, состояния, контракты и архитектура собственной дизайн-системы (проект v0.1, реализация отдельно) |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Визуальная спецификация v0.2: токены, состояния, контракты и архитектура собственной дизайн-системы |
+| [`docs/DESIGN_SYSTEM_IMPLEMENTATION.md`](docs/DESIGN_SYSTEM_IMPLEMENTATION.md) | Реализованные компоненты, ветки интеграции, запуск галереи и проверка |
 
 ---
 
@@ -84,6 +85,26 @@ app/src/main/java/com/combo/
 ---
 
 ## Архитектура
+
+### Собственные UI-компоненты desktop
+
+`composeApp/src/commonMain/kotlin/com/combo/ui/common/designsystem` — независимый
+набор на Compose UI/Foundation/Animation, без Material-компонентов и моделей
+приложения: `tokens ← theme ← primitives ← components`, отдельно `icons`.
+Фичи могут импортировать этот общий UI-лист; DS не импортирует core/data/domain,
+фичи, DI или навигацию. Направление проверяет `ArchitectureRulesTest` вместе с
+синтетическими нарушениями. Существующие экраны мигрируют отдельными изменениями.
+
+Desktop-адаптер `PcDesktopTheme` выбирает установленный Segoe UI (SansSerif fallback)
+и передаёт типографику в общую тему. Живая галерея не читает пользовательские данные:
+
+```powershell
+.\gradlew.bat :composeApp:runDesignSystemGallery
+```
+
+Снимки реальных компонентов генерирует `ComponentGalleryTest` в
+`composeApp/build/ui-previews/design-system/`. Это результаты Compose-тестов;
+системное масштабирование Windows они моделируют через density сцены.
 
 ### Поток данных (UDF)
 
