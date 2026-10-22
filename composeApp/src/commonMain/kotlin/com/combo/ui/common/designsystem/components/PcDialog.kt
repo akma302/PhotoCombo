@@ -1,6 +1,7 @@
 package com.combo.ui.common.designsystem.components
 
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -13,9 +14,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -40,22 +45,23 @@ fun PcDialog(
     content: @Composable () -> Unit,
 ) {
     val initialFocus = remember { FocusRequester() }
+    val fallbackFocus = remember { FocusRequester() }
+    var fallback by remember { mutableStateOf(false) }
     PcPlatformDialog(onDismissRequest, dismissOnClickOutside) {
         PcSurface(
             modifier = modifier.widthIn(max = 480.dp).padding(PcTheme.spacing.xl)
-                .focusRequester(initialFocus).focusGroup()
                 .semantics { paneTitle = title }
                 .onPreviewKeyEvent { event ->
                     if (event.key == Key.Escape) {
                         if (event.type == KeyEventType.KeyUp) onDismissRequest()
                         true
                     } else false
-                },
+                }.focusRequester(fallbackFocus).focusProperties { canFocus = fallback }.focusable(),
             shape = PcTheme.shapes.dialog,
             borderColor = PcTheme.colors.border,
             borderWidth = PcTheme.strokes.border,
         ) {
-            Column(Modifier.padding(PcTheme.spacing.xl)) {
+            Column(Modifier.padding(PcTheme.spacing.xl).focusRequester(initialFocus).focusGroup()) {
                 PcText(title, style = PcTheme.typography.title)
                 Spacer(Modifier.height(PcTheme.spacing.lg))
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) { content() }
@@ -65,7 +71,11 @@ fun PcDialog(
         }
         LaunchedEffect(Unit) {
             withFrameNanos { }
-            initialFocus.requestFocus()
+            if (!initialFocus.requestFocus()) {
+                fallback = true
+                withFrameNanos { }
+                fallbackFocus.requestFocus()
+            }
         }
     }
     DisposableEffect(returnFocus) {
