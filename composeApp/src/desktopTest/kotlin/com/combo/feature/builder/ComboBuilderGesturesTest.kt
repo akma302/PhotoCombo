@@ -260,11 +260,13 @@ class ComboBuilderGesturesTest : UiTestBase() {
         setBuilderContent(vm, repo)
 
         // Тянем по пустому месту (полоса letterbox) — это PAN_VIEWPORT.
+        // Центр рамки после сдвига остаётся в доступной области независимо от панелей.
+        val panStep = vm.state.value.screenH * 0.225f
         onNodeWithTag(EDITOR_CANVAS_TAG).performMouseInput {
             moveTo(emptySpotLocal(vm.state.value))
             press()
-            moveBy(Offset(0f, 150f))
-            moveBy(Offset(0f, 150f))
+            moveBy(Offset(0f, panStep))
+            moveBy(Offset(0f, panStep))
             release()
         }
         settleGestures()

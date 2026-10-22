@@ -7,6 +7,8 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -30,8 +32,8 @@ import org.junit.Test
 /**
  * Enabled-состояние кнопок тулбара, окно «+Frame» (N фото → N рамок) и замена фото.
  *
- * Тулбар горизонтально прокручиваемый, и дальние кнопки могут лежать за краем сцены,
- * поэтому кнопки нажимаются семантическим действием, а не координатным кликом.
+ * Инспектор показывает действия только для выбранной рамки; автоматическое вписывание
+ * представлено флажком с проверяемым состоянием, а не меняющейся подписью кнопки.
  */
 @OptIn(ExperimentalTestApi::class)
 class ComboBuilderToolbarTest : UiTestBase() {
@@ -59,9 +61,9 @@ class ComboBuilderToolbarTest : UiTestBase() {
         }
     }
 
-    /** Две рамки, но выделения нет — Del обязана быть выключена (иначе был NPE на `sel!!`). */
+    /** Без выделения опасного действия нет в интерфейсе. */
     @Test
-    fun delIsDisabledWhenTwoFramesButNoSelection() = runComposeUiTest {
+    fun delIsAbsentWhenTwoFramesButNoSelection() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
         setBuilderContent(vm, repo)
@@ -69,11 +71,8 @@ class ComboBuilderToolbarTest : UiTestBase() {
         vm.onEvent(BuilderEvent.CanvasTapped)
         waitForIdle()
 
-        // Del завязана на выделение рамки, поэтому здесь важно именно enabled кнопки:
-        // клик по выключенной кнопке ничего не делает и ничего не проверяет.
-        // Заодно Del находится в горизонтально прокручиваемом тулбаре и может быть за
-        // краем сцены, поэтому проверяем наличие и enabled, а не видимость.
-        onNodeWithTag(TOOL_TAG_DEL).assertExists().assertIsNotEnabled()
+        onNodeWithTag(TOOL_TAG_DEL).assertDoesNotExist()
+        assertEquals(2, vm.state.value.items.size)
     }
 
     @Test
@@ -87,25 +86,25 @@ class ComboBuilderToolbarTest : UiTestBase() {
         onNodeWithTag(TOOL_TAG_DEL).assertExists().assertIsEnabled()
     }
 
-    /** Кнопка AutoFit включается только с выделенной рамкой и меняет подпись по режиму. */
+    /** Флажок доступен для выбранной рамки и отражает её сохраняемый режим вписывания. */
     @Test
-    fun autoFitIsDisabledWithoutSelectionAndFlipsItsLabelOnClick() = runComposeUiTest {
+    fun autoFitIsAbsentWithoutSelectionAndReflectsTheFramingMode() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
         setBuilderContent(vm, repo)
 
         vm.onEvent(BuilderEvent.CanvasTapped)
         waitForIdle()
-        onNodeWithTag(TOOL_TAG_AUTOFIT).assertExists().assertIsNotEnabled()
+        onNodeWithTag(TOOL_TAG_AUTOFIT).assertDoesNotExist()
 
         vm.onEvent(BuilderEvent.ItemTapped(vm.state.value.items[0].id))
         waitForIdle()
-        onNodeWithTag(TOOL_TAG_AUTOFIT).assertIsEnabled().assert(hasText("AutoFit OFF"))
+        onNodeWithTag(TOOL_TAG_AUTOFIT).assertIsEnabled().assertIsOff().assert(hasText("Always fit"))
         assertEquals(FramingMode.FREE, vm.state.value.items[0].framingMode)
 
         onNodeWithTag(TOOL_TAG_AUTOFIT).performSemanticsAction(SemanticsActions.OnClick)
         waitForIdle()
-        onNodeWithTag(TOOL_TAG_AUTOFIT).assert(hasText("AutoFit ON"))
+        onNodeWithTag(TOOL_TAG_AUTOFIT).assertIsOn()
         assertEquals(FramingMode.FIT, vm.state.value.items[0].framingMode)
     }
 
@@ -206,14 +205,14 @@ class ComboBuilderToolbarTest : UiTestBase() {
     // ---------- замена фото ----------
 
     @Test
-    fun replaceIsDisabledWithoutSelection() = runComposeUiTest {
+    fun replaceIsAbsentWithoutSelection() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
         setBuilderContent(vm, repo)
 
         vm.onEvent(BuilderEvent.CanvasTapped)
         waitForIdle()
-        onNodeWithTag(TOOL_TAG_REPLACE_PHOTO).assertExists().assertIsNotEnabled()
+        onNodeWithTag(TOOL_TAG_REPLACE_PHOTO).assertDoesNotExist()
 
         vm.onEvent(BuilderEvent.ItemTapped(vm.state.value.items[0].id))
         waitForIdle()

@@ -102,7 +102,7 @@ private fun EditorCanvas(
     curHandlePx: State<Float>,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
