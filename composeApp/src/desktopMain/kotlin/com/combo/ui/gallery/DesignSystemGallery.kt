@@ -44,6 +44,7 @@ fun DesignSystemGallery() {
     var checked by remember { mutableStateOf(true) }
     var mode by remember { mutableStateOf("Frame") }
     var text by remember { mutableStateOf("Weekend combo") }
+    var requiredName by remember { mutableStateOf("") }
     var aspect by remember { mutableStateOf("16:9") }
     var dialog by remember { mutableStateOf(false) }
     PcSurface(Modifier.fillMaxSize().testTag("pc_gallery"), color = PcTheme.colors.app) {
@@ -103,7 +104,8 @@ fun DesignSystemGallery() {
             }
             PcText("Fields & overlays", style = PcTheme.typography.title)
             PcTextField(text, { text = it }, "Name", Modifier.widthIn(max = 420.dp).fillMaxWidth())
-            PcTextField("", {}, "Required name", Modifier.widthIn(max = 420.dp).fillMaxWidth(), error = "Enter a name")
+            PcTextField(requiredName, { requiredName = it }, "Required name", Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+                error = if (requiredName.isBlank()) "Enter a name" else null)
             PcSelect(aspect, listOf("16:9", "4:3", "1:1").map { PcOption(it, it) }, { aspect = it }, "Canvas aspect")
             PcActionGroup {
                 PcTooltip("This is a keyboard-accessible action") { PcButton("Hover or focus", {}) }
