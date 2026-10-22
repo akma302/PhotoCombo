@@ -1,14 +1,16 @@
 package com.combo.ui
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CollectionsBookmark
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import com.combo.ui.common.designsystem.components.PcSegmentedControl
+import com.combo.ui.common.designsystem.components.PcOption
+import com.combo.ui.common.designsystem.icons.PcIcons
+import com.combo.ui.common.designsystem.primitives.PcDivider
+import com.combo.ui.common.designsystem.primitives.PcSurface
+import com.combo.ui.common.designsystem.theme.PcTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -72,70 +74,66 @@ fun AppNav(backDispatcher: BackDispatcher) {
         // Хост «назад» держит фокус и ловит Esc/боковую кнопку мыши; UI-тесты поднимают
         // экраны через такой же хост (см. BackKeyHost).
         BackKeyHost(backDispatcher) {
-            Scaffold(
-                bottomBar = {
+            PcSurface(Modifier.fillMaxSize(), color = PcTheme.colors.app) {
+                Column(Modifier.fillMaxSize()) {
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        NavDisplay(
+                            backStack = backStack,
+                            onBack = { backStack.removeLastOrNull() },
+                            modifier = Modifier.fillMaxSize(),
+                            entryProvider = entryProvider {
+                                entry<ScreenKey.Library> {
+                                    // Владелец вкладки — корневой: уход в просмотр и назад не должен
+                                    // сбрасывать режим выбора и выбранные фото.
+                                    CompositionLocalProvider(LocalViewModelStoreOwner provides rootOwner) {
+                                        LibraryScreen(
+                                            onOpenViewer = { backStack.add(ScreenKey.Viewer(it)) },
+                                            onCreateCombo = { backStack.add(ScreenKey.Builder(photos = it)) },
+                                        )
+                                    }
+                                }
+                                entry<ScreenKey.Combos> {
+                                    CompositionLocalProvider(LocalViewModelStoreOwner provides rootOwner) {
+                                        ComboListScreen(
+                                            onOpenBuilder = { backStack.add(ScreenKey.Builder(comboId = it)) },
+                                            onCreateCombo = { backStack.add(ScreenKey.Builder()) },
+                                        )
+                                    }
+                                }
+                                entry<ScreenKey.Viewer> { key ->
+                                    EntryScope {
+                                        PhotoViewerScreen(
+                                            photoId = key.photoId,
+                                            onBack = { backStack.removeLastOrNull() },
+                                        )
+                                    }
+                                }
+                                entry<ScreenKey.Builder> { key ->
+                                    EntryScope {
+                                        val vm: ComboBuilderViewModel = koinViewModel {
+                                            parametersOf(EntryArgs(builderHandle(key)))
+                                        }
+                                        ComboBuilderScreen(
+                                            onBack = { backStack.removeLastOrNull() },
+                                            vm = vm,
+                                        )
+                                    }
+                                }
+                            },
+                        )
+                    }
                     if (current is ScreenKey.Library || current is ScreenKey.Combos) {
-                        NavigationBar {
-                            NavigationBarItem(
-                                selected = current is ScreenKey.Library,
-                                onClick = { backStack.switchTab(ScreenKey.Library) },
-                                icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
-                                label = { Text("Photos") },
-                            )
-                            NavigationBarItem(
-                                selected = current is ScreenKey.Combos,
-                                onClick = { backStack.switchTab(ScreenKey.Combos) },
-                                icon = { Icon(Icons.Default.CollectionsBookmark, contentDescription = null) },
-                                label = { Text("Combos") },
+                        PcDivider()
+                        PcSurface(Modifier.fillMaxWidth()) {
+                            PcSegmentedControl(
+                                options = listOf(PcOption(false, "Photos", PcIcons.Photo), PcOption(true, "Combos", PcIcons.Frame)),
+                                value = current is ScreenKey.Combos,
+                                onValueChange = { backStack.switchTab(if (it) ScreenKey.Combos else ScreenKey.Library) },
+                                modifier = Modifier.fillMaxWidth().padding(PcTheme.spacing.sm),
                             )
                         }
                     }
-                },
-            ) { padding ->
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { backStack.removeLastOrNull() },
-                    modifier = Modifier.padding(padding),
-                    entryProvider = entryProvider {
-                        entry<ScreenKey.Library> {
-                            // Владелец вкладки — корневой: уход в просмотр и назад не должен
-                            // сбрасывать режим выбора и выбранные фото.
-                            CompositionLocalProvider(LocalViewModelStoreOwner provides rootOwner) {
-                                LibraryScreen(
-                                    onOpenViewer = { backStack.add(ScreenKey.Viewer(it)) },
-                                    onCreateCombo = { backStack.add(ScreenKey.Builder(photos = it)) },
-                                )
-                            }
-                        }
-                        entry<ScreenKey.Combos> {
-                            CompositionLocalProvider(LocalViewModelStoreOwner provides rootOwner) {
-                                ComboListScreen(
-                                    onOpenBuilder = { backStack.add(ScreenKey.Builder(comboId = it)) },
-                                    onCreateCombo = { backStack.add(ScreenKey.Builder()) },
-                                )
-                            }
-                        }
-                        entry<ScreenKey.Viewer> { key ->
-                            EntryScope {
-                                PhotoViewerScreen(
-                                    photoId = key.photoId,
-                                    onBack = { backStack.removeLastOrNull() },
-                                )
-                            }
-                        }
-                        entry<ScreenKey.Builder> { key ->
-                            EntryScope {
-                                val vm: ComboBuilderViewModel = koinViewModel {
-                                    parametersOf(EntryArgs(builderHandle(key)))
-                                }
-                                ComboBuilderScreen(
-                                    onBack = { backStack.removeLastOrNull() },
-                                    vm = vm,
-                                )
-                            }
-                        }
-                    },
-                )
+                }
             }
         }
     }

@@ -11,6 +11,14 @@ import androidx.compose.ui.unit.dp
 
 /** Собственные контурные пиктограммы; цвет и экранный размер задаёт потребитель. */
 object PcIcons {
+    val Edit: ImageVector by lazy {
+        icon("Edit") {
+            moveTo(4f, 16f); lineTo(15f, 5f); lineTo(19f, 9f); lineTo(8f, 20f)
+            lineTo(3f, 21f); close()
+            moveTo(13f, 7f); lineTo(17f, 11f)
+        }
+    }
+
     val Back: ImageVector by lazy {
         icon("Back", autoMirror = true) {
             moveTo(10f, 5f); lineTo(3f, 12f); lineTo(10f, 19f)
