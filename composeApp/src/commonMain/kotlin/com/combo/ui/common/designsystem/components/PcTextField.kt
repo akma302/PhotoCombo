@@ -64,6 +64,9 @@ fun PcTextField(
                     .pcControlSurface(
                         source, colors.app, enabled,
                         borderColor = if (error == null) colors.border else colors.danger,
+                        focusOnPointer = true,
+                        focusColor = if (error == null) colors.accent else colors.danger,
+                        glowColor = if (error == null) colors.accent else colors.danger,
                     ),
                 enabled = enabled,
                 readOnly = readOnly,

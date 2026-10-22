@@ -25,6 +25,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
@@ -50,6 +52,7 @@ fun <T> PcSegmentedControl(
     require(options.any { it.value == value }) { "Selected value must be present in options" }
     val requesters = remember(options.map { it.value }) { List(options.size) { FocusRequester() } }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val inputMode = LocalInputModeManager.current
     val colors = PcTheme.colors
     val minimumTarget = PcTheme.minimumTarget
     Layout(
@@ -81,6 +84,7 @@ fun <T> PcSegmentedControl(
                             }
                             if (!enabled || direction == 0) false else {
                                 if (event.type == KeyEventType.KeyDown) {
+                                    inputMode.requestInputMode(InputMode.Keyboard)
                                     val next = (index + direction + options.size) % options.size
                                     requesters[next].requestFocus()
                                     if (options[next].value != value) onValueChange(options[next].value)

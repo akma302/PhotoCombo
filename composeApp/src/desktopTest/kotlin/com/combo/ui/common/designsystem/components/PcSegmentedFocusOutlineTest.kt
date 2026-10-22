@@ -8,6 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -33,10 +36,10 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalTestApi::class)
 class PcSegmentedFocusOutlineTest {
     @Test
-    fun `first selected segment paints trailing focus ring over adjacent surface`() = verifyOutline("One")
+    fun `first selected segment paints bottom strip without trailing external ring`() = verifyOutline("One")
 
     @Test
-    fun `second selected segment paints leading focus ring over adjacent surface`() = verifyOutline("Two")
+    fun `second selected segment paints bottom strip without leading external ring`() = verifyOutline("Two")
 
     @Test
     fun `equal widths fit the longest segment without wrapping when space is available`() = runComposeUiTest {
@@ -57,7 +60,9 @@ class PcSegmentedFocusOutlineTest {
     }
 
     private fun verifyOutline(label: String) = runComposeUiTest {
+        lateinit var inputMode: InputModeManager
         setContent {
+            inputMode = LocalInputModeManager.current
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 PcTheme {
                     Box(Modifier.testTag("scene").background(PcTheme.colors.workspace).padding(12.dp)) {
@@ -70,15 +75,21 @@ class PcSegmentedFocusOutlineTest {
             }
         }
         val before = onNodeWithTag("segments").fetchSemanticsNode().boundsInRoot
+        val scene = onNodeWithTag("scene")
+        val baseline = scene.captureToImage().toPixelMap()
         val segment = onNodeWithText(label)
+        runOnIdle { inputMode.requestInputMode(InputMode.Keyboard) }
         segment.requestFocus().assertIsFocused().assertIsSelected()
         val bounds = segment.fetchSemanticsNode().boundsInRoot
-        val scene = onNodeWithTag("scene")
         val sceneBounds = scene.fetchSemanticsNode().boundsInRoot
         val pixels = scene.captureToImage().toPixelMap()
         val x = (if (label == "One") bounds.right + 3f else bounds.left - 3f) - sceneBounds.left
         val y = bounds.center.y - sceneBounds.top
-        assertEquals(PcColors.Dark.accent.toArgb(), pixels[x.roundToInt(), y.roundToInt()].toArgb())
+        assertEquals(baseline[x.roundToInt(), y.roundToInt()].toArgb(), pixels[x.roundToInt(), y.roundToInt()].toArgb())
+        assertEquals(PcColors.Dark.accent.toArgb(), pixels[
+            (bounds.center.x - sceneBounds.left).roundToInt(),
+            (bounds.bottom - sceneBounds.top - 1f).roundToInt(),
+        ].toArgb())
         assertEquals(before, onNodeWithTag("segments").fetchSemanticsNode().boundsInRoot)
     }
 }

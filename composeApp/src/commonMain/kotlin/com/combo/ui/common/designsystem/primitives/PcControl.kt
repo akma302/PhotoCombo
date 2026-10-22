@@ -2,18 +2,31 @@ package com.combo.ui.common.designsystem.primitives
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -22,7 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.combo.ui.common.designsystem.theme.PcTheme
 
-/** Контур фокуса рисуется снаружи поверхности и не меняет её геометрию. */
+/** Фокус виден у нижней грани; кнопки учитывают способ ввода, поля сохраняют индикацию редактирования. */
 @Composable
 fun Modifier.pcControlSurface(
     interactionSource: MutableInteractionSource,
@@ -30,26 +43,58 @@ fun Modifier.pcControlSurface(
     enabled: Boolean = true,
     borderColor: Color = Color.Transparent,
     shape: Shape = PcTheme.shapes.control,
+    focusOnPointer: Boolean = false,
+    keepFocusedFill: Boolean = false,
+    focusColor: Color = PcTheme.colors.accent,
+    glowColor: Color = PcTheme.colors.accent,
+    focusEnabled: Boolean = enabled,
 ): Modifier {
     val focused by interactionSource.collectIsFocusedAsState()
-    val fill by animateColorAsState(background, tween(PcTheme.motion.effectiveFeedbackMillis))
+    val pressed by interactionSource.collectIsPressedAsState()
+    val inputMode = LocalInputModeManager.current
+    val keyboard = inputMode.inputMode == InputMode.Keyboard
+    val visibleFocus = enabled && focusEnabled && focused && (focusOnPointer || keyboard)
+    val fill by animateColorAsState(
+        if (visibleFocus && !keepFocusedFill && !pressed) PcTheme.colors.focusFill else background,
+        tween(PcTheme.motion.effectiveFeedbackMillis),
+    )
+    val focusProgress by animateFloatAsState(if (visibleFocus) 1f else 0f, tween(PcTheme.motion.effectiveFeedbackMillis))
     val borderWidth = PcTheme.strokes.border
     val focusWidth = PcTheme.strokes.focus
-    val focusOffset = PcTheme.sizes.focusOffset
-    val accent = PcTheme.colors.accent
+    val focus = PcTheme.focus
     val opacity = if (enabled) 1f else PcTheme.opacity.disabled
-    return graphicsLayer { alpha = opacity }.drawWithCache {
+    return onPreviewKeyEvent { event ->
+        if (enabled && event.type == KeyEventType.KeyDown) inputMode.requestInputMode(InputMode.Keyboard)
+        false
+    }.graphicsLayer { alpha = opacity }.drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
-        val gap = focusOffset.toPx() + focusWidth.toPx() / 2
-        val outer = shape.createOutline(
-            androidx.compose.ui.geometry.Size(size.width + gap * 2, size.height + gap * 2), layoutDirection, this,
+        val clip = Path().apply { addOutline(outline) }
+        val lineHeight = focusWidth.toPx().coerceAtMost(size.height)
+        val gradientTop = (size.height - focus.gradientHeight.toPx()).coerceAtLeast(0f)
+        val inner = Brush.verticalGradient(
+            listOf(Color.Transparent, glowColor.copy(alpha = glowColor.alpha * focus.innerAlpha)),
+            startY = gradientTop, endY = size.height,
+        )
+        val haloHeight = focus.haloHeight.toPx()
+        val halo = Brush.verticalGradient(
+            listOf(glowColor.copy(alpha = glowColor.alpha * focus.haloAlpha),
+                glowColor.copy(alpha = glowColor.alpha * focus.haloAlpha * 0.25f), Color.Transparent),
+            startY = size.height, endY = size.height + haloHeight,
         )
         onDrawWithContent {
             drawOutline(outline, fill)
+            if (enabled && focusEnabled && focusProgress > 0f && !keepFocusedFill) clipPath(clip) {
+                drawRect(inner, Offset(0f, gradientTop), Size(size.width, size.height - gradientTop), alpha = focusProgress)
+            }
             if (borderColor.alpha > 0f) drawOutline(outline, borderColor, style = Stroke(borderWidth.toPx()))
             drawContent()
-            if (focused && enabled) translate(-gap, -gap) {
-                drawOutline(outer, accent, style = Stroke(focusWidth.toPx()))
+            if (enabled && focusEnabled && focusProgress > 0f) {
+                val inset = lineHeight.coerceAtMost(size.width / 2)
+                drawRoundRect(halo, Offset(inset, size.height), Size((size.width - inset * 2).coerceAtLeast(0f), haloHeight),
+                    cornerRadius = CornerRadius(haloHeight / 2), alpha = focusProgress)
+                clipPath(clip) {
+                    drawRect(focusColor, Offset(0f, size.height - lineHeight), Size(size.width, lineHeight), alpha = focusProgress)
+                }
             }
         }
     }

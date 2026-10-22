@@ -74,6 +74,9 @@ fun PcButton(
         modifier.pcControlSurface(
             interactionSource, background, enabled,
             borderColor = if (variant == PcButtonVariant.Secondary) colors.border else Color.Transparent,
+            keepFocusedFill = primary,
+            focusColor = if (primary) colors.onAccent else colors.accent,
+            focusEnabled = enabled && !busy,
         ).clickable(interactionSource = interactionSource, indication = null,
             enabled = enabled && !busy, role = Role.Button, onClick = onClick)
             .semantics { if (busy) stateDescription = "Busy" },

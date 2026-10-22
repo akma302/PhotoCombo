@@ -41,6 +41,8 @@ class ComponentGalleryTest(private val width: Int, private val scale: Float, pri
         capture("top")
         val save = onNodeWithTag("gallery_primary")
         save.performScrollTo().requestFocus()
+        save.performKeyInput { pressKey(Key.Tab); keyDown(Key.ShiftLeft); pressKey(Key.Tab); keyUp(Key.ShiftLeft) }
+        save.assertIsFocused()
         capture("focus")
         save.performMouseInput { moveTo(center) }
         capture("hover")
