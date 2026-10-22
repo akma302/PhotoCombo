@@ -15,12 +15,12 @@ class PcTokensTest {
         val palette = PcColors.Dark
         val expected = listOf(
             0xFF202126, 0xFF292B31, 0xFF18191D, 0xFFF0F0F5, 0xFFA8AAB7,
-            0xFF3B3D46, 0xFFB8A8FF, 0xFF24194B, 0xFF3C3454, 0xFF493C66,
+            0xFF3B3D46, 0xFFDCE1E6, 0xFF1C2528, 0xFF35383E, 0xFF41454C, 0xFF3A3C41,
             0xFFFF9CA5, 0x66000000, 0x55000000,
         ).map { it.toInt() }
         val actual = listOf(
             palette.app, palette.panel, palette.workspace, palette.text, palette.textSecondary,
-            palette.border, palette.accent, palette.onAccent, palette.hover, palette.pressed,
+            palette.border, palette.accent, palette.onAccent, palette.hover, palette.pressed, palette.focusFill,
             palette.danger, palette.scrim, palette.shadow,
         ).map(Color::toArgb)
         assertEquals(expected, actual)
@@ -66,5 +66,29 @@ class PcTokensTest {
     @Test(expected = IllegalArgumentException::class)
     fun `negative animation duration is rejected`() {
         PcMotion(feedbackMillis = -1)
+    }
+
+    @Test
+    fun `focus defaults match lower edge lighting contract`() {
+        val focus = PcFocus()
+        assertEquals(10.dp, focus.gradientHeight)
+        assertEquals(4.dp, focus.haloHeight)
+        assertEquals(0.14f, focus.innerAlpha)
+        assertEquals(0.35f, focus.haloAlpha)
+    }
+
+    @Test
+    fun `focus rejects nonfinite nonpositive dimensions and invalid opacity`() {
+        val invalidDimensions = listOf(0f, -1f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
+        val invalidAlpha = listOf(-0.01f, 1.01f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
+        val factories = invalidDimensions.flatMap { value ->
+            listOf<() -> PcFocus>({ PcFocus(gradientHeight = value.dp) }, { PcFocus(haloHeight = value.dp) })
+        } + invalidAlpha.flatMap { value ->
+            listOf<() -> PcFocus>({ PcFocus(innerAlpha = value) }, { PcFocus(haloAlpha = value) })
+        }
+        factories.forEach { factory ->
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) { factory() }
+        }
+        PcFocus(innerAlpha = 0f, haloAlpha = 1f)
     }
 }
