@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="850" viewBox="0 0 1120 850" role="img" aria-labelledby="title desc">
-  <title id="title">PhotoCombo design system — Graphite tone v0.4</title>
+  <title id="title">PhotoCombo design system — Graphite tone v0.5</title>
   <desc id="desc">Graphite palette with flat tonal focus and a 2 dp lower strip. No gradient or outer glow. This is a specification illustration.</desc>
   <defs>
     <style>
@@ -10,7 +10,7 @@
       .caption { fill: #A8AAB7; font-size: 11px; }
       .accent { fill: #DCE1E6; }
       .onaccent { fill: #1C2528; font-weight: 500; }
-      .danger { fill: #FF9CA5; }
+      .danger { fill: #E07894; }
       .line { stroke: #3B3D46; stroke-width: 1; }
       .glyph { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
     </style>
@@ -24,10 +24,10 @@
       <stop offset="0" stop-color="#DCE1E6" stop-opacity=".35"/><stop offset=".5" stop-color="#DCE1E6" stop-opacity=".09"/><stop offset="1" stop-color="#DCE1E6" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="dangerInner" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
-      <stop offset="0" stop-color="#FF9CA5" stop-opacity=".14"/><stop offset="1" stop-color="#FF9CA5" stop-opacity="0"/>
+      <stop offset="0" stop-color="#E07894" stop-opacity=".14"/><stop offset="1" stop-color="#E07894" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="dangerHalo" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0" stop-color="#FF9CA5" stop-opacity=".35"/><stop offset=".5" stop-color="#FF9CA5" stop-opacity=".09"/><stop offset="1" stop-color="#FF9CA5" stop-opacity="0"/>
+      <stop offset="0" stop-color="#E07894" stop-opacity=".35"/><stop offset=".5" stop-color="#E07894" stop-opacity=".09"/><stop offset="1" stop-color="#E07894" stop-opacity="0"/>
     </linearGradient>
     <clipPath id="iconFocusShape"><rect width="34" height="34" rx="7"/></clipPath>
     <clipPath id="primaryFocusShape"><rect width="110" height="34" rx="7"/></clipPath>
@@ -40,7 +40,7 @@
   </defs>
   <rect width="1120" height="850" fill="#202126"/>
   <text class="heading" x="32" y="42">PhotoCombo · Visual system</text>
-  <text class="sub" x="32" y="65">Graphite tone / v0.4 · Tonal focus + soft glow · Visual specification</text>
+  <text class="sub" x="32" y="65">Graphite tone / v0.5 · Flat focus / Ruby danger · Visual specification</text>
   <text class="section" x="32" y="107">Palette</text>
 
   <rect x="32" y="126" width="30" height="30" rx="4" fill="#18191D"/>
@@ -64,8 +64,8 @@
   <text x="424" y="194">Hover</text><text class="caption" x="424" y="212">#35383E</text>
   <rect x="560" y="183" width="30" height="30" rx="4" fill="#41454C"/>
   <text x="600" y="194">Pressed</text><text class="caption" x="600" y="212">#41454C</text>
-  <rect x="736" y="183" width="30" height="30" rx="4" fill="#FF9CA5"/>
-  <text x="776" y="194">Danger</text><text class="caption" x="776" y="212">#FF9CA5</text>
+  <rect x="736" y="183" width="30" height="30" rx="4" fill="#E07894"/>
+  <text x="776" y="194">Danger</text><text class="caption" x="776" y="212">#E07894</text>
   <rect x="912" y="183" width="30" height="30" rx="4" fill="#000000" fill-opacity=".4"/>
   <text x="952" y="194">Scrim</text><text class="caption" x="952" y="212">#00000066</text>
   <path class="line" d="M32 242h1056"/>
@@ -88,7 +88,7 @@
     <text class="caption" x="0" y="56">Ghost</text>
   </g>
   <g transform="translate(480 296)">
-    <use href="#trash" transform="translate(8 9) scale(.6667)" color="#FF9CA5"/>
+    <use href="#trash" transform="translate(8 9) scale(.6667)" color="#E07894"/>
     <text class="danger" x="34" y="22">Delete</text>
     <text class="caption" x="0" y="56">Danger</text>
   </g>
@@ -101,6 +101,11 @@
     <path d="M17 12a6 6 0 1 1-4 7" fill="none" stroke="#1C2528" stroke-width="1.75" stroke-linecap="round"/>
     <text class="onaccent" x="33" y="22">Saving</text>
     <text class="caption" x="0" y="56">Busy · stable width</text>
+  </g>
+  <g transform="translate(940 296)">
+    <rect width="148" height="34" rx="7" fill="#8B2744"/>
+    <text x="18" y="22" style="fill:#F8EAF0;font-weight:500">Delete permanently</text>
+    <text class="caption" x="0" y="56">DangerFilled · #8B2744</text>
   </g>
   <path class="line" d="M32 379h1056"/>
 
@@ -187,9 +192,9 @@
   </g>
   <g transform="translate(320 711)">
     <text class="sub" x="0" y="0">Name</text>
-    <rect x=".5" y="11.5" width="231" height="33" rx="6.5" fill="#3A3C41" stroke="#FF9CA5"/>
+    <rect x=".5" y="11.5" width="231" height="33" rx="6.5" fill="#3A3C41" stroke="#E07894"/>
     <g clip-path="url(#fieldFocusShape)">
-      <rect y="43" width="232" height="2" fill="#FF9CA5"/>
+      <rect y="43" width="232" height="2" fill="#E07894"/>
     </g>
     <text x="12" y="33">Untitled</text>
     <text class="danger" x="0" y="70" style="font-size:12px">Error message linked to the field</text>

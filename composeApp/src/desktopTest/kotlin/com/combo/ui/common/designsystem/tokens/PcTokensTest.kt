@@ -16,12 +16,12 @@ class PcTokensTest {
         val expected = listOf(
             0xFF202126, 0xFF292B31, 0xFF18191D, 0xFFF0F0F5, 0xFFA8AAB7,
             0xFF3B3D46, 0xFFDCE1E6, 0xFF1C2528, 0xFF35383E, 0xFF41454C, 0xFF3A3C41,
-            0xFFFF9CA5, 0x66000000, 0x55000000,
+            0xFFE07894, 0xFF8B2744, 0xFFF8EAF0, 0x66000000, 0x55000000,
         ).map { it.toInt() }
         val actual = listOf(
             palette.app, palette.panel, palette.workspace, palette.text, palette.textSecondary,
             palette.border, palette.accent, palette.onAccent, palette.hover, palette.pressed, palette.focusFill,
-            palette.danger, palette.scrim, palette.shadow,
+            palette.danger, palette.dangerFill, palette.onDanger, palette.scrim, palette.shadow,
         ).map(Color::toArgb)
         assertEquals(expected, actual)
     }

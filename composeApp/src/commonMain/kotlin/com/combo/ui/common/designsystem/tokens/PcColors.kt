@@ -17,6 +17,8 @@ data class PcColors(
     val pressed: Color,
     val focusFill: Color,
     val danger: Color,
+    val dangerFill: Color,
+    val onDanger: Color,
     val scrim: Color,
     val shadow: Color,
 ) {
@@ -33,7 +35,9 @@ data class PcColors(
             hover = Color(0xFF35383E),
             pressed = Color(0xFF41454C),
             focusFill = Color(0xFF3A3C41),
-            danger = Color(0xFFFF9CA5),
+            danger = Color(0xFFE07894),
+            dangerFill = Color(0xFF8B2744),
+            onDanger = Color(0xFFF8EAF0),
             scrim = Color(0x66000000),
             shadow = Color(0x55000000),
         )

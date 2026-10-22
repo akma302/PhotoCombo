@@ -73,6 +73,7 @@ fun DesignSystemGallery() {
                 PcButton("Add photo", {}, icon = PcIcons.Add)
                 PcButton("Replace", {}, variant = PcButtonVariant.Ghost)
                 PcButton("Delete", {}, variant = PcButtonVariant.Danger, icon = PcIcons.Delete)
+                PcButton("Delete permanently", {}, variant = PcButtonVariant.DangerFilled, icon = PcIcons.Delete)
                 PcButton("Unavailable", {}, enabled = false)
                 PcButton("Saving", {}, busy = true)
             }
