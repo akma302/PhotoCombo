@@ -44,7 +44,7 @@ fun viewportZoomPan(
 /**
  * Преобразование «экран ↔ холст»: масштаб и положение левого верхнего угла холста в
  * экранных координатах. Масштаб — `min(sw/cw, sh/ch)`, холст центрируется, а в редакторе
- * к этому добавляются зум и сдвиг вида (`viewport.pan`). Редактор, плеер и список считают
+ * к этому добавляются зум и сдвиг вида (`viewport.pan`). Редактор и список считают
  * его одним и тем же кодом.
  */
 data class CanvasTransform(val scale: Float, val origin: Offset) {
@@ -60,7 +60,7 @@ data class CanvasTransform(val scale: Float, val origin: Offset) {
     )
 
     companion object {
-        /** Вписать холст в экран по меньшей из сторон и отцентрировать — плеер и список. */
+        /** Вписать холст в экран по меньшей из сторон и отцентрировать — превью списка. */
         fun fitInto(canvasW: Float, canvasH: Float, screenW: Float, screenH: Float): CanvasTransform {
             val s = minOf(screenW / canvasW, screenH / canvasH)
             return CanvasTransform(s, Offset((screenW - canvasW * s) / 2f, (screenH - canvasH * s) / 2f))

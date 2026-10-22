@@ -1,14 +1,11 @@
 # Разработка и проверка PhotoCombo
 
 Действующая инструкция для активной desktop-сборки. Архитектура описана в README,
-пользовательское поведение — в USER_GUIDE. Исторические планы не задают команды
-или ограничения текущего окружения.
+пользовательское поведение — в USER_GUIDE.
 
 ## Окружение
 
 Работать из корня репозитория. `settings.gradle.kts` подключает только `:composeApp`.
-Android SDK для этой сборки не требуется. `legacy-android/` — отдельная сборка;
-Android-команды относятся только к ней и не входят в обычную проверку desktop.
 
 Источники версий, которые нужно проверять при изменениях:
 
@@ -19,8 +16,7 @@ Android-команды относятся только к ней и не вхо�
 | `gradle/gradle-daemon-jvm.properties` | JVM Gradle daemon (сейчас JDK 25) |
 | `composeApp/build.gradle.kts` | Source sets, зависимости, задачи запуска и экспорта схем Room |
 
-Не подменять настройки активной сборки требованиями старого Android-проекта
-(JDK 17, Hilt, Android SDK). Первый запуск может потребовать сеть для Gradle/JVM и
+Первый запуск может потребовать сеть для Gradle/JVM и
 зависимостей; `--offline` использовать только при наличии нужного кэша.
 JVM launcher и daemon могут различаться: для сборки учитывать строку Daemon JVM.
 Строка Kotlin в `gradlew --version` относится к самому Gradle; версию компилятора
@@ -70,8 +66,7 @@ Get-Content "$env:TEMP\photocombo-desktop-test.log" -Tail 30
 
 - JVM-проверки геометрии, drafts/history, ViewModel и репозиториев.
 - Room с временной базой; Skia-кодек, EXIF и попиксельный рендер на фикстурах.
-- Compose desktop UI Test: ввод, фокус, роли, callbacks и состояния. Robolectric и
-  Android-эмулятор для активной сборки не используются.
+- Compose desktop UI Test: ввод, фокус, роли, callbacks и состояния.
 - `ArchitectureRulesTest` и `SourceHygieneTest`: слои, переносимость, граф DS и чистота исходников.
 - `ComponentGalleryTest`: настоящие компоненты при ширинах 420/800/1200 dp,
   density 1.0/1.5 и fontScale 1.0/1.25. PNG и `font.txt` создаются в

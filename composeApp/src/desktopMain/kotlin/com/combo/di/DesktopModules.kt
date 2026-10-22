@@ -54,8 +54,7 @@ fun desktopModule(dataDir: Path = defaultAppDataDir().toOkioPath()): Module = mo
             photoDao = get(),
             storage = get(),
             codec = get(),
-            // Четверть доступной памяти, но не меньше 4 КБ: тот же потолок, что был
-            // у android.util.LruCache в прежней версии (maxMemory()/4).
+            // Кэш ограничен четвертью доступной памяти JVM.
             maxCacheKb = max(4, (Runtime.getRuntime().maxMemory() / 1024 / 4).toInt()),
         )
     }

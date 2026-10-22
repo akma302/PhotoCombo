@@ -45,7 +45,7 @@ Frontmatter описывает назначение каждого skill; заг
 | Параметр | Значение / владелец |
 |---|---|
 | Активный модуль и target | `:composeApp`, `desktop`; `settings.gradle.kts`, `composeApp/build.gradle.kts` |
-| Source sets | `commonMain`, `desktopMain`, `desktopTest`; Android-сборка legacy отдельная |
+| Source sets | `commonMain`, `desktopMain`, `desktopTest` |
 | Архитектура | README и инварианты AGENTS; `ArchitectureRulesTest` |
 | Команды и отчёты | `docs/DEVELOPMENT.md` |
 | UI-контракт | `docs/DESIGN_SYSTEM.md`; собственные низкоуровневые компоненты и PcIcons |
