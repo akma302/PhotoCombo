@@ -68,3 +68,12 @@ compose.desktop {
         mainClass = "com.combo.MainKt"
     }
 }
+
+// Галерея не поднимает DI, базу данных и пользовательскую библиотеку.
+tasks.register<JavaExec>("runDesignSystemGallery") {
+    group = "application"
+    description = "Open the live PhotoCombo component gallery"
+    mainClass.set("com.combo.ui.gallery.DesignSystemGalleryKt")
+    classpath(kotlin.targets["desktop"].compilations["main"].output.allOutputs)
+    classpath(configurations["desktopRuntimeClasspath"])
+}
