@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="850" viewBox="0 0 1120 850" role="img" aria-labelledby="title desc">
-  <title id="title">PhotoCombo design system — Graphite tone v0.3</title>
-  <desc id="desc">Graphite palette with tonal focus, a shape-clipped 2 dp lower strip, a 10 dp inner gradient and a soft 4 dp lower halo. Primary preserves its accent fill; error focus preserves the danger border. This is a specification illustration, not a runtime screenshot.</desc>
+  <title id="title">PhotoCombo design system — Graphite tone v0.4</title>
+  <desc id="desc">Graphite palette with flat tonal focus and a 2 dp lower strip. No gradient or outer glow. This is a specification illustration.</desc>
   <defs>
     <style>
       text { font-family: 'Segoe UI', sans-serif; font-size: 13px; fill: #F0F0F5; }
@@ -40,7 +40,7 @@
   </defs>
   <rect width="1120" height="850" fill="#202126"/>
   <text class="heading" x="32" y="42">PhotoCombo · Visual system</text>
-  <text class="sub" x="32" y="65">Graphite tone / v0.3 · Tonal focus + soft glow · Visual specification</text>
+  <text class="sub" x="32" y="65">Graphite tone / v0.4 · Tonal focus + soft glow · Visual specification</text>
   <text class="section" x="32" y="107">Palette</text>
 
   <rect x="32" y="126" width="30" height="30" rx="4" fill="#18191D"/>
@@ -122,20 +122,16 @@
   <g transform="translate(464 434)">
     <rect width="34" height="34" rx="7" fill="#3A3C41"/>
     <g clip-path="url(#iconFocusShape)">
-      <rect y="22" width="34" height="10" fill="url(#focusInner)"/>
       <rect y="32" width="34" height="2" fill="#DCE1E6"/>
     </g>
-    <rect x="5" y="34" width="24" height="4" fill="url(#focusHalo)"/>
     <use href="#undo" transform="translate(9 9) scale(.6667)" color="#F0F0F5"/>
     <text class="caption" x="-3" y="58">Keyboard · tonal focus</text>
   </g>
   <g transform="translate(650 434)">
     <rect width="110" height="34" rx="7" fill="#DCE1E6"/>
     <g clip-path="url(#primaryFocusShape)">
-      <rect y="22" width="110" height="10" fill="url(#focusInner)"/>
       <rect y="32" width="110" height="2" fill="#1C2528"/>
     </g>
-    <rect x="5" y="34" width="100" height="4" fill="url(#whiteHalo)"/>
     <text class="onaccent" x="40" y="22">Save</text>
     <text class="caption" x="0" y="58">Primary · keyboard</text>
   </g>
@@ -183,10 +179,8 @@
     <text class="sub" x="0" y="0">Combo name</text>
     <rect x=".5" y="11.5" width="231" height="33" rx="6.5" fill="#3A3C41" stroke="#3B3D46"/>
     <g clip-path="url(#fieldFocusShape)">
-      <rect y="33" width="232" height="10" fill="url(#focusInner)"/>
       <rect y="43" width="232" height="2" fill="#DCE1E6"/>
     </g>
-    <rect x="5" y="45" width="222" height="4" fill="url(#focusHalo)"/>
     <text x="12" y="33">Music and light</text>
     <path d="M113 20v16" stroke="#DCE1E6" stroke-width="1"/>
     <text class="caption" x="0" y="73">Editing focus · keyboard or mouse</text>
@@ -195,15 +189,13 @@
     <text class="sub" x="0" y="0">Name</text>
     <rect x=".5" y="11.5" width="231" height="33" rx="6.5" fill="#3A3C41" stroke="#FF9CA5"/>
     <g clip-path="url(#fieldFocusShape)">
-      <rect y="33" width="232" height="10" fill="url(#dangerInner)"/>
       <rect y="43" width="232" height="2" fill="#FF9CA5"/>
     </g>
-    <rect x="5" y="45" width="222" height="4" fill="url(#dangerHalo)"/>
     <text x="12" y="33">Untitled</text>
     <text class="danger" x="0" y="70" style="font-size:12px">Error message linked to the field</text>
   </g>
-  <text class="sub" x="610" y="724">Focus fill / inner gradient</text><text x="610" y="749">#3A3C41 / 10 dp at 14%</text>
+  <text class="sub" x="610" y="724">Focus fill / flat</text><text x="610" y="749">#3A3C41 / no gradient</text>
   <text class="sub" x="874" y="724">Controls / icons</text><text x="874" y="749">34 dp / 16 dp</text>
-  <text class="caption" x="610" y="783">Lower strip 2 dp · halo 4 dp at 35% · unchanged hit regions</text>
+  <text class="caption" x="610" y="783">Lower strip 2 dp · no glow · unchanged hit regions</text>
   <text class="caption" x="32" y="828">DESIGN_SYSTEM.md is authoritative · Original runtime icons: Kotlin ImageVector · No external resources</text>
 </svg>

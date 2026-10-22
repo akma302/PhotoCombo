@@ -83,14 +83,14 @@ fun Modifier.pcControlSurface(
         )
         onDrawWithContent {
             drawOutline(outline, fill)
-            if (enabled && focusEnabled && focusProgress > 0f && !keepFocusedFill) clipPath(clip) {
+            if (enabled && focusEnabled && focusProgress > 0f && !keepFocusedFill && focus.innerAlpha > 0f) clipPath(clip) {
                 drawRect(inner, Offset(0f, gradientTop), Size(size.width, size.height - gradientTop), alpha = focusProgress)
             }
             if (borderColor.alpha > 0f) drawOutline(outline, borderColor, style = Stroke(borderWidth.toPx()))
             drawContent()
             if (enabled && focusEnabled && focusProgress > 0f) {
                 val inset = lineHeight.coerceAtMost(size.width / 2)
-                drawRoundRect(halo, Offset(inset, size.height), Size((size.width - inset * 2).coerceAtLeast(0f), haloHeight),
+                if (focus.haloAlpha > 0f) drawRoundRect(halo, Offset(inset, size.height), Size((size.width - inset * 2).coerceAtLeast(0f), haloHeight),
                     cornerRadius = CornerRadius(haloHeight / 2), alpha = focusProgress)
                 clipPath(clip) {
                     drawRect(focusColor, Offset(0f, size.height - lineHeight), Size(size.width, lineHeight), alpha = focusProgress)
