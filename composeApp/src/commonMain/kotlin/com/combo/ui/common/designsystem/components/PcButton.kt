@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -85,7 +86,12 @@ fun PcButton(
                 PcText(text, color = foreground,
                     style = if (primary) PcTheme.typography.controlStrong else PcTheme.typography.control)
             }
-            if (busy) PcBusyIndicator(foreground)
+            if (busy) {
+                Box(Modifier.matchParentSize().wrapContentSize(unbounded = true),
+                    contentAlignment = Alignment.Center) {
+                    PcBusyIndicator(foreground)
+                }
+            }
         }
     }
 }

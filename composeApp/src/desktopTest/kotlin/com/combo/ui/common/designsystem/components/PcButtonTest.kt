@@ -29,6 +29,25 @@ import org.junit.Test
 @OptIn(ExperimentalTestApi::class)
 class PcButtonTest {
     @Test
+    fun busySpinnerDoesNotGrowShortLabelButtonAtEitherTargetDensity() = runSkikoComposeUiTest(Size(400f, 240f)) {
+        val busy = mutableStateOf(false)
+        val density = mutableStateOf(PcDensity.Mouse)
+        setContent {
+            PcTheme(density = density.value, motion = PcMotion(reducedMotion = true)) {
+                PcButton("I", {}, Modifier.testTag("button"), busy = busy.value)
+            }
+        }
+        val button = onNodeWithTag("button")
+        for (target in PcDensity.entries) {
+            runOnIdle { density.value = target; busy.value = false }
+            val bounds = button.fetchSemanticsNode().boundsInRoot
+            button.assertWidthIsEqualTo(target.minimumTarget)
+            runOnIdle { busy.value = true }
+            assertEquals(bounds, button.fetchSemanticsNode().boundsInRoot)
+        }
+    }
+
+    @Test
     fun variantsRenderTheirNormalHoverAndPressedSurfaces() = runSkikoComposeUiTest(Size(400f, 300f)) {
         val colors = PcColors.Dark
         setContent {
