@@ -1,94 +1,125 @@
-# AGENTS.md
+# PhotoCombo: вход в контекст для ИИ-агентов
 
-> **Статус миграции на Kotlin Multiplatform (идёт).** Новый проект — модуль `composeApp`
-> (Kotlin Multiplatform + Compose Multiplatform, цель — desktop/Windows). Прежнее Android-приложение
-> лежит нетронутым в `legacy-android/` как отдельная Gradle-сборка и служит эталоном поведения
-> до конца миграции. Ниже описана прежняя Android-структура; команды из раздела «Build & verify»
-> для неё выполняются в каталоге `legacy-android/`, для нового проекта — из корня:
-> `.\gradlew.bat :composeApp:desktopTest`. План: `docs/KMP_MIGRATION_PLAN.md`.
+Этот файл — начальная точка знакомства с репозиторием. Прочитайте его полностью,
+затем следуйте маршруту ниже. Действующие требования находятся в текущих документах;
+исторические планы не являются заданиями к исполнению.
 
-Guidance for AI agents (and humans) working in this repository. Read it fully before changing code.
+## 1. Порядок чтения
 
-## Source of truth
+1. [README.md](README.md) — что реализовано, структура, архитектура и ограничения.
+2. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — окружение, команды, Git и проверка.
+3. Выберите документы по задаче из таблицы. Читать весь архив перед каждой правкой не нужно.
 
-- `Instructions.md` is the project spec and single source of truth (Russian). Its preamble binds agents: implement `[СОГЛАСОВАНО]`/`[ДИЗАЙН]` sections without changing signatures; never implement `[БЭКЛОГ]` (§15) without an explicit task. If a task contradicts the spec, flag it and propose a spec edit instead of silently diverging.
-- `README.md` mirrors the architecture; `USER_GUIDE.md` describes behavior for end users. Trust code/config over both when they conflict, then fix the document.
-- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) is the versioned visual specification and component contract for the custom UI. Read it before designing or implementing shared UI or migrating a screen. Its status distinguishes target design from implemented behavior; it does not override product or storage invariants.
-- The spec's §5 (package layout) predates the modular layout described below. Until the owner updates §5, the "Project structure" section of `README.md` is authoritative for packages.
+| Задача | Следующий документ | Что из него брать |
+|---|---|---|
+| Продуктовое поведение, библиотека, просмотр, редактор | [USER_GUIDE.md](USER_GUIDE.md) | Текущие пользовательские сценарии |
+| UI-компоненты, внешний вид, перенос экрана | [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Визуальная спецификация и публичные контракты |
+| Использование готовых компонентов, галерея, визуальная проверка | [docs/DESIGN_SYSTEM_IMPLEMENTATION.md](docs/DESIGN_SYSTEM_IMPLEMENTATION.md) | Состав реализации, запуск, свидетельства проверки |
+| Данные, геометрия, рендер, Undo, импорты между слоями | Разделы архитектуры README и раздел 3 этого файла | Инварианты и точки расширения; затем соответствующие исходники и тесты |
+| Причины старых миграционных решений | Исторические материалы из раздела 5 | Только историю решений |
 
-## Build & verify (Windows / PowerShell)
+Направление ознакомления: **AGENTS → обзор/разработка → тематический документ → код/тесты**.
+Документы не требуют возвращаться к началу или читать друг друга по кругу.
+README — обзор для людей, а не второй конкурирующий регламент для агентов.
 
-```powershell
-.\gradlew.bat :app:assembleDebug        # full build, produces app-debug.apk
-.\gradlew.bat :app:testDebugUnitTest    # JVM unit tests (no emulator needed)
-.\gradlew.bat :app:kspDebugKotlin       # fast Room/Hilt/KSP-only check
-```
+## 2. Текущее состояние и источники истины
 
-- No `ANDROID_HOME` env var: `local.properties` at repo root must contain `sdk.dir=C:\Users\akma3\AppData\Local\Android\Sdk`. Don't commit it.
-- JDK 17 required; compileSdk 35, minSdk 26.
-- When piping Gradle output in PowerShell, console wrapping truncates error lines — redirect via `cmd /c "... > file.log 2>&1"` then search the log.
-- Run `:app:testDebugUnitTest` after every logical change. A change is not done while tests are red.
+- Активная сборка — KMP-модуль `:composeApp`, цель `desktop` (Windows).
+  `legacy-android/` — отдельная историческая Android-сборка; без отдельной задачи её не менять.
+- Приложение работает, собирается и проверяется локально. Старые фразы о невозможности
+  сборки относятся к прежнему окружению. Реальную доступность инструментов проверять в текущей сессии.
+- Собственная дизайн-система и галерея реализованы; продуктовые экраны ещё не перенесены на неё.
+- `Instructions.md` в репозитории отсутствует. Не искать в нём требования и не восстанавливать
+  предполагаемые разделы по старым ссылкам. Действующие источники перечислены в этом файле.
+- Текущая задача и явно принятые решения владельца задают объём работы. Backlog и исторические
+  планы не исполнять автоматически. Изменение требований отражать в соответствующем документе.
+- Код, Gradle-конфигурация и тесты описывают фактическую реализацию; руководство — текущие сценарии;
+  дизайн-спецификация — утверждённую визуальную цель. Цель и реализацию различать явно.
+  При противоречии установить причину и обновить устаревший документ; не менять продукт
+  или ослаблять проверки только ради соответствия старому тексту.
 
-## Package layout and dependency direction
+## 3. Инварианты при изменении кода
 
-```
-core/{model,background,color,render,util}   no imports from data/domain/feature/ui
-data/ (+ di/)            Room entities/DAOs, PhotoStorage, entity adapters
-domain/ (+ image/, di/)  repository interfaces + implementations, PhotoImporter, PhotoAssets, LruBitmapSource
-feature/{library,viewer,combo_list,builder}/   builder also has draft/ and history/
-ui/ (+ common/)          navigation and shared composables
-```
+### Слои и переносимость
 
-Direction: `core ← data ← domain ← feature ← ui`. `ArchitectureRulesTest` enforces it:
+- Направление зависимостей: `core ← data ← domain ← feature ← ui`.
+  `feature.X` не импортирует `feature.Y`; общее выносится в `ui.common` или подходящий нижний слой.
+  `ui.common` и его подпакеты не импортируют фичи. `core.model` не импортирует `com.combo.*`.
+- `feature.builder.draft` и `history` не импортируют корень `feature.builder`.
+  Циклов между пакетами быть не должно. ViewModel располагается отдельным файлом рядом с экраном.
+- `commonMain` не импортирует `android.*`, `java.*`, `javax.*`, `org.jetbrains.skia.*`.
+  Платформенные реализации живут в `desktopMain`, контракты — в общем коде.
+- DS: `tokens ← theme ← primitives ← components`, отдельно `icons`.
+  DS не зависит от моделей приложения, core/data/domain, фич, DI или навигации.
+  Использовать Compose UI/Foundation/Animation, собственные Layout/Canvas/Modifiers и
+  кэшированные `PcIcons` в формате ImageVector. Не добавлять сторонние UI-библиотеки,
+  наборы иконок или Material-компоненты внутрь DS. Material на старых экранах допустим до их миграции.
+- Ограничения проверяет `ArchitectureRulesTest`. При конфликте переносить ответственность,
+  а не ослаблять правила. Алгоритмы геометрии и истории оставлять независимо тестируемыми;
+  не переносить их в composables или ViewModel ради удобства вызова.
 
-- `core` never imports `data`, `domain`, `feature`, `ui`; `core.model` imports nothing from `com.combo.*`;
-- `data` does not import `domain`/`feature`/`ui`; `domain` does not import `feature`/`ui`;
-- `feature.X` does not import `feature.Y`; shared UI goes to `ui.common` (which must not import `feature`);
-- in `feature.builder`, the subpackages `draft` and `history` never import the package root;
-- there are no import cycles between packages.
+### Рендер, редактирование и сохранение
 
-If you need a new dependency that breaks a rule, move the code (shared enums to `core.model`, shared composables to `ui.common`) instead of relaxing the rule. Every ViewModel lives in its own file next to its screen.
+- Рамку рисует только `drawItem()` (`core/render/DrawItem.kt`), кадр собирает только
+  `buildItemFrame()` (`ItemFrames.kt`), холст рисует только `drawCombo()` (`DrawCombo.kt`).
+  Редактор и превью списка используют эти же функции. Оверлей выделения живёт отдельно в редакторе.
+- Вписывание определяют `effectiveFraming()` и `contentArgsOf()` (`Framing.kt`).
+  Фото сохраняет пропорции; crop возникает из рамки, scale и pan, отдельный crop-rect не хранится.
+- Комбо — конфиг. В каждой рамке ровно одно фото, пустые рамки невозможны.
+  Нет плеера, списков фото внутри рамки, таймеров и переходов.
+- Drafts мутабельны; `revision` инициирует перерисовку. Undo: START → снимок,
+  END → checkpoint, CANCEL → восстановление. Действие без изменений не даёт undo-шаг.
+  Снимки — data classes со структурным равенством; поля синхронизировать с drafts (`DraftMapperTest`).
+- Жесты редактора сохраняют фазы START/CHANGE/END/CANCEL через `awaitEachGesture`.
+  Не заменять их на `detectTransformGestures`, не имеющий нужного завершения/отмены.
+  В едином `pointerInput(Unit)` обновляемые значения читать через State.
+- Save финализирует независимый снимок по внешним границам рамок; рабочий draft и Undo
+  не меняются, в том числе при ошибке записи. Вид холста не записывается как изменение комбо.
+- Лимиты и пороги определяет `Const.kt`: в частности, не более 10 рамок.
+  Не менять их или блокировку удаления используемого фото без соответствующей задачи.
 
-## Architecture invariants (easy to break)
+### Файлы, импорт и Room
 
-- **WYSIWYG**: all item rendering goes through the single `DrawScope.drawItem()` in `core/render/DrawItem.kt`, used by the editor and the combo list previews. Never fork or duplicate drawing logic.
-- **Frame assembly**: an `ItemFrame` is built **only** via `buildItemFrame()` (`core/render/ItemFrames.kt`). Never construct `ItemFrame(...)` by hand outside that file.
-- **Combo drawing**: canvas content (background + frames) is drawn **only** via `drawCombo()` (`core/render/DrawCombo.kt`). Editor-only overlays (selection outline) are the sole exception and live in the builder screen.
-- **Framing**: how a photo sits in a frame is decided only in `effectiveFraming()` / `contentArgsOf()` (`core/render/Framing.kt`).
-- **Crop is emergent**: no normalized crop-rect is stored anywhere. It arises from `clipRect(border) + contentScale + pan`. Content must always be drawn aspect-preserving (`TransformMath`).
-- **Combo = config**: only ids + transform params live in Room; originals are never modified. Bitmaps are decoded on demand through `LruBitmapSource`; ViewModels load them through `PhotoAssets`.
-- **File locations**: paths on disk come only from `PhotoStorage` (`filesDir/photos/<fileName>`, `filesDir/thumbs/<photoId>.jpg`). The layout is user data: never change it.
-- **Builder drafts are mutable** by design; ViewModels emit `revision` bumps instead of copying state per gesture frame. Undo snapshots are taken only on completed actions (`START`→snapshot, `END`→checkpoint, `CANCEL`→restore) via `DraftHistory`; a gesture that changed nothing must leave no undo step. Snapshot classes (`ComboSnap`/`ItemSnap`) are data classes and rely on structural equality — keep them that way and keep their fields in sync with the drafts (`DraftMapperTest` checks it).
-- **One frame — one photo**: a frame (`ItemDraft`, `ComboItemEntity`) holds exactly one `photoId` with its `contentScale`/`panX`/`panY`. There are no empty frames, no per-frame photo lists, timers, transitions or switching. A new frame is created only together with its photo (`DraftEditor.addItems`, `newComboDrafts`).
-- **avgColor** is computed exactly once at import time; letterbox fill = avgColor with alpha 0.5 (`Const.FILL_ALPHA`). Never recompute at render.
-- **EXIF is normalized to pixels at import**; render/decode code must not handle orientation.
-- **Enum names are a storage format** (`.name` is written to Room and JSON). Never rename an enum value without a migration.
+- Пути выдаёт только `PhotoStorage` через `AppDirs.dataDir`:
+  `photos/<fileName>`, `thumbs/<photoId>.jpg`. Не менять раскладку существующих данных.
+  Тесты используют временные каталоги, а не личную библиотеку.
+- EXIF нормализуется при импорте; `avgColor` вычисляется один раз и хранится.
+  Рендер не повторяет EXIF/вычисление среднего цвета; заливка полей использует `Const.FILL_ALPHA`.
+  ViewModel получает метаданные и битмапы через `PhotoAssets`, декодирование идёт через кэш.
+- Имена enum — формат хранения (`.name`). Переименование требует миграции.
+- Схема Room — `composeApp/schemas`; версию проверять в `data/AppDb.kt` (сейчас 2).
+  Изменения схемы сопровождаются миграцией в `data/Migrations.kt`, её регистрацией
+  в desktop-фабрике БД и тестом `MigrationTest`. Не сбрасывать пользовательскую базу.
+- `@Relation` не сортирует: порядок рамок обеспечивает репозиторий по `zIndex`.
+  При вложенных отношениях явно задавать `entity`, если этого требует POJO со своей `@Relation`.
 
-## Room gotchas
+## 4. Качество изменений
 
-- Enums are stored as String columns (migration safety); convert via `.name` / `valueOf` accessors on entities.
-- `ComboWithItems` is a flat `@Embedded` + one `@Relation` over `ComboItemEntity`. If a nested relation is ever added, the outer `@Relation` needs the explicit `entity` parameter when its target POJO itself contains `@Embedded`/`@Relation`; omitting it fails KSP with confusing "Cannot find the child entity column" errors.
-- `@Relation` does not sort; the repository re-sorts items by `zIndex` after load.
-- Schema exports to `app/schemas` (KSP `room.schemaLocation`). `AppDb.version` is 2; migrations live in `data/Migrations.kt` and are registered in `DatabaseFactory`. For any further entity change bump `version`, add a migration and a case in `MigrationTest` (or get an explicit decision to reset data).
+- Новая логика требует тестов; баг — регрессии, падающей без исправления.
+  Не удалять, не игнорировать и не ослаблять тесты для зелёного результата.
+  При утверждённом изменении визуального контракта обновлять проверяемый контракт
+  вместе со спецификацией, сохраняя проверки поведения.
+- Имена тестов описывают поведение, а не номера задач. Команды и критерии проверки — в DEVELOPMENT.
+- UTF-8 без BOM, LF. Не писать исходники через PowerShell `>`, `Out-File`, `Set-Content`,
+  `WriteAllLines`: использовать редактор/apply_patch или запись с явной кодировкой и LF.
+- Комментарии в коде — по-русски, описывают назначение и актуальное поведение;
+  без истории переписки и ссылок на отсутствующие файлы. Непроверенное обозначать явно.
+- Обновлять владельца контекста: архитектуру — README, сценарии — USER_GUIDE,
+  визуальные роли/контракты — DESIGN_SYSTEM и изображённые состояния визуального листа,
+  команды/процесс — DEVELOPMENT. Не копировать одно требование во все документы.
+- В отчёте различать автоматические тесты, просмотр снимков и ручную проверку приложения.
+  Результат моделирования density не называть переключением системного DPI Windows.
 
-## Conventions
+## 5. Исторические материалы — читать только по необходимости
 
-- Gestures are hand-rolled `awaitEachGesture` loops dispatching phase events (`START|CHANGE|END|CANCEL`) to the ViewModel; do not replace them with `detectTransformGestures` (it lacks completion callbacks, which undo requires). The editor's loop is a single `pointerInput(Unit)` block: everything composition-dependent is read through `State` wrappers, never added as keys.
-- Existing UI still uses `material-icons-extended`. New design-system UI uses original Kotlin `ImageVector` icons from `PcIcons`, following `docs/DESIGN_SYSTEM.md`; do not introduce icon packs, SVG parsers or third-party UI libraries. Existing screens migrate separately.
-- Limits from `Const.kt` are policy (§14), not suggestions: MAX_ITEMS=10, pan-clamp, zoom bounds, deletion blocking for photos used in combos.
-- Pure logic (geometry, editing operations, history, mappers, gesture classification) must stay free of Android/Compose UI types so it can be tested on the plain JVM. Put new logic there, not into composables or ViewModels.
+Файлы сохранены по существующим путям ради истории и ссылок. Их версии зависимостей,
+команды, числа тестов, незакрытые пункты и ограничения старого окружения — сведения
+на момент записи, а не текущие требования или автоматически разрешённые задачи.
 
-## Tests
-
-- New logic needs tests; a bug fix needs a regression test that fails without the fix.
-- Never change an assertion, delete or `@Ignore` a test to make it pass. If a test and the code disagree, decide which one is right and say so in your report.
-- Tests that do not touch Android types run on the plain JVM; screen tests use Robolectric + Compose Test (no emulator). Shared fakes are in `app/src/test/java/com/combo/ui/TestDoubles.kt`.
-- Test names describe behavior; a test class covers one unit. Do not name tests after tasks, batches or ticket numbers.
-- `SourceHygieneTest` guards the sources: UTF-8 without BOM, LF only, no `U+FFFD`, no runs of `????`, no code at column 0 inside blocks. Edit files with an editor or tools that preserve this. Never write source files with PowerShell `>`, `Out-File`, `Set-Content` or `WriteAllLines` (they add CRLF/BOM or break Cyrillic).
-
-## Comments and documentation
-
-- Code comments are in Russian. KDoc says what a thing is for and why it is shaped that way; do not narrate what the next line does.
-- Comments describe the code as it is now. Do not write history ("раньше", "теперь", "was moved from…"), and do not refer to chats, task batches, review item numbers or files that are not in the repository. Use version control for history.
-- If a comment states a guess, say so ("НЕ ПРОВЕРЕНО: …"). Never present an unverified claim as fact.
-- When behavior changes, update `README.md` (architecture) and `USER_GUIDE.md` (user-visible behavior) in the same change.
+| Документ | Для чего открывать |
+|---|---|
+| [MIGRATION_REPORT.md](MIGRATION_REPORT.md) | Ход миграции Android → desktop и прежние проверки |
+| [docs/KMP_MIGRATION_PLAN.md](docs/KMP_MIGRATION_PLAN.md) | Первоначальный план и варианты решений |
+| [docs/PHASE1_CHANGELOG.md](docs/PHASE1_CHANGELOG.md) | Каркас KMP и первоначальный перенос данных |
+| [docs/PHASE5_SIMPLIFY_CHANGELOG.md](docs/PHASE5_SIMPLIFY_CHANGELOG.md) | Переход к модели «одна рамка — одно фото» |
+| [docs/IMPROVEMENTS_PLAN.md](docs/IMPROVEMENTS_PLAN.md) | Прежние исправления ресайза, обрезки и добавления рамок |
