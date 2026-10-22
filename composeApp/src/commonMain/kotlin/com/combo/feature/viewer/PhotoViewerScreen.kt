@@ -3,15 +3,14 @@ package com.combo.feature.viewer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,20 +22,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntSize
-import com.combo.ui.common.BackNavIcon
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.testTag
+import com.combo.ui.common.designsystem.components.PcIconButton
+import com.combo.ui.common.designsystem.icons.PcIcons
+import com.combo.ui.common.designsystem.primitives.PcDivider
+import com.combo.ui.common.designsystem.primitives.PcSurface
+import com.combo.ui.common.designsystem.primitives.PcText
+import com.combo.ui.common.designsystem.theme.PcTheme
 import com.combo.ui.common.KeyInputHost
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoViewerScreen(
     photoId: String,
@@ -44,42 +46,39 @@ fun PhotoViewerScreen(
     vm: PhotoViewerViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsState()
-    // Pager создаётся только с загруженным списком: initialPage должен сразу указывать
-    // на выбранное фото, до первого измерения и запуска загрузки соседних страниц.
+    PhotoViewerContent(photoId, state, onBack, vm::ensureLoaded)
+}
+
+/** Оформление и ввод просмотра отделены от загрузки для воспроизводимых UI-проверок. */
+@Composable
+internal fun PhotoViewerContent(
+    photoId: String,
+    state: PhotoViewerViewModel.State,
+    onBack: () -> Unit,
+    ensureLoaded: (Int) -> Unit,
+) {
     if (state.photos.isEmpty()) {
-        Scaffold(topBar = {
-            TopAppBar(navigationIcon = { BackNavIcon(onBack) }, title = { Text("") })
-        }) { padding ->
-            Box(Modifier.fillMaxSize().padding(padding))
-        }
+        ViewerChrome("", onBack) { Box(Modifier.fillMaxSize()) }
         return
     }
+    // Начальная страница задаётся до первого измерения и загрузки соседей.
     val startIndex = state.photos.indexOfFirst { it.id == photoId }.coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = startIndex) { state.photos.size }
 
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    var container by remember { mutableStateOf(IntSize.Zero) }
 
     LaunchedEffect(pagerState.currentPage) {
         scale = 1f
         offset = Offset.Zero
     }
     LaunchedEffect(pagerState.currentPage, state.photos.size) {
-        vm.ensureLoaded(pagerState.currentPage)
+        ensureLoaded(pagerState.currentPage)
     }
 
     val scope = rememberCoroutineScope()
 
-    Scaffold(topBar = {
-        TopAppBar(
-            navigationIcon = { BackNavIcon(onBack) },
-            title = {
-                val p = state.photos.getOrNull(pagerState.currentPage)
-                Text(p?.originalName ?: "")
-            },
-        )
-    }) { padding ->
+    ViewerChrome(state.photos.getOrNull(pagerState.currentPage)?.originalName.orEmpty(), onBack) {
         // Стрелки влево/вправо — клавиатурный эквивалент горизонтального свайпа:
         // листают страницы пейджера с теми же границами, что и свайп.
         KeyInputHost(onKeyDown = { event ->
@@ -99,12 +98,12 @@ fun PhotoViewerScreen(
                 else -> false
             }
         }) {
-            Box(Modifier.fillMaxSize().padding(padding).onSizeChanged { container = it }) {
+            Box(Modifier.fillMaxSize()) {
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                     val photo = state.photos.getOrNull(page)
                     val image = photo?.let { state.images[it.id] }
                     Box(
-                        Modifier.fillMaxSize().background(Color.Black),
+                        Modifier.fillMaxSize().background(PcTheme.colors.workspace),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (image != null) {
@@ -131,6 +130,24 @@ fun PhotoViewerScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Название не вытесняет кнопку возврата даже при длинном имени и крупном шрифте. */
+@Composable
+private fun ViewerChrome(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
+    PcSurface(Modifier.fillMaxSize().testTag("photo_viewer"), color = PcTheme.colors.workspace) {
+        Column(Modifier.fillMaxSize()) {
+            PcSurface(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth().padding(PcTheme.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                    PcIconButton(PcIcons.Back, "Back", onBack)
+                    PcText(title, Modifier.weight(1f).padding(horizontal = PcTheme.spacing.sm),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            PcDivider()
+            Box(Modifier.weight(1f).fillMaxWidth()) { content() }
         }
     }
 }
