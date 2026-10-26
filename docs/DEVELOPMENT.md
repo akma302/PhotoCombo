@@ -1,89 +1,96 @@
 # Разработка и проверка PhotoCombo
 
-Действующая инструкция для активной desktop-сборки. Архитектура описана в README,
-пользовательское поведение — в USER_GUIDE.
+Архитектура и граф модулей описаны в README, пользовательское поведение — в USER_GUIDE.
 
-## Окружение
+## Окружение и структура сборки
 
-Работать из корня репозитория. `settings.gradle.kts` подключает только `:composeApp`.
+Работать из корня репозитория. `settings.gradle.kts` подключает 11 KMP-проектов
+с целью desktop: core, data, domain, design-system, ui-common, четыре feature-модуля,
+composeApp и test-support. Родитель `:feature` — только каталог группировки.
 
-Источники версий, которые нужно проверять при изменениях:
-
-| Файл | Что определяет |
+| Файл | Назначение |
 |---|---|
-| `gradle/libs.versions.toml` | Kotlin, Compose Multiplatform, Room, Koin и остальные зависимости |
-| `gradle/wrapper/gradle-wrapper.properties` | Версию Gradle wrapper |
-| `gradle/gradle-daemon-jvm.properties` | JVM Gradle daemon (сейчас JDK 25) |
-| `composeApp/build.gradle.kts` | Source sets, зависимости, задачи запуска и экспорта схем Room |
+| `gradle/libs.versions.toml` | Общие версии и зависимости |
+| `gradle/wrapper/gradle-wrapper.properties` | Версия Gradle |
+| `gradle/gradle-daemon-jvm.properties` | JVM Gradle daemon (JDK 25) |
+| `build.gradle.kts` | Проверка графа, агрегатные тестовые задачи и системные свойства тестов |
+| `<модуль>/build.gradle.kts` | Source sets и реальные зависимости модуля |
+| `data/build.gradle.kts` | Room/KSP и экспорт схем в data/schemas |
+| `composeApp/build.gradle.kts` | Запуск приложения и галереи |
 
-Первый запуск может потребовать сеть для Gradle/JVM и
-зависимостей; `--offline` использовать только при наличии нужного кэша.
-JVM launcher и daemon могут различаться: для сборки учитывать строку Daemon JVM.
-Строка Kotlin в `gradlew --version` относится к самому Gradle; версию компилятора
-проекта определяет `gradle/libs.versions.toml`.
+Исходные Kotlin-пакеты сохранены. commonMain не импортирует платформенные API;
+платформенные адаптеры находятся в desktopMain своих модулей. Типы публичных
+контрактов экспортируются через api, детали подключаются через implementation.
+SQLite API и Compose ripple явно выровнены на прежние версии из каталога:
+после разделения compile classpath больше не получает выравнивание от desktop launcher.
+
+Первый запуск может потребовать сеть для Gradle/JVM и зависимостей; --offline
+подходит для заполненного кэша. JVM launcher и daemon могут различаться.
+Строка Kotlin в gradlew --version относится к Gradle; версия компилятора проекта — в каталоге.
 
 ## Команды (Windows / PowerShell)
 
 ```powershell
 .\gradlew.bat --version
-.\gradlew.bat :composeApp:desktopTest --console=plain
+.\gradlew.bat check --offline --console=plain
+.\gradlew.bat verifyModuleGraph --offline --console=plain
 .\gradlew.bat :composeApp:run
 .\gradlew.bat :composeApp:runDesignSystemGallery
 ```
 
-`run` открывает продукт с настоящими пользовательскими данными; галерея запускает
-отдельное окно без DI, базы и личных фото. Не использовать личную библиотеку для
-разрушительных проверок. Пути данных задаёт `defaultAppDataDir()`:
-на Windows это `%APPDATA%\PhotoCombo`.
+`check` выполняет desktopTest всех модулей, проверку графа и единый HTML-отчёт
+`build/reports/tests/desktop/index.html`. Корневой `desktopTest` также запускает
+все тесты; `desktopTestReport` добавляет единый отчёт. `:composeApp:desktopTest`
+теперь проверяет только интеграцию приложения, а не весь проект.
 
-Для локальной проверки с заполненным кэшем:
+Выборочные проверки во время разработки:
 
 ```powershell
-.\gradlew.bat :composeApp:desktopTest --offline --console=plain
-.\gradlew.bat :composeApp:desktopTest --tests '*designsystem*' --offline --console=plain
+.\gradlew.bat :design-system:desktopTest --offline --console=plain
+.\gradlew.bat :feature:builder:desktopTest --tests '*DraftHistoryTest' --offline --console=plain
+.\gradlew.bat :data:desktopTest --tests '*MigrationTest' --offline --console=plain
+.\gradlew.bat :domain:desktopTest '-Prealphotos=C:\Photos' --console=plain
 ```
 
-Выборочный запуск полезен во время разработки. После изменения кода перед публикацией
-выполнить полный `desktopTest`. Повторять уже зелёный прогон без новых изменений
-или причин не требуется. Для изменений только документации проверить ссылки,
-пути, актуальность команд и `git diff --check`; UI-тесты без изменения кода не нужны.
+--tests применяется к конкретной Test-задаче модуля, а не корневому агрегатору.
+RealPhotoImportTest остаётся опциональным и требует выбранного владельцем каталога;
+без -Prealphotos он пропускается. Фикстуры и временные БД не используют личную библиотеку.
 
-Сохранение полного лога (перенаправление допустимо для лога, не для исходников):
+После изменения кода перед публикацией выполнить полный check. Уже зелёный прогон
+без новых изменений или причин повторять не требуется. Для правок документации
+достаточно проверки ссылок, путей, команд и git diff --check.
+
+Лог проверки:
 
 ```powershell
-.\gradlew.bat :composeApp:desktopTest --console=plain > "$env:TEMP\photocombo-desktop-test.log" 2>&1
+.\gradlew.bat check --console=plain > "$env:TEMP\photocombo-check.log" 2>&1
 $testExit = $LASTEXITCODE
-Get-Content "$env:TEMP\photocombo-desktop-test.log" -Tail 30
-# Проверить $testExit: 0 означает успешное выполнение Gradle.
+Get-Content "$env:TEMP\photocombo-check.log" -Tail 30
 ```
 
-При ошибке читать полный лог; не судить о результате по последней строке предупреждения.
+run открывает приложение с настоящими данными в %APPDATA%\PhotoCombo. Галерея
+работает без DI и БД. Не использовать личную библиотеку для разрушительных проверок.
 
-## Какие проверки существуют
+## Тесты и отчёты
 
-Тесты: `composeApp/src/desktopTest/kotlin/com/combo/`. Общие фейки находятся в
-`TestDoubles.kt` и `ui/TestDoubles.kt` внутри этого дерева; UI-хост — `ui/UiTestBase.kt`.
+Тесты находятся у владельца кода в `<модуль>/src/desktopTest`. Общие фикстуры,
+фейки, UiTestBase и TestScreen находятся в `test-support/src/desktopMain`;
+тестовый модуль не входит в runtime classpath приложения. В composeApp остаются
+сквозные проверки DI, навигации, паритета рендера, архитектуры и гигиены исходников.
 
-- JVM-проверки геометрии, drafts/history, ViewModel и репозиториев.
-- Room с временной базой; Skia-кодек, EXIF и попиксельный рендер на фикстурах.
-- Compose desktop UI Test: ввод, фокус, роли, callbacks и состояния.
-- `ArchitectureRulesTest` и `SourceHygieneTest`: слои, переносимость, граф DS и чистота исходников.
-- `ComponentGalleryTest`: настоящие компоненты при ширинах 420/800/1200 dp,
-  density 1.0/1.5 и fontScale 1.0/1.25. PNG и `font.txt` создаются в
-  `composeApp/build/ui-previews/design-system/` и не коммитятся.
+ArchitectureRulesTest и SourceHygieneTest получают корень и список модулей из Gradle,
+чтобы проверка не ограничилась оставшимися файлами composeApp. Внутренние правила
+DS и draft/history продолжают проверяться тестами; межмодульный граф дополнительно
+проверяет verifyModuleGraph. Добавление KMP-модуля без регистрации в графе — ошибка.
 
-XML: `composeApp/build/test-results/desktopTest/`.
-HTML-отчёт: `composeApp/build/reports/tests/desktopTest/index.html`.
-Число тестов получать из текущего прогона, а не копировать из старых отчётов.
+XML: `<модуль>/build/test-results/desktopTest/`. HTML каждого модуля:
+`<модуль>/build/reports/tests/desktopTest/index.html`; общий — в корневом build/reports.
+Считать тесты по всем модулям, а не по одному composeApp.
 
-`RealPhotoImportTest` опционален и пропускается без явно заданного каталога:
-
-```powershell
-.\gradlew.bat :composeApp:desktopTest '-Prealphotos=C:\Photos' --console=plain
-```
-
-Этот запуск требует выбранного владельцем каталога. Синтетические фикстуры остаются
-основой воспроизводимой проверки; пропущенный тест реальных фото указывать в отчёте.
+PNG создаются в build/ui-previews владельца: design-system для галереи,
+feature/builder для редактора, feature/library, feature/combo-list и feature/viewer
+для соответствующих экранов. ComponentGalleryTest использует настоящие компоненты
+при ширинах 420/800/1200 dp, density 1/1.5 и fontScale 1/1.25.
 
 ## Визуальная проверка
 
