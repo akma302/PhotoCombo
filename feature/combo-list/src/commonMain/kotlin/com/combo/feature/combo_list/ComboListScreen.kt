@@ -2,9 +2,9 @@ package com.combo.feature.combo_list
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import com.combo.ui.common.GalleryGrid
+import com.combo.ui.common.GallerySizeControl
+import com.combo.ui.common.GalleryScaleUiState
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,7 +41,10 @@ fun ComboListScreen(
     vm: ComboListViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsState()
-    ComboListContent(state.combos, onOpenBuilder, onCreateCombo, vm::delete) { combo, modifier ->
+    val galleryScale by vm.galleryScale.state.collectAsState()
+    ComboListContent(state.combos, onOpenBuilder, onCreateCombo, vm::delete,
+        galleryScale, vm.galleryScale::change, vm.galleryScale::commit, vm.galleryScale::reset,
+    ) { combo, modifier ->
         StaticPreview(vm, combo, modifier)
     }
 }
@@ -53,61 +56,61 @@ internal fun ComboListContent(
     onOpenBuilder: (String) -> Unit,
     onCreateCombo: () -> Unit,
     onDelete: (String) -> Unit,
+    galleryScale: GalleryScaleUiState = GalleryScaleUiState(loaded = true),
+    onScaleChange: (Float) -> Unit = {},
+    onScaleFinished: () -> Unit = {},
+    onScaleReset: () -> Unit = {},
     preview: @Composable (ComboWithItems, Modifier) -> Unit,
 ) {
     PcSurface(Modifier.fillMaxSize().testTag("combo_list"), color = PcTheme.colors.app) {
         Column(Modifier.fillMaxSize()) {
             PcSurface(Modifier.fillMaxWidth()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(PcTheme.spacing.lg),
-                    horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PcText("Combos", Modifier.weight(1f), style = PcTheme.typography.title)
-                    PcButton("New combo", onCreateCombo, Modifier.testTag(NEW_COMBO_TAG),
-                        variant = PcButtonVariant.Primary, icon = PcIcons.Add)
+                Column(Modifier.fillMaxWidth().padding(PcTheme.spacing.lg)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.md),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PcText("Combos", Modifier.weight(1f), style = PcTheme.typography.title)
+                        PcButton("New combo", onCreateCombo, Modifier.testTag(NEW_COMBO_TAG),
+                            variant = PcButtonVariant.Primary, icon = PcIcons.Add)
+                    }
+                    GallerySizeControl(galleryScale, onScaleChange, onScaleFinished, onScaleReset)
                 }
             }
             PcDivider()
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-                BoxWithConstraints(Modifier.widthIn(max = 1040.dp).fillMaxSize()) {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
                     val inset = if (maxWidth >= 600.dp) PcTheme.spacing.xl else PcTheme.spacing.lg
                     val gap = PcTheme.spacing.lg
-                    val columns = ((maxWidth - inset * 2 + gap) / (176.dp + gap)).toInt().coerceIn(1, 3)
-                    val cellWidth = (maxWidth - inset * 2 - gap * (columns - 1)) / columns
-                    // Все превью в строке имеют высоту самого высокого холста при общей ширине.
-                    val rowAspects = remember(combos, columns) {
-                        combos.chunked(columns).map { row ->
-                            row.maxOf { it.combo.canvasHeight.toFloat() / it.combo.canvasWidth }
-                        }
-                    }
                     if (combos.isEmpty()) {
                         Column(Modifier.padding(inset), verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm)) {
                             PcText("No combos yet", style = PcTheme.typography.title)
                             PcText("Create a combo to arrange your photos.", color = PcTheme.colors.textSecondary)
                         }
                     } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(columns),
+                        GalleryGrid(
+                            items = combos,
+                            key = { it.combo.id },
+                            referenceItemWidth = (240f * galleryScale.percent / 100f).dp,
+                            previewAspectRatio = { it.combo.canvasWidth.toFloat() / it.combo.canvasHeight },
                             modifier = Modifier.fillMaxSize().testTag("combo_grid"),
                             contentPadding = PaddingValues(inset),
-                            horizontalArrangement = Arrangement.spacedBy(gap),
-                            verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.xl),
-                        ) {
-                            itemsIndexed(combos, key = { _, combo -> combo.combo.id }) { index, combo ->
-                                Column(Modifier.fillMaxWidth().testTag("combo_card_${combo.combo.id}")) {
-                                    PcSurface(
-                                        Modifier.fillMaxWidth().height(cellWidth * rowAspects[index / columns])
-                                            .clip(PcTheme.shapes.small)
-                                            .clickable(role = Role.Button) { onOpenBuilder(combo.combo.id) }
-                                            .semantics { contentDescription = "Edit ${combo.combo.name}" }
-                                            .testTag("combo_preview_${combo.combo.id}"),
-                                        color = PcTheme.colors.workspace,
-                                    ) {
-                                        preview(combo, Modifier.fillMaxSize())
-                                    }
-                                    ComboDetails(combo, onOpenBuilder, onDelete)
+                            horizontalGap = gap,
+                            verticalGap = PcTheme.spacing.xl,
+                        ) { combo, geometry ->
+                            Column(Modifier.fillMaxWidth().testTag("combo_card_${combo.combo.id}")) {
+                                PcSurface(
+                                    Modifier.fillMaxWidth().height(geometry.previewHeight)
+                                        .clip(PcTheme.shapes.small)
+                                        .clickable(role = Role.Button) { onOpenBuilder(combo.combo.id) }
+                                        .semantics { contentDescription = "Edit ${combo.combo.name}" }
+                                        .testTag("combo_preview_${combo.combo.id}"),
+                                    color = PcTheme.colors.workspace,
+                                ) {
+                                    preview(combo, Modifier.fillMaxSize())
                                 }
+                                ComboDetails(combo, onOpenBuilder, onDelete)
                             }
                         }
                     }

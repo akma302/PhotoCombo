@@ -41,6 +41,7 @@ fun main() = application {
 
 @Composable
 fun DesignSystemGallery() {
+    var sliderValue by remember { mutableStateOf(100f) }
     var checked by remember { mutableStateOf(true) }
     var mode by remember { mutableStateOf("Frame") }
     var text by remember { mutableStateOf("Weekend combo") }
@@ -90,6 +91,9 @@ fun DesignSystemGallery() {
                     }
                 }
             }
+            PcText("Item size · ${sliderValue.toInt()}%", style = PcTheme.typography.label)
+            PcSlider(sliderValue, 50f..200f, { sliderValue = it }, {}, "Item size", Modifier.widthIn(max = 360.dp).fillMaxWidth())
+            PcSlider(100f, 50f..200f, {}, {}, "Disabled size", Modifier.widthIn(max = 360.dp).fillMaxWidth(), enabled = false)
             PcText("Selection & commands", style = PcTheme.typography.title)
             PcSegmentedControl(listOf(PcOption("Frame", "Frame", PcIcons.Frame), PcOption("Photo", "Photo", PcIcons.Photo)),
                 mode, { mode = it }, Modifier.widthIn(max = 360.dp))

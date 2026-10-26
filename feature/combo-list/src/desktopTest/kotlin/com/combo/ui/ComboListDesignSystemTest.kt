@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.combo.feature.combo_list.ComboListContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.Density
 import com.combo.ImageFixtures
@@ -59,7 +60,7 @@ class ComboListDesignSystemTest(
             override suspend fun get(photoId: String, requiredPx: Int) =
                 gridBitmap(photoId.removePrefix("p").toInt()).also { requests += photoId to requiredPx }
         }
-        val vm = ComboListViewModel(repository, FakePhotoRepository((1..6).map { photoEntity("p$it").copy(width = 320, height = 220) }), source)
+        val vm = ComboListViewModel(repository, FakePhotoRepository((1..6).map { photoEntity("p$it").copy(width = 320, height = 220) }), source, settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
         var created = 0
         val opened = mutableListOf<String>()
         setContent {
@@ -71,10 +72,14 @@ class ComboListDesignSystemTest(
         waitForIdle()
         val first = onNodeWithTag("combo_preview_c1").fetchSemanticsNode().boundsInRoot
         val second = onNodeWithTag("combo_preview_c2").fetchSemanticsNode().boundsInRoot
-        assertEquals(first.top, second.top, 1f)
         assertEquals(first.width, second.width, 1f)
-        assertEquals(first.height, second.height, 1f)
-        assertTrue(second.left > first.right)
+        if (width >= 600) {
+            assertEquals(first.top, second.top, 1f)
+            assertEquals(first.height, second.height, 1f)
+            assertTrue(second.left > first.right)
+        } else {
+            assertTrue(second.top > first.bottom)
+        }
         onNodeWithText("Combo c1").assertDoesNotExist()
         val output = File("build/ui-previews/combo-list").apply { mkdirs() }
         val prefix = "combo-list-$width-$sceneDensity-$fontScale"
@@ -83,7 +88,13 @@ class ComboListDesignSystemTest(
                 ImageFixtures.pngBytes(onNodeWithTag("combo_list").captureToImage()))
         }
         capture("populated")
-        onNodeWithTag("combo_preview_c2").performClick()
+        onNodeWithTag("gallery_size_slider").performMouseInput { click(androidx.compose.ui.geometry.Offset(.5f, center.y)) }
+        capture("small")
+        onNodeWithTag("gallery_size_slider").performSemanticsAction(SemanticsActions.SetProgress) { it(200f) }
+        capture("large")
+        onNodeWithTag("gallery_size_reset").performClick()
+        assertEquals(100f, vm.galleryScale.state.value.percent)
+        onNodeWithTag("combo_preview_c2").performScrollTo().performClick()
         assertEquals(listOf("c2"), opened)
         opened.clear()
 
@@ -160,8 +171,11 @@ class ComboGridResizeTest {
         } }
         fun bounds(id: Int) = onNodeWithTag("combo_preview_c$id").fetchSemanticsNode().boundsInRoot
         val narrowFirst = bounds(1)
-        assertEquals(narrowFirst.top, bounds(2).top, 1f)
-        assertTrue(bounds(3).top > narrowFirst.bottom)
+        assertTrue(bounds(2).top > narrowFirst.bottom)
+        runOnIdle { width.value = 528.dp }
+        waitForIdle()
+        assertEquals(bounds(1).top, bounds(2).top, 1f)
+        assertTrue(bounds(3).top > bounds(1).bottom)
         runOnIdle { width.value = 320.dp }
         waitForIdle()
         assertTrue(bounds(2).top > bounds(1).bottom)

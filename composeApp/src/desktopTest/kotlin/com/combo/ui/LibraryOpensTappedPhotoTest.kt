@@ -38,7 +38,7 @@ class LibraryOpensTappedPhotoTest : UiTestBase() {
         // асинхронность (в проде её даёт Room Flow) ломала initialPage у pager'а.
         val libraryRepo = FakePhotoRepository(photos)
         val viewerRepo = FakePhotoRepository()
-        val libraryVm = LibraryViewModel(libraryRepo, FakeImagePicker())
+        val libraryVm = LibraryViewModel(libraryRepo, FakeImagePicker(), settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
         val viewerVm = PhotoViewerViewModel(SavedStateHandle(), viewerRepo, StubBitmapSource())
         val koin = trackKoin(libraryRepo)
 

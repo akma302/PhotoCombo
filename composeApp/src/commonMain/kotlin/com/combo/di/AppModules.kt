@@ -3,6 +3,10 @@ package com.combo.di
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.data.PhotoStorage
+import com.combo.data.FileGallerySettingsStorage
+import com.combo.data.GallerySettingsStorage
+import com.combo.domain.GallerySettingsRepository
+import com.combo.domain.GallerySettingsRepositoryImpl
 import com.combo.domain.ComboRepository
 import com.combo.domain.ComboRepositoryImpl
 import com.combo.domain.PhotoImporter
@@ -19,6 +23,8 @@ import org.koin.dsl.module
  * функциональные типы плохо (разные `FunctionN` одного вида неразличимы по классу).
  */
 val appModule = module {
+    single<GallerySettingsStorage> { FileGallerySettingsStorage(get(), get()) }
+    single<GallerySettingsRepository> { GallerySettingsRepositoryImpl(get(), get(), get()) }
     single { PhotoStorage(dirs = get(), files = get()) }
 
     single {

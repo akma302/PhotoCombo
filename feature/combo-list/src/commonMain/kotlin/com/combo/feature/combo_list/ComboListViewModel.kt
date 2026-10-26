@@ -1,6 +1,9 @@
 package com.combo.feature.combo_list
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.combo.domain.GallerySettingsRepository
+import com.combo.domain.GalleryKind
+import com.combo.ui.common.GalleryScaleState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.combo.core.render.ItemFrame
@@ -30,7 +33,9 @@ class ComboListViewModel(
     private val comboRepo: ComboRepository,
     private val photoRepo: PhotoRepository,
     private val bitmapSource: BitmapSource,
+    settingsRepository: GallerySettingsRepository,
 ) : ViewModel() {
+    val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Combos)
 
     data class State(
         val combos: List<ComboWithItems> = emptyList(),

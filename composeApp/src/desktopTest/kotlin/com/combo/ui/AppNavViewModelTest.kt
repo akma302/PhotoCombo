@@ -1,5 +1,8 @@
 package com.combo.ui
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import org.junit.Assert.assertEquals
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -50,10 +53,12 @@ class AppNavViewModelTest : UiTestBase() {
         photoRepo: FakePhotoRepository,
         comboRepo: FakeComboRepository = FakeComboRepository(),
         bitmapSource: BitmapSource = StubBitmapSource(),
+        settings: FakeGallerySettingsRepository = FakeGallerySettingsRepository(),
     ): KoinApplication = trackKoin(
         koinApplication {
             modules(
                 viewModelModule,
+                module { single<com.combo.domain.GallerySettingsRepository> { settings } },
                 module {
                     single<PhotoRepository> { photoRepo }
                     single<ComboRepository> { comboRepo }
@@ -144,4 +149,27 @@ class AppNavViewModelTest : UiTestBase() {
             onAllNodesWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNodes().isNotEmpty()
         }
     }
+    @Test
+    fun galleryScaleSurvivesTabsViewerAndBuilderIndependently() = runComposeUiTest {
+        val settings = FakeGallerySettingsRepository()
+        setAppNavContent(appKoin(FakePhotoRepository(listOf(photoEntity("p1"))), settings = settings))
+        waitUntil { onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + "p1").fetchSemanticsNodes().isNotEmpty() }
+        onNodeWithTag("gallery_size_slider").performSemanticsAction(SemanticsActions.SetProgress) { it(150f) }
+        onNodeWithTag(PHOTO_CELL_TAG_PREFIX + "p1").performClick()
+        waitForIdle()
+        pressEsc()
+        onNodeWithText("150%").assertIsDisplayed()
+        onNodeWithText("Combos").performClick()
+        onNodeWithText("100%").assertIsDisplayed()
+        onNodeWithTag("gallery_size_slider").performSemanticsAction(SemanticsActions.SetProgress) { it(75f) }
+        onNodeWithTag("combo_list_new_combo").performClick()
+        waitForIdle()
+        pressEsc()
+        onNodeWithTag("builder_exit_discard").performClick()
+        onNodeWithText("75%").assertIsDisplayed()
+        onNodeWithText("Photos").performClick()
+        onNodeWithText("150%").assertIsDisplayed()
+        assertEquals(com.combo.data.GallerySettings(150f, 75f), settings.settings)
+    }
+
 }
