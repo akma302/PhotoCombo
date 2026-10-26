@@ -44,13 +44,13 @@ Frontmatter описывает назначение каждого skill; заг
 
 | Параметр | Значение / владелец |
 |---|---|
-| Активный модуль и target | `:composeApp`, `desktop`; `settings.gradle.kts`, `composeApp/build.gradle.kts` |
+| Модули и target | 11 KMP-проектов с целью desktop; composeApp — launcher, граф в README и build scripts |
 | Source sets | `commonMain`, `desktopMain`, `desktopTest` |
 | Архитектура | README и инварианты AGENTS; `ArchitectureRulesTest` |
 | Команды и отчёты | `docs/DEVELOPMENT.md` |
 | UI-контракт | `docs/DESIGN_SYSTEM.md`; собственные низкоуровневые компоненты и PcIcons |
 | Реальные примеры | `DesignSystemGallery`, `ComponentGalleryTest` |
-| Продуктовая интеграция | Компоненты подключены к builder и Combos; остальные экраны — отдельными PR |
+| Продуктовая интеграция | Компоненты :design-system подключены ко всем четырём feature-модулям |
 
 Пути в таблице — от корня репозитория. Они не являются зависимостями переносимых skills.
 

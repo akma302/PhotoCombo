@@ -98,10 +98,10 @@ density 1.0/1.5, fontScale 1.0/1.25 и LTR/RTL, непрозрачную пол�
 компоненты, допускает ввод текста, выбор режима/формата, открытие меню и диалога.
 Обычный запуск PhotoCombo продолжает открывать продуктовые экраны.
 
-Полная проверка: `./gradlew.bat :composeApp:desktopTest --offline --console=plain`.
-Только компоненты: `./gradlew.bat :composeApp:desktopTest --tests '*designsystem*' --offline`.
+Полная проверка: `./gradlew.bat check --offline --console=plain`.
+Только компоненты: `./gradlew.bat :design-system:desktopTest --offline`.
 
-`ComponentGalleryTest` создаёт PNG в `composeApp/build/ui-previews/design-system/`
+`ComponentGalleryTest` создаёт PNG в `design-system/build/ui-previews/design-system/`
 для ширин 420/800/1200 dp, density 1.0/1.5 и fontScale 1.0/1.25:
 
 - `top` и `bottom` — части прокручиваемой галереи;
@@ -132,8 +132,8 @@ Segoe UI. Просмотрены снимки широкой и узкой га�
 
 ## Граница этапа
 
-Набор компонентов подключён к builder, его диалогам и сетке Combos. Библиотека и
-просмотр фото мигрируют отдельными независимыми PR. Компонентная галерея не заменяет проверку экрана.
+Набор подключён ко всем четырём продуктовым экранам; они размещены в независимых
+feature-модулях. Сам набор находится в :design-system, общий UI — в :ui-common. Компонентная галерея не заменяет проверку экрана.
 
 ## Плоский фокус (v0.4)
 
@@ -173,7 +173,7 @@ PcSurface/PcText. Рендер, жесты, сохранение и хранил
 Полный desktopTest: 415 тестов, 414 passed, 0 failures/errors, 1 skipped
 (не задан каталог личных фотографий). Добавлены проверки сворачивания и 12 сочетаний
 ширины 420/800/1200 dp, density 1/1.5, fontScale 1/1.25 с цветными фикстурами.
-PNG: `composeApp/build/ui-previews/builder-ds-*.png`. Просмотрены широкий снимок
+PNG: `feature/builder/build/ui-previews/builder-ds-*.png`. Просмотрены широкий снимок
 и узкий при density 1.5/fontScale 1.25. Проверка положения инспектора обновлена
 под утверждённый breakpoint 760; проверки событий, сохранения и жестов сохранены.
 Ручная проверка окна и переключение системного DPI не выполнялись.
@@ -192,7 +192,7 @@ PNG: `composeApp/build/ui-previews/builder-ds-*.png`. Просмотрены ш�
 при density 1/1.5, LTR/RTL и обоих выбранных значениях. Touch-минимум проверен отдельно.
 Проверены ширина/выравнивание групп, отсутствие перекрытий, callbacks и перенос при
 fontScale 1.25. Builder снимается в Frame и Photo по 12 сочетаниям ширины/density/fontScale;
-изолированные снимки инспектора — `composeApp/build/ui-previews/builder-inspector-*.png`.
+изолированные снимки инспектора — `feature/builder/build/ui-previews/builder-inspector-*.png`.
 Просмотрены Photo 1200 dp и Photo 420 dp при density 1.5/fontScale 1.25, Frame 800 dp.
 Действия проверялись автоматикой; ручной обход приложения и смена системного DPI не выполнялись.
 
@@ -215,8 +215,17 @@ fontScale 1.25. Builder снимается в Frame и Photo по 12 сочет�
 Геометрия проверена на смешанных форматах; отдельный тест меняет ширину 420 → 320 →
 900 dp и проверяет перегруппировку, равные ширины и высоты строк.
 Настоящие CMP-снимки на синтетических изображениях создаются в
-`composeApp/build/ui-previews/combo-list/`: ширины 420/600/1200 dp, density 1/1.5,
+`feature/combo-list/build/ui-previews/combo-list/`: ширины 420/600/1200 dp, density 1/1.5,
 fontScale 1/1.25. Широкий снимок 1200 × 980 dp показывает обе строки целиком.
 Просмотрены широкий и узкий снимки при density 1.5/fontScale 1.25. Скриншоты для
 PR находятся в `docs/design-system/screenshots/`. Ручной обход окна и системный
 DPI не проверялись; значения density/fontScale относятся к тестовой сцене.
+
+## Многомодульная структура
+
+Код DS, desktop-адаптер и галерея находятся в design-system; экранные тесты и
+снимки — у соответствующих feature-модулей. Команда запуска галереи из composeApp
+сохранена: её runtime classpath получает готовый JAR design-system.
+Перенос не изменяет компоненты, UI-контракты и пиксельный рендер. Основная проверка
+теперь корневой check; старые числа в разделах v0.4–v0.8 — исторические результаты,
+а текущие отчёты собираются по всем модулям (см. DEVELOPMENT).

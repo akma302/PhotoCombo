@@ -2,8 +2,8 @@
 
 PhotoCombo — desktop-приложение для Windows на Kotlin Multiplatform и Compose
 Multiplatform: личная библиотека фото и неразрушающий редактор коллажей («комбо»).
-Активный модуль — `composeApp`. Builder и сетка Combos используют собственную дизайн-систему;
-остальные экраны переносятся на неё отдельно.
+Приложение собирается из независимых KMP-модулей; `composeApp` содержит точку входа,
+DI и навигацию. Все продуктовые экраны используют собственную дизайн-систему.
 
 **Комбо — конфиг**, а не экспортированная картинка: id исходников, рамки и параметры
 трансформаций хранятся в Room, изображение рисуется на лету. Каждая рамка содержит
@@ -42,8 +42,8 @@ Multiplatform: личная библиотека фото и неразруша�
 
 Kotlin · Compose Multiplatform UI/Foundation · MVVM/MVI (UDF) · Room KMP + SQLite ·
 Koin · Coroutines/Flow · kotlinx.serialization · Okio; Skia и AWT в desktop-адаптерах.
-Навигация — Navigation 3. Библиотека и просмотр пока используют Material 3,
-новая дизайн-система — собственные компоненты без Material внутри набора.
+Навигация — Navigation 3. Продуктовые экраны используют собственные компоненты;
+Material остаётся инфраструктурой Snackbar/темы и совместимых общих адаптеров.
 
 Точные версии задают `gradle/libs.versions.toml` и Gradle-конфигурация;
 [инструкция разработки](docs/DEVELOPMENT.md) описывает требования окружения.
@@ -53,26 +53,41 @@ Koin · Coroutines/Flow · kotlinx.serialization · Okio; Skia и AWT в desktop
 ## Структура проекта
 
 ```text
-composeApp/
-├─ src/commonMain/kotlin/com/combo/
-│  ├─ Const.kt
-│  ├─ core/          model, background, color, render, util, image, platform
-│  ├─ data/          Room: Entities, Daos, AppDb, Migrations, EntityExt, PhotoStorage
-│  ├─ domain/        репозитории, PhotoImporter, PhotoAssets, image/LruBitmapSource
-│  ├─ feature/       library, viewer, combo_list, builder (включая draft и history)
-│  ├─ ui/            AppNav, общие хосты/сетка, common/designsystem
-│  └─ di/            общие Koin-модули и фабрики ViewModel
-├─ src/desktopMain/kotlin/com/combo/
-│  ├─ Main.kt        окно приложения
-│  ├─ core/          Skia-кодек, AWT-пикер, каталоги и другие адаптеры
-│  ├─ data/          desktop-фабрика Room
-│  ├─ di/            платформенные биндинги
-│  └─ ui/            адаптер темы, платформенный диалог, gallery
-├─ src/desktopTest/kotlin/com/combo/
-└─ schemas/          экспортированные схемы Room
+core/                  Const, модели, геометрия, рендер, платформенные контракты и desktop-адаптеры
+data/                  Room, DAO, сущности, миграции, PhotoStorage; schemas/
+domain/                репозитории, импорт, PhotoAssets, кэш изображений
+design-system/         токены, тема, Pc-компоненты, desktop-шрифт/диалог и галерея
+ui-common/             общие UI-хосты, сетка и миниатюры
+feature/
+  builder/             экран, ViewModel, draft, history и ввод редактора
+  library/             библиотека и импорт
+  combo-list/          сетка комбо и превью
+  viewer/              просмотр фотографий
+composeApp/            desktop main, Koin, навигация и сквозные тесты
+test-support/          общие фикстуры и UI-тестовый хост (только тестовые зависимости)
 ```
 
-Направление зависимостей: `core ← data ← domain ← feature ← ui`. Правила проверяет тест `ArchitectureRulesTest`: `core` не импортирует вышележащие слои, `feature.X` не импортирует `feature.Y` (общее выносится в `ui.common`), подпакеты `draft` и `history` не импортируют корень `feature.builder`, циклов между пакетами нет.
+Каждый конечный каталог — отдельный Gradle-проект с целью `desktop`. Имена Kotlin-пакетов
+сохранены; внутри модулей используются `src/commonMain`, `src/desktopMain` и
+`src/desktopTest`. Реальные Gradle-зависимости и их проверка находятся в build scripts.
+
+| Модуль | Зависимости на код приложения |
+|---|---|
+| `:core` | Нет |
+| `:data` | core |
+| `:domain` | core, data |
+| `:design-system` | Нет |
+| `:ui-common` | core, data, domain, design-system |
+| `:feature:builder`, `:feature:library`, `:feature:combo-list`, `:feature:viewer` | core, data, domain, design-system, ui-common; без связей между фичами |
+| `:composeApp` | Все производственные модули; точка сборки DI и навигации |
+| `:test-support` | Нижние слои и общий UI; подключается только к desktopTest |
+
+Направление `core ← data ← domain ← feature ← ui` сохранено; общий UI и DS —
+независимые листы для фич. Типы публичных контрактов доступны через `api`,
+детали реализации — через `implementation`. `verifyModuleGraph` проверяет
+Gradle-граф и запрещает test-support в производственных зависимостях.
+`ArchitectureRulesTest` проверяет все модули: владельцев пакетов, отсутствие
+циклов, переносимость commonMain, независимость фич и внутренние правила DS/draft/history.
 
 Реализации репозиториев лежат в `domain` рядом с интерфейсами. Контракты используют
 Room-сущности, общий `ImageSource` и Compose `ImageBitmap`. `commonMain` не импортирует JVM/Android/Skia API, платформенная
@@ -85,12 +100,12 @@ Room-сущности, общий `ImageSource` и Compose `ImageBitmap`. `commo
 
 ### Собственные UI-компоненты desktop
 
-`composeApp/src/commonMain/kotlin/com/combo/ui/common/designsystem` — независимый
+`design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem` — независимый
 набор на Compose UI/Foundation/Animation, без Material-компонентов и моделей
 приложения: `tokens ← theme ← primitives ← components`, отдельно `icons`.
 Фичи могут импортировать этот общий UI-лист; DS не импортирует core/data/domain,
 фичи, DI или навигацию. Направление проверяет `ArchitectureRulesTest` вместе с
-синтетическими нарушениями. Существующие экраны мигрируют отдельными изменениями.
+синтетическими нарушениями. Все четыре продуктовых экрана используют этот набор.
 
 Спецификация v0.8 «Графит · тон» задаёт нейтральный светлый accent и плоский тональный
 фокус с нижней полосой. Палитра danger «Красный рубин» разделяет светлый текст
@@ -98,8 +113,8 @@ Room-сущности, общий `ImageSource` и Compose `ImageBitmap`. `commo
 индикатор кнопок и переключателей зависит от клавиатурного режима ввода,
 текстовые поля показывают также фокус редактирования мышью. Состояние интеграции и
 проверки описано в [отчёте реализации](docs/DESIGN_SYSTEM_IMPLEMENTATION.md).
-Builder, его панели и диалоги используют этот набор; сообщения имеют собственную
-поверхность поверх SnackbarHost. Сетка Combos также использует Pc-компоненты; библиотека и просмотр остаются на Material.
+Builder, библиотека, Combos и просмотр используют этот набор; сообщения имеют
+собственную поверхность поверх SnackbarHost.
 
 Desktop-адаптер `PcDesktopTheme` выбирает установленный Segoe UI (SansSerif fallback)
 и передаёт типографику в общую тему. Живая галерея не читает пользовательские данные:
@@ -109,7 +124,7 @@ Desktop-адаптер `PcDesktopTheme` выбирает установленн�
 ```
 
 Снимки реальных компонентов генерирует `ComponentGalleryTest` в
-`composeApp/build/ui-previews/design-system/`. Это результаты Compose-тестов;
+`design-system/build/ui-previews/design-system/`. Это результаты Compose-тестов;
 системное масштабирование Windows они моделируют через density сцены.
 
 ### Поток данных (UDF)
@@ -288,7 +303,7 @@ ComboListScreen (сетка «Без рамок», разрешение, кно�
 ## Проверка и запуск
 
 Действующие команды, типы тестов, расположение отчётов и порядок Git-работы описаны
-в [DEVELOPMENT](docs/DEVELOPMENT.md). Основная проверка — `:composeApp:desktopTest`;
+в [DEVELOPMENT](docs/DEVELOPMENT.md). Основная проверка — корневой `check` (все модули);
 обычный запуск — `:composeApp:run`. Активные тесты используют JVM/Skia/Compose desktop,
 без эмулятора.
 
@@ -298,8 +313,8 @@ ComboListScreen (сетка «Без рамок», разрешение, кно�
 по границам рамок, адаптивные инструменты и управление видом, библиотека с
 мультивыбором, открытие нажатого фото и список комбо. Собственные UI-компоненты
 доступны в галерее и подключены к builder. Его панели, окна выбора фото и выхода
-используют графитовую тему и собственные векторы; сетка Combos также перенесена,
-библиотека и просмотр мигрируют отдельными PR.
+используют графитовую тему и собственные векторы; библиотека, Combos и просмотр
+также подключены к собственным компонентам.
 
 Вне текущей реализации: экспорт изображения/видео, шифрование at-rest,
 rotation-жесты, угловые маркеры ресайза, якорь на противоположной грани,

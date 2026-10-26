@@ -13,11 +13,12 @@ import java.nio.charset.CodingErrorAction
  * съехавшие на колонку 0 строки внутри блоков — это следы перекодировки/правки не
  * редактором, а не «просто комментарий».
  *
- * Путь: `user.dir` в Gradle — каталог модуля, то есть `composeApp/`, дальше `src`.
+ * Корень сборки передаётся Gradle; сканируются src всех модулей без build/generated.
  */
 class SourceHygieneTest {
 
-    private val srcDir: File = File(System.getProperty("user.dir"), "src")
+    private val srcDir = File(checkNotNull(System.getProperty("photocombo.root")))
+    private val modules = checkNotNull(System.getProperty("photocombo.modules")).split('|')
 
     private val U_FFFD = 0xFFFD.toChar()
 
@@ -25,8 +26,8 @@ class SourceHygieneTest {
     private val QMARK_RUN = Regex(Regex.escape("?") + "{4}")
 
     private fun kotlinFiles(): List<File> =
-        srcDir.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
+        modules.flatMap { module -> File(srcDir, "$module/src").walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }.toList() }.asSequence()
             .sortedBy { it.path }
             .toList()
 

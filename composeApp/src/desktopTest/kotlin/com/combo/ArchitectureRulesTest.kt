@@ -39,10 +39,13 @@ import java.io.File
  */
 class ArchitectureRulesTest {
 
-    /** Корни исходников приложения: общий код и desktop. Тестовые наборы не проверяются. */
-    private val srcRoots: List<File> = listOf("src/commonMain/kotlin", "src/desktopMain/kotlin")
-        .map { File(System.getProperty("user.dir"), it) }
-        .filter { it.isDirectory }
+    /** Каждый Gradle-модуль проверяется целиком; тестовые source sets исключены. */
+    private val projectRoot = File(checkNotNull(System.getProperty("photocombo.root")))
+    private val modulePaths = checkNotNull(System.getProperty("photocombo.modules")).split('|')
+        .filterNot { it == "test-support" }
+    private val srcRoots: List<File> = modulePaths.flatMap { module ->
+        listOf("commonMain", "desktopMain").map { File(projectRoot, "$module/src/$it/kotlin") }
+    }.filter { it.isDirectory }
 
     /** Один проверенный файл: его пакет и списки импортов (все и только `com.combo.*`). */
     private data class Source(
@@ -51,6 +54,7 @@ class ArchitectureRulesTest {
         val imports: List<String>,
         val sourceSet: String = "",
         val allImports: List<String> = emptyList(),
+        val module: String = "",
     )
 
     private fun sources(): List<Source> =
@@ -72,6 +76,7 @@ class ArchitectureRulesTest {
                     // "src/commonMain/kotlin" → "commonMain": имя набора источников нужно
                     // правилу про платформенные импорты.
                     sourceSet = root.parentFile.name,
+                    module = root.parentFile.parentFile.parentFile.relativeTo(projectRoot).invariantSeparatorsPath,
                     allImports = lines.mapNotNull { line ->
                         Regex("^import\\s+([\\w.]+)").find(line)?.groupValues?.get(1)
                     },
@@ -80,17 +85,29 @@ class ArchitectureRulesTest {
             .toList()
 
     /** Фичи приложения; используются для правила «feature.X не импортирует feature.Y». */
-    private val featureRoots = listOf(
-        "com.combo.feature.builder",
-        "com.combo.feature.combo_list",
-        "com.combo.feature.library",
-        "com.combo.feature.viewer",
-    )
+    private val featureRoots = modulePaths.filter { it.startsWith("feature/") }
+        .map { "com.combo.feature." + it.substringAfterLast('/').replace('-', '_') }
 
     private fun violationsIn(sources: List<Source>): List<String> {
         val problems = mutableListOf<String>()
 
         for (s in sources) {
+            val expectedModule = when {
+                s.pkg.startsWith("com.combo.core") ||
+                    (s.pkg == "com.combo" && s.label.substringAfterLast('/') == "Const.kt") -> "core"
+                s.pkg.startsWith("com.combo.data") -> "data"
+                s.pkg.startsWith("com.combo.domain") -> "domain"
+                s.pkg.startsWith("com.combo.ui.common.designsystem") || s.pkg.startsWith("com.combo.ui.gallery") ||
+                    (s.pkg == "com.combo.ui.common" && s.label.substringAfterLast('/') == "PcDesktopTheme.kt") -> "design-system"
+                s.pkg.startsWith("com.combo.ui.common") -> "ui-common"
+                s.pkg.startsWith("com.combo.feature.") -> "feature/" + s.pkg.removePrefix("com.combo.feature.")
+                    .substringBefore('.').replace('_', '-')
+                else -> "composeApp"
+            }
+            if (s.module.isNotEmpty() && s.module != expectedModule) {
+                problems += "${s.label}: пакет ${s.pkg} принадлежит $expectedModule, а не ${s.module}"
+            }
+
             fun forbid(prefixes: List<String>, rule: String) {
                 for (imp in s.imports) {
                     if (prefixes.any { imp == it || imp.startsWith("$it.") }) {
@@ -416,13 +433,26 @@ class ArchitectureRulesTest {
     @Test
     fun `architecture test actually inspects the sources`() {
         val all = sources()
+        modulePaths.forEach { module ->
+            assertTrue("$module не охвачен проверкой", srcRoots.any { it.toPath().startsWith(File(projectRoot, module).toPath()) })
+        }
         assertTrue(
             "найдено всего ${all.size} .kt в commonMain/desktopMain — пути srcRoots указывают не туда",
-            all.size > 20,
+            all.size > 100,
         )
         assertTrue(
             "ни один файл не снял package — проверка слоёв не сработает",
             all.all { it.pkg.startsWith("com.combo") },
         )
     }
+    @Test
+    fun `packages cannot be hidden in a different gradle module`() {
+        assertTrue(violationsIn(listOf(
+            Source("Viewer.kt", "com.combo.feature.viewer", emptyList(), module = "core"),
+        )).isNotEmpty())
+        assertEquals(emptyList<String>(), violationsIn(listOf(
+            Source("Viewer.kt", "com.combo.feature.viewer", emptyList(), module = "feature/viewer"),
+        )))
+    }
+
 }
