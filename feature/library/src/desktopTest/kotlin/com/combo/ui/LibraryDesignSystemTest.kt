@@ -12,6 +12,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.Density
 import com.combo.ImageFixtures
 import com.combo.feature.library.*
+import com.combo.ui.common.GalleryScaleUiState
+import androidx.compose.ui.semantics.SemanticsActions
 import com.combo.ui.common.PcDesktopFonts
 import com.combo.ui.common.PcDesktopTheme
 import com.combo.ui.common.designsystem.tokens.PcMotion
@@ -60,6 +62,7 @@ class LibraryDesignSystemTest(private val width: Int, private val scale: Float, 
         var message by mutableStateOf<String?>(null)
         val opened = mutableListOf<String>()
         val combos = mutableListOf<List<String>>()
+        var itemPercent by mutableStateOf(100f)
         var imports = 0
         var deletes = 0
         var dismissed = 0
@@ -74,6 +77,9 @@ class LibraryDesignSystemTest(private val width: Int, private val scale: Float, 
                     onDelete = { deletes++; photos = photos.filterNot { it.id in selected }; selected = emptyList() },
                     onCreateCombo = { combos += selected; selectionMode = false; selected = emptyList() },
                     onImport = { imports++ },
+                    galleryScale = GalleryScaleUiState(itemPercent, loaded = true),
+                    onScaleChange = { itemPercent = it },
+                    onScaleReset = { itemPercent = 100f },
                     message = message,
                     onDismissMessage = { dismissed++; message = null },
                     thumbnail = { photo, modifier -> Image(bitmaps.getValue(photo.id), null, modifier) },
@@ -87,6 +93,13 @@ class LibraryDesignSystemTest(private val width: Int, private val scale: Float, 
         }
         onNodeWithTag(LIB_IMPORT_TAG).assertIsDisplayed()
         capture("normal")
+        onNodeWithTag("gallery_size_slider").performMouseInput { click(androidx.compose.ui.geometry.Offset(.5f, center.y)) }
+        capture("small")
+        onNodeWithTag("gallery_size_slider").performSemanticsAction(SemanticsActions.SetProgress) { it(200f) }
+        capture("large")
+        onNodeWithTag("gallery_size_reset").performClick()
+        assertEquals(100f, itemPercent)
+        onNode(hasScrollToIndexAction()).performScrollToIndex(1)
         onNodeWithTag(PHOTO_CELL_TAG_PREFIX + "fixture2").performClick()
         assertEquals(listOf("fixture2"), opened)
         onNodeWithTag(LIB_IMPORT_TAG).requestFocus().performKeyInput { pressKey(Key.Enter) }
@@ -94,14 +107,19 @@ class LibraryDesignSystemTest(private val width: Int, private val scale: Float, 
         onNodeWithTag(LIB_SELECT_TAG).performClick()
         onNodeWithText("Selected: 0").assertExists()
         onNodeWithTag(LIB_CREATE_COMBO_TAG).assertDoesNotExist()
+        onNode(hasScrollToIndexAction()).performScrollToIndex(2)
         onNodeWithTag(PHOTO_CELL_TAG_PREFIX + "fixture3").performClick()
+        onNode(hasScrollToIndexAction()).performScrollToIndex(0)
         onNodeWithTag(PHOTO_CELL_TAG_PREFIX + "fixture1").performClick()
         onNodeWithTag(LIB_CREATE_COMBO_TAG).assertIsDisplayed()
         onNodeWithTag(LIB_DELETE_TAG).assertIsDisplayed()
         onNodeWithTag(LIB_IMPORT_TAG).assertIsDisplayed()
+        onNodeWithTag("gallery_size_slider").performMouseInput { click(androidx.compose.ui.geometry.Offset(.5f, center.y)) }
+        assertEquals(listOf("fixture3", "fixture1"), selected)
         capture("selected")
         onNodeWithTag(LIB_CREATE_COMBO_TAG).performClick()
         assertEquals(listOf(listOf("fixture3", "fixture1")), combos)
+        onNode(hasScrollToIndexAction()).performScrollToIndex(1)
         onNodeWithTag(PHOTO_CELL_TAG_PREFIX + "fixture2").performMouseInput { rightClick() }
         onNodeWithText("Selected: 1").assertExists()
         assertEquals(listOf("fixture2"), opened)

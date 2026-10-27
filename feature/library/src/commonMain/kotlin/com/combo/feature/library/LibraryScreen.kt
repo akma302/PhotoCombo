@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
+import com.combo.ui.common.GallerySizeControl
+import com.combo.ui.common.GalleryScaleUiState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -55,6 +56,7 @@ fun LibraryScreen(
     onCreateCombo: (List<String>) -> Unit,
     vm: LibraryViewModel = koinViewModel(),
 ) {
+    val galleryScale by vm.galleryScale.state.collectAsState()
     val photos by vm.photos.collectAsState()
     val selected by vm.selected.collectAsState()
     val selectionMode by vm.selectionMode.collectAsState()
@@ -72,6 +74,10 @@ fun LibraryScreen(
         }
     }
     LibraryScreenContent(
+        galleryScale = galleryScale,
+        onScaleChange = vm.galleryScale::change,
+        onScaleFinished = vm.galleryScale::commit,
+        onScaleReset = vm.galleryScale::reset,
         photos = photos,
         selected = selected,
         selectionMode = selectionMode,
@@ -101,6 +107,10 @@ internal fun LibraryScreenContent(
     onCreateCombo: () -> Unit,
     onImport: () -> Unit,
     modifier: Modifier = Modifier,
+    galleryScale: GalleryScaleUiState = GalleryScaleUiState(loaded = true),
+    onScaleChange: (Float) -> Unit = {},
+    onScaleFinished: () -> Unit = {},
+    onScaleReset: () -> Unit = {},
     message: String? = null,
     onDismissMessage: () -> Unit = {},
     thumbnail: @Composable (PhotoEntity, Modifier) -> Unit = { photo, imageModifier ->
@@ -129,6 +139,7 @@ internal fun LibraryScreenContent(
                         }
                         PcButton("Import", onImport, Modifier.testTag(LIB_IMPORT_TAG), icon = PcIcons.Add)
                     }
+                    GallerySizeControl(galleryScale, onScaleChange, onScaleFinished, onScaleReset)
                 }
             }
             PcDivider()
@@ -138,9 +149,9 @@ internal fun LibraryScreenContent(
                     onCellClick = { if (selectionMode) onToggle(it.id) else onOpenViewer(it.id) },
                     cellTag = { PHOTO_CELL_TAG_PREFIX + it.id },
                     modifier = Modifier.fillMaxSize(),
-                    columns = GridCells.Fixed(3),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    referenceItemWidth = (240f * galleryScale.percent / 100f).dp,
+                    verticalGap = 2.dp,
+                    horizontalGap = 2.dp,
                     isSelected = { it.id in selected },
                     onCellLongClick = { onEnterSelection(); onToggle(it.id) },
                     thumbnail = thumbnail,

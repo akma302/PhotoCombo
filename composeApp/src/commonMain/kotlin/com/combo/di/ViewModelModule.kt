@@ -22,9 +22,9 @@ import org.koin.dsl.module
  * handle создаётся пустым прямо здесь, чтобы не плодить особый случай у вызова.
  */
 val viewModelModule = module {
-    viewModel { LibraryViewModel(photoRepo = get(), picker = get()) }
+    viewModel { LibraryViewModel(photoRepo = get(), picker = get(), settingsRepository = get()) }
 
-    viewModel { ComboListViewModel(comboRepo = get(), photoRepo = get(), bitmapSource = get()) }
+    viewModel { ComboListViewModel(comboRepo = get(), photoRepo = get(), bitmapSource = get(), settingsRepository = get()) }
 
     viewModel { PhotoViewerViewModel(SavedStateHandle(), photoRepo = get(), bitmapSource = get()) }
 

@@ -34,7 +34,7 @@ class LibraryImportAndMessageTest : UiTestBase() {
         val picker = object : ImagePicker {
             override suspend fun pickImages(): List<ImageSource> { pickerCalls++; return listOf(source) }
         }
-        val vm = LibraryViewModel(repo, picker)
+        val vm = LibraryViewModel(repo, picker, settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
         val koin = trackKoin(repo)
         setContent { TestScreen(koin, backDispatcher) { LibraryScreen({}, {}, vm) } }
         onNodeWithTag(LIB_IMPORT_TAG).performClick()
@@ -57,7 +57,7 @@ class LibraryImportAndMessageTest : UiTestBase() {
                 return DeleteResult.BLOCKED_IF_USED_IN_COMBO
             }
         }
-        val vm = LibraryViewModel(repo, FakeImagePicker())
+        val vm = LibraryViewModel(repo, FakeImagePicker(), settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
         val koin = trackKoin(repo)
         setContent { TestScreen(koin, backDispatcher) { LibraryScreen({}, {}, vm) } }
         waitUntil { onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + "used").fetchSemanticsNodes().isNotEmpty() }

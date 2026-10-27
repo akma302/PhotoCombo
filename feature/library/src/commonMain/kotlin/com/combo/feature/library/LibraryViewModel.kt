@@ -1,5 +1,8 @@
 package com.combo.feature.library
 
+import com.combo.domain.GallerySettingsRepository
+import com.combo.domain.GalleryKind
+import com.combo.ui.common.GalleryScaleState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.combo.Const
@@ -21,7 +24,9 @@ import kotlinx.coroutines.launch
 class LibraryViewModel(
     private val photoRepo: PhotoRepository,
     private val picker: ImagePicker,
+    settingsRepository: GallerySettingsRepository,
 ) : ViewModel() {
+    val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Photos)
 
     val photos: StateFlow<List<PhotoEntity>> = photoRepo.all()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

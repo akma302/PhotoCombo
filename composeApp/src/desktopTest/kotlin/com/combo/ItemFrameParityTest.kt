@@ -166,6 +166,7 @@ class ItemFrameParityTest {
             FakeComboRepository(listOf(combo)),
             FakePhotoRepository(photos),
             StubBitmapSource(),
+            settingsRepository = com.combo.ui.FakeGallerySettingsRepository(),
         )
         dispatcher.scheduler.advanceUntilIdle()
         vm.ensureAssetsFor(combo)

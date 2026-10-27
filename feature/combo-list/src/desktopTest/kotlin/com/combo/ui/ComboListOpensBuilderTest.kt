@@ -28,7 +28,7 @@ class ComboListOpensBuilderTest : UiTestBase() {
     @Test
     fun combosSectionHasWorkingEntryPointToBuilder() = runComposeUiTest {
         val comboRepo = FakeComboRepository()
-        val vm = ComboListViewModel(comboRepo, FakePhotoRepository(), StubBitmapSource())
+        val vm = ComboListViewModel(comboRepo, FakePhotoRepository(), StubBitmapSource(), settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
         val koin = trackKoin(FakePhotoRepository())
 
         var createRequested = 0

@@ -42,7 +42,7 @@ class LibraryMultiselectTest : UiTestBase() {
         ids: List<String>,
         repo: FakePhotoRepository = FakePhotoRepository(ids.map { photoEntity(it) }),
     ): LibraryViewModel {
-        val vm = LibraryViewModel(repo, FakeImagePicker())
+        val vm = LibraryViewModel(repo, FakeImagePicker(), settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
         val koin = trackKoin(repo)
         openedPhotoId = null
         comboRequest = null
