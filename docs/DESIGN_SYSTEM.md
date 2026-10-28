@@ -15,6 +15,7 @@ Read numerical values and public APIs in source; do not duplicate them in docume
 
 Desktop fonts and dialogs: `design-system/src/desktopMain/kotlin/com/combo/ui/common/`.
 Live examples: `design-system/src/desktopMain/kotlin/com/combo/ui/gallery/DesignSystemGallery.kt`.
+Individual Compose previews: `design-system/src/desktopMain/kotlin/com/combo/ui/gallery/ComponentPreviews.kt`; shared gallery previews: `ui-common/src/desktopMain/kotlin/com/combo/ui/common/GalleryPreviews.kt`.
 Contract and state tests: `design-system/src/desktopTest/`.
 Launch commands and screenshot locations: [DEVELOPMENT](DEVELOPMENT.md).
 

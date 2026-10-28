@@ -22,6 +22,9 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
         }
+        val desktopMain by getting {
+            dependencies { implementation(compose.preview) }
+        }
         val desktopTest by getting {
             dependencies {
                 implementation(project(":test-support"))

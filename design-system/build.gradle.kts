@@ -16,6 +16,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation(compose.preview)
             }
         }
         val desktopTest by getting {
@@ -23,6 +24,7 @@ kotlin {
                 implementation(libs.junit)
                 implementation(compose.desktop.uiTestJUnit4)
                 implementation(compose.desktop.currentOs)
+                implementation(compose.preview)
             }
         }
     }
