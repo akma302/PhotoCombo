@@ -27,7 +27,7 @@ Android Studio on Windows (adjust the path if needed):
 
 The project-scoped MCP server can use `:composeApp:hotMcpServerDesktop --offline --quiet --console=plain`
 from the project directory; Codex must trust the project configuration to load it. See the
-[Codex MCP documentation](https://developers.openai.com/codex/mcp). This gallery does not use personal data.
+[Codex MCP documentation](https://developers.openai.com/codex/mcp).
 
 Tests use personal photos only when the owner explicitly selects them:
 `RealPhotoImportTest` is skipped without `-Prealphotos=<directory>`.
