@@ -28,8 +28,16 @@ Use the file and symbol names below with `rg --files` and `rg -n`.
 
 ## Architecture constraints
 
-- Dependency direction: `core ← data ← domain ← feature ← composeApp` (an arrow points
-  toward a dependency). Features may also depend on `ui-common` and `design-system`.
+Dependency direction (`→` means "depends on"; simplified, direct shortcuts omitted):
+
+```text
+composeApp → feature/* → domain → data → core
+               ↓
+           ui-common → domain
+               ↓
+          design-system
+```
+
 - Features must not depend on each other; `ui-common` must not import features.
   `design-system` has no production project dependencies; its internal direction is
   `tokens ← theme ← primitives ← components`, with icons independent. `test-support` is test-only.
