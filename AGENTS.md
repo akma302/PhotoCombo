@@ -1,116 +1,62 @@
-# PhotoCombo: вход в контекст для ИИ-агентов
+# PhotoCombo: agent map
 
-Этот файл — начальная точка знакомства с репозиторием. Прочитайте его полностью,
-затем следуйте маршруту ниже. Действующие требования находятся в перечисленных документах.
+Windows desktop application built with KMP / Compose Multiplatform. Load only
+material relevant to the task; there is no required document reading order.
+Find actual behavior and APIs in code and tests. The owner's task defines product changes.
 
-## 1. Порядок чтения
+## Where to look
 
-1. [README.md](README.md) — что реализовано, структура, архитектура и ограничения.
-2. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — окружение, команды, Git и проверка.
-3. Для изменений KMP/CMP прочитайте [переносимые rules](.agents/rules/kmp-cmp.md).
-4. Выберите документы и skills по задаче из таблицы. Читать все skills
-   перед каждой правкой не нужно.
+Table paths are relative to the repository root. Within a module, shared code is in
+`src/commonMain/kotlin/com/combo`, platform code in `src/desktopMain`, and tests in `src/desktopTest`.
+Use the file and symbol names below with `rg --files` and `rg -n`.
 
-| Задача | Следующий документ | Что из него брать |
-|---|---|---|
-| Продуктовое поведение, библиотека, просмотр, редактор | [USER_GUIDE.md](USER_GUIDE.md) | Текущие пользовательские сценарии |
-| UI-компоненты, внешний вид, перенос экрана | [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Визуальная спецификация и публичные контракты |
-| Использование готовых компонентов, галерея, визуальная проверка | [docs/DESIGN_SYSTEM_IMPLEMENTATION.md](docs/DESIGN_SYSTEM_IMPLEMENTATION.md) | Состав реализации, запуск, свидетельства проверки |
-| Данные, геометрия, рендер, Undo, импорты между слоями | Разделы архитектуры README и раздел 3 этого файла | Инварианты и точки расширения; затем соответствующие исходники и тесты |
-| Изменение KMP-контракта или платформенного адаптера | [kmp-platform-change](.agents/skills/kmp-platform-change/SKILL.md) | Процедура изменения границы common/platform |
-| Реализация общего CMP-компонента | [cmp-component](.agents/skills/cmp-component/SKILL.md) | Контракт, реализация и приёмка |
-| Проверка CMP-ввода, layout и отрисовки | [cmp-ui-verification](.agents/skills/cmp-ui-verification/SKILL.md) | Выбор проверок и свидетельства результата |
-| Перенос workflow в другой KMP/CMP-проект | [docs/KMP_CMP_WORKFLOW.md](docs/KMP_CMP_WORKFLOW.md) | Состав набора и параметры адаптации |
+| Area | Location / entry points |
+|---|---|
+| Features and user actions | [feature/](feature/): library, combo-list, viewer, builder; `*Screen.kt`, `*ViewModel.kt`; editor events in `BuilderContract.kt` |
+| Navigation, ViewModel lifetime, DI | [composeApp/](composeApp/src/): `AppNav.kt`, `ScreenKey.kt`, `ViewModelStoreOwners.kt`, `di/` |
+| Shared gallery and item sizing | [ui-common/](ui-common/src/commonMain/kotlin/com/combo/ui/common/): `GalleryGrid.kt`, `PhotoGrid.kt`, `GalleryScaleState.kt`; persistence in `GallerySettingsRepository` and `GallerySettingsStorage` |
+| Geometry, framing, rendering | [core/render/](core/src/commonMain/kotlin/com/combo/core/render/): `Framing.kt`, `ItemFrames.kt`, `DrawItem.kt`, `DrawCombo.kt`; backgrounds in the adjacent `background/` directory |
+| Editing, Undo, combo saving | [builder/](feature/builder/src/commonMain/kotlin/com/combo/feature/builder/): `draft/`, `history/`, `FinalizeCanvas.kt`, `ComboBuilderViewModel.kt`; input in `EditorGestures.kt`, `EditorWheel.kt` |
+| Database, file paths, migrations | [data/](data/src/): `Entities.kt`, `AppDb.kt`, `Migrations.kt`, `PhotoStorage.kt`; schemas in [data/schemas/](data/schemas/) |
+| Repositories, import, image cache | [domain/](domain/src/commonMain/kotlin/com/combo/domain/): `Repositories.kt`, `Impls.kt`, `PhotoImporter.kt`, `PhotoAssets.kt`, `image/` |
+| Components and visual decisions | [design-system/](design-system/src/); visual requirements and token locations in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md); CMP UI work in [cmp-ui](.agents/skills/cmp-ui/SKILL.md) |
+| Build, verification, reports, Git | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) |
+| Modules, dependencies, versions, targets | `settings.gradle.kts`, root and module `build.gradle.kts`, `gradle/libs.versions.toml` |
+| Architecture constraints | `verifyModuleGraph` in root Gradle; `ArchitectureRulesTest` and `SourceHygieneTest` in composeApp |
+| Fixtures and UI test host | [test-support/](test-support/src/desktopMain/); scenarios in the owning module's tests |
+| Business limits and thresholds | [Const.kt](core/src/commonMain/kotlin/com/combo/Const.kt) |
 
-Направление ознакомления: **AGENTS → обзор/разработка → применимые rules → тематический документ/skill → код/тесты**.
-Документы не требуют возвращаться к началу или читать друг друга по кругу.
-README — обзор для людей, а не второй конкурирующий регламент для агентов.
+## Architecture constraints
 
-## 2. Текущее состояние и источники истины
+Dependency direction (`→` means "depends on"; simplified, direct shortcuts omitted):
 
-- KMP-модули: core, data, domain, design-system, ui-common, четыре feature-модуля
-  и composeApp (desktop launcher/DI/навигация); test-support используется только в тестах.
-  Все модули имеют цель `desktop` (Windows).
-- Приложение работает, собирается и проверяется локально. Доступность инструментов
-  проверять в текущей сессии.
-- Все продуктовые экраны и галерея используют собственную графитовую дизайн-систему.
-- Текущая задача и явно принятые решения владельца задают объём работы. Backlog
-  не исполнять автоматически. Изменение требований отражать в соответствующем документе.
-- Код, Gradle-конфигурация и тесты описывают фактическую реализацию; руководство — текущие сценарии;
-  дизайн-спецификация — утверждённую визуальную цель. Цель и реализацию различать явно.
-  При противоречии установить причину и обновить устаревший документ; не менять продукт
-  или ослаблять проверки только ради соответствия старому тексту.
+```text
+composeApp → feature/* → domain → data → core
+               ↓
+           ui-common → domain
+               ↓
+          design-system
+```
 
-## 3. Инварианты при изменении кода
+- Features must not depend on each other; `ui-common` must not import features.
+  `design-system` has no production project dependencies; its internal direction is
+  `tokens ← theme ← primitives ← components`, with icons independent. `test-support` is test-only.
+- `commonMain` must not import JVM/Android/Skia APIs; OS adapters belong in `desktopMain`.
+  The exact module graph is enforced by `verifyModuleGraph` and package boundaries by
+  `ArchitectureRulesTest`; do not weaken either check to accommodate a dependency.
 
-### Слои и переносимость
+## Constraints to preserve
 
-- Направление зависимостей: `core ← data ← domain ← feature ← ui`.
-  `feature.X` не импортирует `feature.Y`; общее выносится в `ui.common` или подходящий нижний слой.
-  `ui.common` и его подпакеты не импортируют фичи. `core.model` не импортирует `com.combo.*`.
-- `feature.builder.draft` и `history` не импортируют корень `feature.builder`.
-  Циклов между пакетами быть не должно. ViewModel располагается отдельным файлом рядом с экраном.
-- В этом проекте платформенный target только desktop: адаптеры живут в `desktopMain`,
-  контракты — в общем коде каждого модуля; границы переносимости определены подключёнными rules.
-  Feature-модули не зависят друг от друга. test-support запрещён в production;
-  `api` используется для типов публичных контрактов, `implementation` — для деталей.
-- DS: `tokens ← theme ← primitives ← components`, отдельно `icons`.
-  DS не зависит от моделей приложения, core/data/domain, фич, DI или навигации.
-  Использовать Compose UI/Foundation/Animation, собственные Layout/Canvas/Modifiers и
-  кэшированные `PcIcons` в формате ImageVector. Не добавлять сторонние UI-библиотеки,
-  наборы иконок или Material-компоненты внутрь DS. Material на старых экранах допустим до их миграции.
-- Gradle-граф проверяет корневой `verifyModuleGraph`; тесты слоёв, владельцев пакетов
-  и внутренние ограничения проверяет `ArchitectureRulesTest` во всех модулях. При конфликте переносить ответственность,
-  а не ослаблять правила. Алгоритмы геометрии и истории оставлять независимо тестируемыми;
-  не переносить их в composables или ViewModel ради удобства вызова.
+- Original photos remain unchanged. User file layout and persisted enum names must remain
+  compatible with existing data; schema changes require a migration and its test.
+  Use temporary directories for tests rather than the personal library.
+- The editor and previews share the core renderer. Saving finalizes a separate snapshot:
+  it must not modify the working draft or Undo, even if writing fails. Gesture cancellation creates no checkpoint.
+  Find these contracts in `ItemFrameParityTest`, `DraftMapperTest`, `*HistoryTest`, `*Finalize*Test`.
+- Source files: UTF-8 without BOM, LF. Write comments in English and explain the code's purpose.
 
-### Рендер, редактирование и сохранение
+## Maintaining this map
 
-- Рамку рисует только `drawItem()` (`core/render/DrawItem.kt`), кадр собирает только
-  `buildItemFrame()` (`ItemFrames.kt`), холст рисует только `drawCombo()` (`DrawCombo.kt`).
-  Редактор и превью списка используют эти же функции. Оверлей выделения живёт отдельно в редакторе.
-- Вписывание определяют `effectiveFraming()` и `contentArgsOf()` (`Framing.kt`).
-  Фото сохраняет пропорции; crop возникает из рамки, scale и pan, отдельный crop-rect не хранится.
-- Комбо — конфиг. В каждой рамке ровно одно фото, пустые рамки невозможны.
-- Drafts мутабельны; `revision` инициирует перерисовку. Undo: START → снимок,
-  END → checkpoint, CANCEL → восстановление. Действие без изменений не даёт undo-шаг.
-  Снимки — data classes со структурным равенством; поля синхронизировать с drafts (`DraftMapperTest`).
-- Жесты редактора сохраняют фазы START/CHANGE/END/CANCEL через `awaitEachGesture`.
-  Не заменять их на `detectTransformGestures`, не имеющий нужного завершения/отмены.
-  В едином `pointerInput(Unit)` обновляемые значения читать через State.
-- Save финализирует независимый снимок по внешним границам рамок; рабочий draft и Undo
-  не меняются, в том числе при ошибке записи. Вид холста не записывается как изменение комбо.
-- Лимиты и пороги определяет `Const.kt`: в частности, не более 10 рамок.
-  Не менять их или блокировку удаления используемого фото без соответствующей задачи.
-
-### Файлы, импорт и Room
-
-- Пути выдаёт только `PhotoStorage` через `AppDirs.dataDir`:
-  `photos/<fileName>`, `thumbs/<photoId>.jpg`. Не менять раскладку существующих данных.
-  Тесты используют временные каталоги, а не личную библиотеку.
-- EXIF нормализуется при импорте; `avgColor` вычисляется один раз и хранится.
-  Рендер не повторяет EXIF/вычисление среднего цвета; заливка полей использует `Const.FILL_ALPHA`.
-  ViewModel получает метаданные и битмапы через `PhotoAssets`, декодирование идёт через кэш.
-- Имена enum — формат хранения (`.name`). Переименование требует миграции.
-- Схема Room — `data/schemas`; версию проверять в `data/AppDb.kt` (сейчас 2).
-  Изменения схемы сопровождаются миграцией в `data/Migrations.kt`, её регистрацией
-  в desktop-фабрике БД и тестом `MigrationTest`. Не сбрасывать пользовательскую базу.
-- `@Relation` не сортирует: порядок рамок обеспечивает репозиторий по `zIndex`.
-  При вложенных отношениях явно задавать `entity`, если этого требует POJO со своей `@Relation`.
-
-## 4. Качество изменений
-
-- Новая логика требует тестов; баг — регрессии, падающей без исправления.
-  Не удалять, не игнорировать и не ослаблять тесты для зелёного результата.
-  При утверждённом изменении визуального контракта обновлять проверяемый контракт
-  вместе со спецификацией, сохраняя проверки поведения.
-- Имена тестов описывают поведение, а не номера задач. Команды и критерии проверки — в DEVELOPMENT.
-- UTF-8 без BOM, LF. Не писать исходники через PowerShell `>`, `Out-File`, `Set-Content`,
-  `WriteAllLines`: использовать редактор/apply_patch или запись с явной кодировкой и LF.
-- Комментарии в коде — по-русски, описывают назначение и актуальное поведение;
-  без истории переписки и ссылок на отсутствующие файлы. Непроверенное обозначать явно.
-- Обновлять владельца контекста: архитектуру — README, сценарии — USER_GUIDE,
-  визуальные роли/контракты — DESIGN_SYSTEM и изображённые состояния визуального листа,
-  команды/процесс — DEVELOPMENT. Не копировать одно требование во все документы.
-- Для выбора проверок CMP применять профильный skill из таблицы; конкретные команды
-  и ограничения среды PhotoCombo находятся в DEVELOPMENT.
+Add a pointer when a new area is difficult to discover.
+Do not copy algorithms, signatures, token values, PR history, or test-run results here.
+Commands belong in DEVELOPMENT, visual requirements in DESIGN_SYSTEM, and implementation details in code and tests.
