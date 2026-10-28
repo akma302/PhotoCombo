@@ -1,46 +1,46 @@
-# PhotoCombo: карта для агента
+# PhotoCombo: agent map
 
-Desktop-приложение для Windows на KMP / Compose Multiplatform. Загружай только
-материалы, относящиеся к задаче; обязательного порядка чтения документов нет.
-Фактическое поведение и API ищи в коде и тестах, продуктовые изменения задаёт задача владельца.
+Windows desktop application built with KMP / Compose Multiplatform. Load only
+material relevant to the task; there is no required document reading order.
+Find actual behavior and APIs in code and tests. The owner's task defines product changes.
 
-## Где искать
+## Where to look
 
-Пути в таблице — от корня репозитория. В модуле общий код лежит в
-`src/commonMain/kotlin/com/combo`, платформенный — в `src/desktopMain`, тесты — в `src/desktopTest`.
-Названия файлов и символов ниже подходят для поиска через `rg --files` и `rg -n`.
+Table paths are relative to the repository root. Within a module, shared code is in
+`src/commonMain/kotlin/com/combo`, platform code in `src/desktopMain`, and tests in `src/desktopTest`.
+Use the file and symbol names below with `rg --files` and `rg -n`.
 
-| Нужная область | Место / точки входа |
+| Area | Location / entry points |
 |---|---|
-| Фичи и пользовательские действия | [feature/](feature/): library, combo-list, viewer, builder; `*Screen.kt`, `*ViewModel.kt`; события редактора — `BuilderContract.kt` |
-| Навигация, время жизни ViewModel, DI | [composeApp/](composeApp/src/): `AppNav.kt`, `ScreenKey.kt`, `ViewModelStoreOwners.kt`, `di/` |
-| Общая галерея и размер элементов | [ui-common/](ui-common/src/commonMain/kotlin/com/combo/ui/common/): `GalleryGrid.kt`, `PhotoGrid.kt`, `GalleryScaleState.kt`; сохранение — `GallerySettingsRepository` и `GallerySettingsStorage` |
-| Геометрия, вписывание, отрисовка | [core/render/](core/src/commonMain/kotlin/com/combo/core/render/): `Framing.kt`, `ItemFrames.kt`, `DrawItem.kt`, `DrawCombo.kt`; фон — соседний `background/` |
-| Правки, Undo и сохранение combo | [builder/](feature/builder/src/commonMain/kotlin/com/combo/feature/builder/): `draft/`, `history/`, `FinalizeCanvas.kt`, `ComboBuilderViewModel.kt`; ввод — `EditorGestures.kt`, `EditorWheel.kt` |
-| БД, файловые пути, миграции | [data/](data/src/): `Entities.kt`, `AppDb.kt`, `Migrations.kt`, `PhotoStorage.kt`; схемы — [data/schemas/](data/schemas/) |
-| Репозитории, импорт и кэш изображений | [domain/](domain/src/commonMain/kotlin/com/combo/domain/): `Repositories.kt`, `Impls.kt`, `PhotoImporter.kt`, `PhotoAssets.kt`, `image/` |
-| Компоненты и визуальные решения | [design-system/](design-system/src/); ориентиры и адреса токенов — [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md); работа с CMP UI — [cmp-ui](.agents/skills/cmp-ui/SKILL.md) |
-| Сборка, проверки, отчёты и Git | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) |
-| Модули, зависимости, версии, targets | `settings.gradle.kts`, корневой и модульные `build.gradle.kts`, `gradle/libs.versions.toml` |
-| Архитектурные ограничения | `verifyModuleGraph` в корневом Gradle; `ArchitectureRulesTest` и `SourceHygieneTest` в composeApp |
-| Фикстуры и UI-тестовый хост | [test-support/](test-support/src/desktopMain/); сценарии — тесты модуля владельца |
-| Бизнес-лимиты и пороги | [Const.kt](core/src/commonMain/kotlin/com/combo/Const.kt) |
+| Features and user actions | [feature/](feature/): library, combo-list, viewer, builder; `*Screen.kt`, `*ViewModel.kt`; editor events in `BuilderContract.kt` |
+| Navigation, ViewModel lifetime, DI | [composeApp/](composeApp/src/): `AppNav.kt`, `ScreenKey.kt`, `ViewModelStoreOwners.kt`, `di/` |
+| Shared gallery and item sizing | [ui-common/](ui-common/src/commonMain/kotlin/com/combo/ui/common/): `GalleryGrid.kt`, `PhotoGrid.kt`, `GalleryScaleState.kt`; persistence in `GallerySettingsRepository` and `GallerySettingsStorage` |
+| Geometry, framing, rendering | [core/render/](core/src/commonMain/kotlin/com/combo/core/render/): `Framing.kt`, `ItemFrames.kt`, `DrawItem.kt`, `DrawCombo.kt`; backgrounds in the adjacent `background/` directory |
+| Editing, Undo, combo saving | [builder/](feature/builder/src/commonMain/kotlin/com/combo/feature/builder/): `draft/`, `history/`, `FinalizeCanvas.kt`, `ComboBuilderViewModel.kt`; input in `EditorGestures.kt`, `EditorWheel.kt` |
+| Database, file paths, migrations | [data/](data/src/): `Entities.kt`, `AppDb.kt`, `Migrations.kt`, `PhotoStorage.kt`; schemas in [data/schemas/](data/schemas/) |
+| Repositories, import, image cache | [domain/](domain/src/commonMain/kotlin/com/combo/domain/): `Repositories.kt`, `Impls.kt`, `PhotoImporter.kt`, `PhotoAssets.kt`, `image/` |
+| Components and visual decisions | [design-system/](design-system/src/); visual requirements and token locations in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md); CMP UI work in [cmp-ui](.agents/skills/cmp-ui/SKILL.md) |
+| Build, verification, reports, Git | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) |
+| Modules, dependencies, versions, targets | `settings.gradle.kts`, root and module `build.gradle.kts`, `gradle/libs.versions.toml` |
+| Architecture constraints | `verifyModuleGraph` in root Gradle; `ArchitectureRulesTest` and `SourceHygieneTest` in composeApp |
+| Fixtures and UI test host | [test-support/](test-support/src/desktopMain/); scenarios in the owning module's tests |
+| Business limits and thresholds | [Const.kt](core/src/commonMain/kotlin/com/combo/Const.kt) |
 
-## Ограничения, которые нужно сохранить
+## Constraints to preserve
 
-- `commonMain` не импортирует JVM/Android/Skia API; адаптеры ОС находятся в `desktopMain`.
-  Фичи независимы друг от друга, `ui-common` не импортирует фичи, test-support доступен только тестам.
-  Точный граф проверяется кодом; не ослаблять проверки ради новой зависимости.
-- Оригиналы фото не изменяются. Раскладка пользовательских файлов и сохранённые enum-имена
-  совместимы с существующими данными; изменения схемы требуют миграции и её теста.
-  Для тестов использовать временные каталоги вместо личной библиотеки.
-- Редактор и превью используют единый рендер из core. Сохранение финализирует отдельный
-  снимок: не меняет рабочий draft и Undo даже при сбое записи. Отмена жеста не создаёт checkpoint.
-  Эти контракты искать в тестах `ItemFrameParityTest`, `DraftMapperTest`, `*HistoryTest`, `*Finalize*Test`.
-- Исходники: UTF-8 без BOM, LF. Комментарии по-русски, о назначении кода.
+- `commonMain` must not import JVM/Android/Skia APIs; OS adapters belong in `desktopMain`.
+  Features are independent, `ui-common` must not import features, and test-support is test-only.
+  Code enforces the exact graph; do not weaken checks to accommodate a new dependency.
+- Original photos remain unchanged. User file layout and persisted enum names must remain
+  compatible with existing data; schema changes require a migration and its test.
+  Use temporary directories for tests rather than the personal library.
+- The editor and previews share the core renderer. Saving finalizes a separate snapshot:
+  it must not modify the working draft or Undo, even if writing fails. Gesture cancellation creates no checkpoint.
+  Find these contracts in `ItemFrameParityTest`, `DraftMapperTest`, `*HistoryTest`, `*Finalize*Test`.
+- Source files: UTF-8 without BOM, LF. Write comments in English and explain the code's purpose.
 
-## Как поддерживать эту карту
+## Maintaining this map
 
-Добавляй указатель при появлении новой области, которую трудно обнаружить.
-Не копируй сюда алгоритмы, сигнатуры, значения токенов, историю PR и результаты прогонов.
-Команды принадлежат DEVELOPMENT, визуальные требования — DESIGN_SYSTEM; детали реализации — коду и тестам.
+Add a pointer when a new area is difficult to discover.
+Do not copy algorithms, signatures, token values, PR history, or test-run results here.
+Commands belong in DEVELOPMENT, visual requirements in DESIGN_SYSTEM, and implementation details in code and tests.

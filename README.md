@@ -1,15 +1,15 @@
 # PhotoCombo
 
-Локальная фотобиблиотека и неразрушающий редактор коллажей для Windows,
-на Kotlin Multiplatform и Compose Multiplatform. Фото импортируются в библиотеку;
-combo хранит конфигурацию рамок и исходников, которую можно снова открыть и отредактировать.
+A local photo library and nondestructive collage editor for Windows,
+built with Kotlin Multiplatform and Compose Multiplatform. Photos are imported into the library;
+a combo stores a configuration of frames and source photos that can be reopened and edited.
 
 ```powershell
 .\gradlew.bat :composeApp:run
 ```
 
-- [Карта проекта](AGENTS.md) — где искать фичи, данные, рендер, UI и тесты.
-- [Разработка](docs/DEVELOPMENT.md) — окружение, команды проверки и работа с Git.
-- [Дизайн-система](docs/DESIGN_SYSTEM.md) — визуальные требования и точки входа в компоненты.
+- [Project map](AGENTS.md): where to find features, data, rendering, UI, and tests.
+- [Development](docs/DEVELOPMENT.md): environment, verification commands, and Git conventions.
+- [Design system](docs/DESIGN_SYSTEM.md): visual requirements and component entry points.
 
-Версии инструментов и зависимостей задают Gradle-конфигурации и `gradle/libs.versions.toml`.
+Tool and dependency versions are defined by Gradle configuration and `gradle/libs.versions.toml`.

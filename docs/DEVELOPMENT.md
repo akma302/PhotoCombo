@@ -1,8 +1,8 @@
-# Разработка PhotoCombo
+# PhotoCombo development
 
-## Запуск и проверка
+## Running and verifying
 
-Команды PowerShell из корня проекта:
+PowerShell commands from the repository root:
 
 ```powershell
 .\gradlew.bat :composeApp:run
@@ -12,33 +12,32 @@
 .\gradlew.bat verifyModuleGraph --offline --console=plain
 ```
 
-`--offline` подходит для заполненного кэша; первая сборка может потребовать сеть.
-Версии launcher/wrapper/daemon — в `gradle/`, зависимости — в каталоге версий.
-При проблемах с окружением: `.\gradlew.bat --version` и `gradle/gradle-daemon-jvm.properties`.
+`--offline` requires a populated cache; the first build may need network access.
+Launcher/wrapper/daemon configuration is in `gradle/`; dependencies are in the version catalog.
+For environment issues, inspect `.\gradlew.bat --version` and `gradle/gradle-daemon-jvm.properties`.
 
-`run` открывает настоящие данные в `%APPDATA%\PhotoCombo`; галерея компонентов не использует БД.
-Личные фотографии для тестов нужны только по явному выбору владельца:
-`RealPhotoImportTest` без `-Prealphotos=<каталог>` пропускается.
+`run` opens real user data in `%APPDATA%\PhotoCombo`; the component gallery does not use the database.
+Tests use personal photos only when the owner explicitly selects them:
+`RealPhotoImportTest` is skipped without `-Prealphotos=<directory>`.
 
-## Что проверять и где результат
+## Verification and reports
 
-- Логика: `desktopTest` модуля владельца; `--tests` задаётся конкретной задаче модуля.
-  Корневой `check` запускает тесты всех модулей и проверку графа; `:composeApp:desktopTest` — только интеграция.
-- Перед публикацией кода выполнить полный `check`. Повторять успешный прогон без изменений
-  или новых причин не требуется. Для документации достаточно проверки ссылок, путей, команд и `git diff --check`.
-- Общий отчёт: `build/reports/tests/desktop/index.html`; XML: `<модуль>/build/test-results/desktopTest/`.
-  Снимки CMP: `<модуль>/build/ui-previews/`. Фикстуры и фейки — в test-support.
-- Для UI выбирать проверки по риску изменения: [cmp-ui](../.agents/skills/cmp-ui/SKILL.md).
-  Сборка, автоматические действия, просмотр PNG и ручная проверка окна — разные свидетельства.
+- Logic: run the owning module's `desktopTest`; apply `--tests` to a specific module task.
+  Root `check` runs all modules' tests and graph verification; `:composeApp:desktopTest` covers integration only.
+- Run the full `check` before publishing code. A successful run needs no repetition without changes
+  or a new reason. Documentation changes require link, path, command, and `git diff --check` validation.
+- Combined report: `build/reports/tests/desktop/index.html`; XML: `<module>/build/test-results/desktopTest/`.
+  CMP screenshots: `<module>/build/ui-previews/`. Fixtures and fakes are in test-support.
+- Choose UI checks according to the change's risks: [cmp-ui](../.agents/skills/cmp-ui/SKILL.md).
+  Builds, automated interactions, PNG inspection, and manual window interaction provide different evidence.
 
 ## Git
 
-- Проверить рабочую копию и базу задачи. Ветка: `feature_<id>_<name>` или `bug_<id>_<name>`;
-  свободный номер искать среди существующих веток.
-- Независимые задачи — отдельные PR в main. Общая ветка для зависимых частей — при согласовании владельцем.
-  Делегирование требует авторизации; если оно согласовано, отдельные worktree,
-  не более двух параллельных субагентов, GPT-6.1 Sol / Medium.
-- Проверенную работу закоммитить, опубликовать ветку и открыть PR при доступности GitHub.
-  Описание PR содержит итоговое поведение, проверки и ограничения.
-- После сообщения о merge перейти на чистый main и выполнить `git pull --ff-only`.
-  Локальные ветки автоматически не удалять.
+- Check the working tree and task base. Branch names: `feature_<id>_<name>` or `bug_<id>_<name>`;
+  find an unused ID among existing branches.
+- Independent tasks use separate PRs into main. A shared branch for dependent parts requires owner agreement.
+  Delegation requires authorization; when agreed, use separate worktrees.
+- Commit verified work, push the branch, and open a PR when GitHub is available.
+  The PR description covers resulting behavior, verification, and limitations.
+- After merge confirmation, switch to a clean main and run `git pull --ff-only`.
+  Do not automatically delete local branches.
