@@ -26,11 +26,19 @@ Use the file and symbol names below with `rg --files` and `rg -n`.
 | Fixtures and UI test host | [test-support/](test-support/src/desktopMain/); scenarios in the owning module's tests |
 | Business limits and thresholds | [Const.kt](core/src/commonMain/kotlin/com/combo/Const.kt) |
 
+## Architecture constraints
+
+- Dependency direction: `core ← data ← domain ← feature ← composeApp` (an arrow points
+  toward a dependency). Features may also depend on `ui-common` and `design-system`.
+- Features must not depend on each other; `ui-common` must not import features.
+  `design-system` has no production project dependencies; its internal direction is
+  `tokens ← theme ← primitives ← components`, with icons independent. `test-support` is test-only.
+- `commonMain` must not import JVM/Android/Skia APIs; OS adapters belong in `desktopMain`.
+  The exact module graph is enforced by `verifyModuleGraph` and package boundaries by
+  `ArchitectureRulesTest`; do not weaken either check to accommodate a dependency.
+
 ## Constraints to preserve
 
-- `commonMain` must not import JVM/Android/Skia APIs; OS adapters belong in `desktopMain`.
-  Features are independent, `ui-common` must not import features, and test-support is test-only.
-  Code enforces the exact graph; do not weaken checks to accommodate a new dependency.
 - Original photos remain unchanged. User file layout and persisted enum names must remain
   compatible with existing data; schema changes require a migration and its test.
   Use temporary directories for tests rather than the personal library.
