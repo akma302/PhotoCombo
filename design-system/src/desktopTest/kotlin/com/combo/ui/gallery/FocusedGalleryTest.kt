@@ -11,6 +11,7 @@ class FocusedGalleryTest {
     @Test fun selectingExamplesShowsOnlySelectedComponentAndKeepsItInteractive() = runSkikoComposeUiTest(Size(800f, 700f)) {
         setContent { PcDesktopTheme { DesignSystemGallery() } }
         onNodeWithTag("gallery_primary").assertExists()
+        onNodeWithText("Select a component for a focused view").assertIsDisplayed()
         fun select(label: String) {
             onNodeWithContentDescription("Gallery component").performClick()
             onNodeWithText(label).performScrollTo().performClick()

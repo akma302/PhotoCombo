@@ -52,10 +52,14 @@ fun DesignSystemGallery(extraExamples: List<GalleryExample> = emptyList()) {
     val active = selected.takeIf { it in names } ?: "All"
     PcSurface(Modifier.fillMaxSize(), color = PcTheme.colors.app) {
         Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(PcTheme.spacing.md), horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.md)) {
-                PcText("Component", style = PcTheme.typography.label)
-                PcSelect(active, names.map { PcOption(it, it) }, { selected = it }, "Gallery component",
-                    Modifier.testTag("gallery_component_selector"))
+            Column(Modifier.fillMaxWidth().padding(PcTheme.spacing.md), verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.xs)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.md)) {
+                    PcText("Component", style = PcTheme.typography.label)
+                    PcSelect(active, names.map { PcOption(it, it) }, { selected = it }, "Gallery component",
+                        Modifier.testTag("gallery_component_selector"))
+                }
+                PcText("Select a component for a focused view", color = PcTheme.colors.textSecondary,
+                    style = PcTheme.typography.caption)
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 if (active == "All") OverviewGallery()

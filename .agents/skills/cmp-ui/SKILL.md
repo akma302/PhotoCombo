@@ -12,6 +12,21 @@ description: "Modify and verify PhotoCombo's Compose UI: shared components, inpu
 - Shared grid, thumbnails, and input hosts: `ui-common/src/`.
 - Test host and fakes: `test-support/src/desktopMain/`; commands and reports: [DEVELOPMENT](../../../docs/DEVELOPMENT.md).
 
+## Focused gallery through Hot Reload MCP
+
+Launch the gallery with Hot Reload using the command in DEVELOPMENT; the regular
+gallery task does not connect it to Hot Reload. In a trusted PhotoCombo session,
+use `photocombo-hot-reload`: check `status`, then read `get_semantic_tree`.
+Open `Gallery component` (`gallery_component_selector`), find and select the named
+component, then read the tree again before acting. Popups may produce multiple tree
+roots; scroll the options if needed. Re-read the tree after each UI change and use
+current node IDs. Select `All` to return to the overview.
+
+Use the focused tree and supported semantic actions for behavior; take a screenshot
+when visual appearance matters. Semantic clicks do not verify pointer behavior.
+If the MCP server or a relevant action is unavailable, report the gap and use the
+existing desktop tests or gallery rather than claiming an MCP check.
+
 ## Implementation considerations
 
 A component's public contract includes caller-owned state and callbacks, a root Modifier,
