@@ -63,7 +63,7 @@ compose.desktop {
 tasks.register<JavaExec>("runDesignSystemGallery") {
     group = "application"
     description = "Open the live PhotoCombo component gallery"
-    mainClass.set("com.combo.ui.gallery.DesignSystemGalleryKt")
+    mainClass.set("com.combo.ui.GalleryLauncherKt")
     classpath(kotlin.targets["desktop"].compilations["main"].output.allOutputs)
     classpath(configurations["desktopRuntimeClasspath"])
 }

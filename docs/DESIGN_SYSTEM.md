@@ -14,7 +14,7 @@ Read numerical values and public APIs in source; do not duplicate them in docume
 | Icons | `icons/PcIcons.kt` |
 
 Desktop fonts and dialogs: `design-system/src/desktopMain/kotlin/com/combo/ui/common/`.
-Live examples: `design-system/src/desktopMain/kotlin/com/combo/ui/gallery/DesignSystemGallery.kt`.
+Live examples: `design-system/src/desktopMain/kotlin/com/combo/ui/gallery/DesignSystemGallery.kt` and `ComponentExamples.kt`; the shared grid example and launcher are in `composeApp/src/desktopMain/kotlin/com/combo/ui/GalleryLauncher.kt`.
 Contract and state tests: `design-system/src/desktopTest/`.
 Launch commands and screenshot locations: [DEVELOPMENT](DEVELOPMENT.md).
 
