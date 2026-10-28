@@ -21,23 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
 import com.combo.ui.common.PcDesktopFonts
-import com.combo.ui.common.PcDesktopTheme
 import com.combo.ui.common.designsystem.components.*
 import com.combo.ui.common.designsystem.icons.PcIcons
 import com.combo.ui.common.designsystem.primitives.*
 import com.combo.ui.common.designsystem.theme.PcTheme
-
-/** Живая галерея использует те же компоненты, которые импортируют экраны приложения. */
-fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "PhotoCombo · UI components",
-        state = rememberWindowState(width = 960.dp, height = 960.dp)) {
-        PcDesktopTheme { DesignSystemGallery() }
-    }
-}
 
 data class GalleryExample(val name: String, val content: @Composable () -> Unit)
 
