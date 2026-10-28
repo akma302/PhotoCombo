@@ -9,6 +9,7 @@ build/
 
 # Machine-specific configuration and signing credentials
 local.properties
+.codex/config.toml
 *.jks
 *.keystore
 keystore.properties

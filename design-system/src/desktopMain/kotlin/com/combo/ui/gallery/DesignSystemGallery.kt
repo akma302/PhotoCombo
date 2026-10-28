@@ -21,26 +21,44 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
 import com.combo.ui.common.PcDesktopFonts
-import com.combo.ui.common.PcDesktopTheme
 import com.combo.ui.common.designsystem.components.*
 import com.combo.ui.common.designsystem.icons.PcIcons
 import com.combo.ui.common.designsystem.primitives.*
 import com.combo.ui.common.designsystem.theme.PcTheme
 
-/** Живая галерея использует те же компоненты, которые импортируют экраны приложения. */
-fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "PhotoCombo · UI components",
-        state = rememberWindowState(width = 960.dp, height = 960.dp)) {
-        PcDesktopTheme { DesignSystemGallery() }
+data class GalleryExample(val name: String, val content: @Composable () -> Unit)
+
+private val componentNames = listOf("Button", "Icon button", "Checkbox", "Text field", "Slider",
+    "Segmented control", "Select", "Tooltip", "Dialog", "Action group", "Text", "Surface", "Divider", "Icons")
+
+@Composable
+fun DesignSystemGallery(extraExamples: List<GalleryExample> = emptyList()) {
+    var selected by remember { mutableStateOf("All") }
+    val names = listOf("All") + componentNames + extraExamples.map { it.name }
+    require(names.distinct().size == names.size) { "Gallery example names must be unique" }
+    val active = selected.takeIf { it in names } ?: "All"
+    PcSurface(Modifier.fillMaxSize(), color = PcTheme.colors.app) {
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxWidth().padding(PcTheme.spacing.md), verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.xs)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.md)) {
+                    PcText("Component", style = PcTheme.typography.label)
+                    PcSelect(active, names.map { PcOption(it, it) }, { selected = it }, "Gallery component",
+                        Modifier.testTag("gallery_component_selector"))
+                }
+                PcText("Select a component for a focused view", color = PcTheme.colors.textSecondary,
+                    style = PcTheme.typography.caption)
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                if (active == "All") OverviewGallery()
+                else extraExamples.firstOrNull { it.name == active }?.content?.invoke() ?: ComponentExample(active)
+            }
+        }
     }
 }
 
 @Composable
-fun DesignSystemGallery() {
+private fun OverviewGallery() {
     var sliderValue by remember { mutableStateOf(100f) }
     var checked by remember { mutableStateOf(true) }
     var mode by remember { mutableStateOf("Frame") }

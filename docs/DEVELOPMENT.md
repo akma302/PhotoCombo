@@ -17,6 +17,18 @@ Launcher/wrapper/daemon configuration is in `gradle/`; dependencies are in the v
 For environment issues, inspect `.\gradlew.bat --version` and `gradle/gradle-daemon-jvm.properties`.
 
 `run` opens real user data in `%APPDATA%\PhotoCombo`; the component gallery does not use the database.
+The gallery's Component selector switches between the overview and focused interactive examples;
+shared GalleryGrid uses synthetic data. For Hot Reload with the JetBrains Runtime bundled with
+Android Studio on Windows (adjust the path if needed):
+
+```powershell
+.\gradlew.bat '-Dorg.gradle.java.installations.paths=C:\Program Files\Android\Android Studio\jbr' :composeApp:hotRunDesktop --mainClass=com.combo.ui.GalleryLauncherKt --no-auto
+```
+
+The project-scoped MCP server can use `:composeApp:hotMcpServerDesktop --offline --quiet --console=plain`
+from the project directory; Codex must trust the project configuration to load it. See the
+[Codex MCP documentation](https://developers.openai.com/codex/mcp).
+
 Tests use personal photos only when the owner explicitly selects them:
 `RealPhotoImportTest` is skipped without `-Prealphotos=<directory>`.
 

@@ -12,6 +12,14 @@ description: "Modify and verify PhotoCombo's Compose UI: shared components, inpu
 - Shared grid, thumbnails, and input hosts: `ui-common/src/`.
 - Test host and fakes: `test-support/src/desktopMain/`; commands and reports: [DEVELOPMENT](../../../docs/DEVELOPMENT.md).
 
+## Focused gallery through Hot Reload MCP
+
+Launch the Hot Reload gallery using [DEVELOPMENT](../../../docs/DEVELOPMENT.md).
+Select a component via `Gallery component` (`gallery_component_selector`); `All`
+restores the overview. Use `photocombo-hot-reload` and `get_semantic_tree` to inspect
+and act; refresh node IDs after UI changes. Popups may expose multiple tree roots.
+If MCP or an action is unavailable, use desktop tests or the gallery and report the gap.
+
 ## Implementation considerations
 
 A component's public contract includes caller-owned state and callbacks, a root Modifier,
