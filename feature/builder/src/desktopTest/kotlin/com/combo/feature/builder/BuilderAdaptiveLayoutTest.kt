@@ -57,6 +57,29 @@ import java.io.File
 /** Реальное изменение ширины одной сцены: геометрия, диалоги и управление холстом. */
 @OptIn(ExperimentalTestApi::class)
 class BuilderAdaptiveLayoutTest : UiTestBase() {
+    @Test
+    fun selectedPhotoSizeFlowFollowsActualEditorEvents() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        waitUntil { vm.selectedPhotoSize.value != null }
+        val first = vm.state.value.items.first()
+        val second = vm.state.value.items.last()
+        runOnIdle { vm.onEvent(BuilderEvent.ItemTapped(first.id)) }
+        waitUntil { vm.selectedPhotoSize.value?.frameId == first.id }
+        val before = checkNotNull(vm.selectedPhotoSize.value)
+        runOnIdle {
+            vm.onEvent(BuilderEvent.ContentZoom(first.id, 1f, GesturePhase.START))
+            vm.onEvent(BuilderEvent.ContentZoom(first.id, 1.1f, GesturePhase.CHANGE))
+            vm.onEvent(BuilderEvent.ContentZoom(first.id, 1f, GesturePhase.END))
+        }
+        waitUntil { vm.selectedPhotoSize.value?.scaledWidth != before.scaledWidth }
+        runOnIdle { vm.onEvent(BuilderEvent.ItemTapped(second.id)) }
+        waitUntil { vm.selectedPhotoSize.value?.frameId == second.id }
+        assertEquals(second.photoId, vm.selectedPhotoSize.value?.photoId)
+        runOnIdle { vm.onEvent(BuilderEvent.CanvasTapped) }
+        waitUntil { vm.selectedPhotoSize.value == null }
+    }
+
     private val repo = FakePhotoRepository((1..3).map { photoEntity("p$it") })
     private var nextId = 0
     private var width by mutableStateOf(1200.dp)

@@ -20,7 +20,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.combo.core.model.FramingMode
-import com.combo.core.render.effectiveFraming
 import com.combo.feature.builder.draft.FitPreset
 import com.combo.ui.common.designsystem.components.PcButton
 import com.combo.ui.common.designsystem.components.PcCheckbox
@@ -31,7 +30,6 @@ import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.primitives.PcDivider
 import com.combo.ui.common.designsystem.theme.LocalPcContentColor
 import com.combo.ui.common.designsystem.theme.PcTheme
-import kotlin.math.roundToInt
 
 /** Одни и те же настройки рамки переносятся вправо или вниз без дублирования действий. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -40,6 +38,7 @@ internal fun BuilderInspector(
     state: BuilderUiState,
     wide: Boolean,
     onEvent: (BuilderEvent) -> Unit,
+    photoSize: PhotoSize? = null,
     onReplace: () -> Unit,
 ) {
     val item = state.items.firstOrNull { it.id == state.selectedItemId }
@@ -65,15 +64,7 @@ internal fun BuilderInspector(
             }
             BuilderIconButton(PcIcons.Close, "Deselect frame", { onEvent(BuilderEvent.CanvasTapped) }, enabled = enabled)
         }
-        if (photo != null && photo.width > 0 && photo.height > 0) {
-            val scale = effectiveFraming(item.framingMode, item.border(), photo.width, photo.height,
-                item.contentScale, item.panX, item.panY).scale
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                InspectorLabel("Photo size · ${(scale * 100).roundToInt()}%")
-                PcText("${(photo.width * scale).roundToInt()} × ${(photo.height * scale).roundToInt()} px")
-                InspectorLabel("Original ${photo.width} × ${photo.height} px")
-            }
-        }
+        if (photoSize?.frameId == item.id && photoSize.photoId == item.photoId) PhotoSizeInfo(photoSize)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(if (wide) 19.dp else 12.dp)) {
             Column(if (wide) Modifier.fillMaxWidth() else Modifier.width(200.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (wide) InspectorLabel("Mouse edits")

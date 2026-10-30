@@ -42,6 +42,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -71,6 +74,9 @@ class ComboBuilderViewModel(
 
     private val _state = MutableStateFlow(BuilderUiState())
     val state: StateFlow<BuilderUiState> = _state.asStateFlow()
+    val selectedPhotoSize: StateFlow<PhotoSize?> = state
+        .map { it.selectedPhotoSize() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Метаданные и битмапы живут в общем кэше; размеры и debounce — политика этого экрана. */
     private val assets = PhotoAssets(photoRepo, bitmapSource)

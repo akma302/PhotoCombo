@@ -39,7 +39,7 @@ class BuilderInspectorCompositionTest {
             "p1" to photoEntity("p1").copy(width = 800, height = 600),
             "p2" to photoEntity("p2").copy(width = 1200, height = 600),
         )))
-        setContent { PcDesktopTheme { BuilderInspector(current, wide = true, onEvent = {}, onReplace = {}) } }
+        setContent { PcDesktopTheme { BuilderInspector(current, wide = true, onEvent = {}, photoSize = current.selectedPhotoSize(), onReplace = {}) } }
         onNodeWithText("1600 × 1200 px").assertIsDisplayed()
         onNodeWithText("Original 800 × 600 px").assertIsDisplayed()
         onNodeWithText("Photo size · 200%").assertIsDisplayed()
