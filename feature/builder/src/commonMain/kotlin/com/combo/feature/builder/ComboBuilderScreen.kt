@@ -40,6 +40,7 @@ fun ComboBuilderScreen(
     vm: ComboBuilderViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsState()
+    val photoSize by vm.selectedPhotoSize.collectAsState()
     val bitmaps by vm.bitmaps.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     var showExitDialog by remember { mutableStateOf(false) }
@@ -68,7 +69,7 @@ fun ComboBuilderScreen(
                             inspectorExpanded = inspectorExpanded,
                             modifier = Modifier.fillMaxSize(),
                             canvas = { EditorViewport(vm, state, bitmaps, Modifier.padding(if (wide) 32.dp else 20.dp)) },
-                            inspector = { BuilderInspector(state, wide, vm::onEvent) { pickMode = BuilderPickMode.REPLACE } },
+                            inspector = { BuilderInspector(state, wide, vm::onEvent, photoSize) { pickMode = BuilderPickMode.REPLACE } },
                         )
                     }
                     SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter)) { message ->

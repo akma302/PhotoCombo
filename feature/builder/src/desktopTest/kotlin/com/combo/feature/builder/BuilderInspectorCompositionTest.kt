@@ -3,6 +3,9 @@ package com.combo.feature.builder
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -17,6 +20,8 @@ import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.combo.core.render.ItemDraft
+import com.combo.core.model.FramingMode
+import com.combo.ui.photoEntity
 import com.combo.feature.builder.draft.FitPreset
 import com.combo.ui.common.PcDesktopTheme
 import org.junit.Assert.assertEquals
@@ -26,6 +31,26 @@ import org.junit.Test
 /** Геометрия групп инспектора и однократные команды без второго источника состояния. */
 @OptIn(ExperimentalTestApi::class)
 class BuilderInspectorCompositionTest {
+    @Test
+    fun photoSizeTracksSelectedFrameAndEffectiveFit() = runSkikoComposeUiTest(Size(400f, 800f)) {
+        val first = ItemDraft("first", 0, 0f, 0f, 400f, 300f, photoId = "p1", contentScale = 2f, panX = 0f, panY = 0f)
+        val second = ItemDraft("second", 1, 0f, 0f, 300f, 300f, photoId = "p2", contentScale = 3f, panX = 0f, panY = 0f, framingMode = FramingMode.FIT)
+        var current by mutableStateOf(BuilderUiState(items = listOf(first, second), selectedItemId = "first", photos = mapOf(
+            "p1" to photoEntity("p1").copy(width = 800, height = 600),
+            "p2" to photoEntity("p2").copy(width = 1200, height = 600),
+        )))
+        setContent { PcDesktopTheme { BuilderInspector(current, wide = true, onEvent = {}, photoSize = current.selectedPhotoSize(), onReplace = {}) } }
+        onNodeWithText("1600 × 1200 px").assertIsDisplayed()
+        onNodeWithText("Original 800 × 600 px").assertIsDisplayed()
+        onNodeWithText("Photo size · 200%").assertIsDisplayed()
+        runOnIdle { current = current.copy(selectedItemId = "second") }
+        onNodeWithText("300 × 150 px").assertIsDisplayed()
+        onNodeWithText("Photo size · 25%").assertIsDisplayed()
+        onNodeWithText("1600 × 1200 px").assertDoesNotExist()
+        runOnIdle { current = current.copy(selectedItemId = null) }
+        onNodeWithText("300 × 150 px").assertDoesNotExist()
+    }
+
     private val state = BuilderUiState(
         items = (0..2).map { index ->
             ItemDraft("frame-$index", index, 0f, 0f, 100f, 100f,

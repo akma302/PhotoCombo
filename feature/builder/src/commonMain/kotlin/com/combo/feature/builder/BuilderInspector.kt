@@ -38,6 +38,7 @@ internal fun BuilderInspector(
     state: BuilderUiState,
     wide: Boolean,
     onEvent: (BuilderEvent) -> Unit,
+    photoSize: PhotoSize? = null,
     onReplace: () -> Unit,
 ) {
     val item = state.items.firstOrNull { it.id == state.selectedItemId }
@@ -63,6 +64,7 @@ internal fun BuilderInspector(
             }
             BuilderIconButton(PcIcons.Close, "Deselect frame", { onEvent(BuilderEvent.CanvasTapped) }, enabled = enabled)
         }
+        if (photoSize?.frameId == item.id && photoSize.photoId == item.photoId) PhotoSizeInfo(photoSize)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(if (wide) 19.dp else 12.dp)) {
             Column(if (wide) Modifier.fillMaxWidth() else Modifier.width(200.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (wide) InspectorLabel("Mouse edits")
