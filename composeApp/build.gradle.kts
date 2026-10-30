@@ -36,6 +36,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("org.jetbrains.runtime:jbr-api:1.9.0")
                 // Main-диспетчер корутин на desktop (нужен viewModelScope).
                 implementation(libs.kotlinx.coroutines.swing)
             }
@@ -66,4 +67,14 @@ tasks.register<JavaExec>("runDesignSystemGallery") {
     mainClass.set("com.combo.ui.GalleryLauncherKt")
     classpath(kotlin.targets["desktop"].compilations["main"].output.allOutputs)
     classpath(configurations["desktopRuntimeClasspath"])
+}
+
+
+// Isolated window preview: no database or user library.
+tasks.register<JavaExec>("runTitleBarPreview") {
+    group = "application"
+    mainClass.set("com.combo.ui.TitleBarPreviewKt")
+    classpath(kotlin.targets["desktop"].compilations["main"].output.allOutputs)
+    classpath(configurations["desktopRuntimeClasspath"])
+    providers.gradleProperty("titlebarJava").orNull?.let { setExecutable(it) }
 }

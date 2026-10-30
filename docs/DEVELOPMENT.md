@@ -53,3 +53,19 @@ Tests use personal photos only when the owner explicitly selects them:
   The PR description covers resulting behavior, verification, and limitations.
 - After merge confirmation, switch to a clean main and run `git pull --ff-only`.
   Do not automatically delete local branches.
+
+## Experimental JBR title bar
+
+The isolated preview does not open the personal library:
+
+```powershell
+.\gradlew.bat :composeApp:runTitleBarPreview '-PtitlebarJava=C:\Program Files\Android\Android Studio\jbr\bin\java.exe' --offline --console=plain
+```
+
+This is an experiment, not enabled in the main application. It uses the public JetBrains
+Runtime API with a normal decorated window as fallback. On the tested JBR 25.0.4 b508.27,
+the service reported successful installation, but the preview did not show the intended
+Compose content in the inspected window. Native dragging, resizing, window menu, DPI, and
+button hit testing therefore remain unverified. The public forceHitTest API distinguishes
+client and title bar areas; it does not expose a maximize-button hit-test role, so Windows
+Snap Layouts for the custom maximize button is not established.
