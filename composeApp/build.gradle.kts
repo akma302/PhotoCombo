@@ -36,6 +36,8 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("net.java.dev.jna:jna:5.6.0")
+                implementation("net.java.dev.jna:jna-platform:5.6.0")
                 // Main-диспетчер корутин на desktop (нужен viewModelScope).
                 implementation(libs.kotlinx.coroutines.swing)
             }
@@ -64,6 +66,14 @@ tasks.register<JavaExec>("runDesignSystemGallery") {
     group = "application"
     description = "Open the live PhotoCombo component gallery"
     mainClass.set("com.combo.ui.GalleryLauncherKt")
+    classpath(kotlin.targets["desktop"].compilations["main"].output.allOutputs)
+    classpath(configurations["desktopRuntimeClasspath"])
+}
+
+// Isolated Windows chrome experiment; does not initialize the application or its data.
+tasks.register<JavaExec>("runWin32TitleBarExperiment") {
+    group = "application"
+    mainClass.set("com.combo.ui.Win32TitleBarExperimentKt")
     classpath(kotlin.targets["desktop"].compilations["main"].output.allOutputs)
     classpath(configurations["desktopRuntimeClasspath"])
 }
