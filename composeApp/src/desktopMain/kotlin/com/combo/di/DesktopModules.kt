@@ -1,8 +1,10 @@
 package com.combo.di
 
 import com.combo.core.image.DesktopImagePicker
+import com.combo.core.image.DesktopPngOutput
 import com.combo.core.image.ImageCodec
 import com.combo.core.image.ImagePicker
+import com.combo.core.image.PngOutput
 import com.combo.core.image.SkiaImageCodec
 import com.combo.core.platform.AppDirs
 import com.combo.core.platform.DesktopAppDirs
@@ -41,6 +43,7 @@ fun desktopModule(dataDir: Path = defaultAppDataDir().toOkioPath()): Module = mo
     single<Logger> { DesktopLogger() }
     single<ImageCodec> { SkiaImageCodec(files = get(), logger = get()) }
     single<ImagePicker> { DesktopImagePicker(files = get()) }
+    single<PngOutput> { DesktopPngOutput(codec = get(), dirs = get()) }
     single<CoroutineDispatcher> { Dispatchers.IO }
     single<WallClock> { WallClock { System.currentTimeMillis() } }
     single<IdGenerator> { IdGenerator { UUID.randomUUID().toString() } }

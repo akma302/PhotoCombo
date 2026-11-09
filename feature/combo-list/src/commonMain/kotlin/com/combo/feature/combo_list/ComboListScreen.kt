@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.combo.core.render.CanvasTransform
@@ -42,8 +44,10 @@ fun ComboListScreen(
 ) {
     val state by vm.state.collectAsState()
     val galleryScale by vm.galleryScale.state.collectAsState()
-    ComboListContent(state.combos, onOpenBuilder, onCreateCombo, vm::delete,
+    ComboListContent(
+        state.combos, onOpenBuilder, onCreateCombo, vm::delete, vm::export,
         galleryScale, vm.galleryScale::change, vm.galleryScale::commit, vm.galleryScale::reset,
+        state.exportingComboId, state.exportMessage,
     ) { combo, modifier ->
         StaticPreview(vm, combo, modifier)
     }
@@ -56,10 +60,13 @@ internal fun ComboListContent(
     onOpenBuilder: (String) -> Unit,
     onCreateCombo: () -> Unit,
     onDelete: (String) -> Unit,
+    onExport: (String) -> Unit,
     galleryScale: GalleryScaleUiState = GalleryScaleUiState(loaded = true),
     onScaleChange: (Float) -> Unit = {},
     onScaleFinished: () -> Unit = {},
     onScaleReset: () -> Unit = {},
+    exportingComboId: String? = null,
+    exportMessage: String? = null,
     preview: @Composable (ComboWithItems, Modifier) -> Unit,
 ) {
     PcSurface(Modifier.fillMaxSize().testTag("combo_list"), color = PcTheme.colors.app) {
@@ -76,6 +83,14 @@ internal fun ComboListContent(
                             variant = PcButtonVariant.Primary, icon = PcIcons.Add)
                     }
                     GallerySizeControl(galleryScale, onScaleChange, onScaleFinished, onScaleReset)
+                    val status = if (exportingComboId != null) "Exporting PNG…" else exportMessage
+                    if (status != null) {
+                        PcText(
+                            status,
+                            Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            style = PcTheme.typography.label,
+                        )
+                    }
                 }
             }
             PcDivider()
@@ -110,7 +125,7 @@ internal fun ComboListContent(
                                 ) {
                                     preview(combo, Modifier.fillMaxSize())
                                 }
-                                ComboDetails(combo, onOpenBuilder, onDelete)
+                                ComboDetails(combo, onOpenBuilder, onDelete, onExport, exportingComboId)
                             }
                         }
                     }
@@ -125,6 +140,8 @@ private fun ComboDetails(
     combo: ComboWithItems,
     onOpenBuilder: (String) -> Unit,
     onDelete: (String) -> Unit,
+    onExport: (String) -> Unit,
+    exportingComboId: String?,
 ) {
     // Подпись и инструменты могут занять две строки при крупном шрифте, оставаясь доступными.
     FlowRow(
@@ -140,8 +157,10 @@ private fun ComboDetails(
             Row(Modifier.padding(1.dp)) {
                 PcIconButton(PcIcons.Edit, "Edit", { onOpenBuilder(combo.combo.id) },
                     Modifier.testTag("combo_edit_${combo.combo.id}"))
+                PcIconButton(PcIcons.Export, "Export PNG", { onExport(combo.combo.id) },
+                    Modifier.testTag("combo_export_${combo.combo.id}"), enabled = exportingComboId == null)
                 PcIconButton(PcIcons.Delete, "Delete", { onDelete(combo.combo.id) },
-                    Modifier.testTag("combo_delete_${combo.combo.id}"))
+                    Modifier.testTag("combo_delete_${combo.combo.id}"), enabled = exportingComboId != combo.combo.id)
             }
         }
     }

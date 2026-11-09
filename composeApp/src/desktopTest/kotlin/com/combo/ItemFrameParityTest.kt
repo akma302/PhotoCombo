@@ -167,6 +167,7 @@ class ItemFrameParityTest {
             FakePhotoRepository(photos),
             StubBitmapSource(),
             settingsRepository = com.combo.ui.FakeGallerySettingsRepository(),
+            exportPng = { null },
         )
         dispatcher.scheduler.advanceUntilIdle()
         vm.ensureAssetsFor(combo)

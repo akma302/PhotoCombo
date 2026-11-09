@@ -16,6 +16,7 @@ import com.combo.domain.BitmapSource
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoAssets
 import com.combo.domain.PhotoRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,6 +35,7 @@ class ComboListViewModel(
     private val photoRepo: PhotoRepository,
     private val bitmapSource: BitmapSource,
     settingsRepository: GallerySettingsRepository,
+    private val exportPng: suspend (String) -> String?,
 ) : ViewModel() {
     val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Combos)
 
@@ -41,6 +43,8 @@ class ComboListViewModel(
         val combos: List<ComboWithItems> = emptyList(),
         val photos: Map<String, PhotoEntity> = emptyMap(),
         val images: Map<String, ImageBitmap> = emptyMap(),
+        val exportingComboId: String? = null,
+        val exportMessage: String? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -81,6 +85,23 @@ class ComboListViewModel(
 
     fun delete(id: String) {
         viewModelScope.launch { comboRepo.delete(id) }
+    }
+
+    fun export(id: String) {
+        if (_state.value.exportingComboId != null) return
+        _state.update { it.copy(exportingComboId = id, exportMessage = null) }
+        viewModelScope.launch {
+            var message: String? = null
+            try {
+                message = exportPng(id)?.let { "Exported $it" }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                message = error.message?.let { "PNG export failed. $it" } ?: "PNG export failed."
+            } finally {
+                _state.update { it.copy(exportingComboId = null, exportMessage = message) }
+            }
+        }
     }
 
     fun framesFor(combo: ComboWithItems): List<ItemFrame> {
