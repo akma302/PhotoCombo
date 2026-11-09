@@ -9,6 +9,7 @@ import com.combo.domain.GallerySettingsRepository
 import com.combo.domain.GallerySettingsRepositoryImpl
 import com.combo.domain.ComboRepository
 import com.combo.domain.ComboRepositoryImpl
+import com.combo.domain.ComboPngExporter
 import com.combo.domain.PhotoImporter
 import com.combo.domain.PhotoRepository
 import com.combo.domain.PhotoRepositoryImpl
@@ -54,4 +55,5 @@ val appModule = module {
     }
 
     single<ComboRepository> { ComboRepositoryImpl(db = get(), comboDao = get()) }
+    single { ComboPngExporter(combos = get(), photos = get(), bitmaps = get(), output = get(), ioDispatcher = get()) }
 }

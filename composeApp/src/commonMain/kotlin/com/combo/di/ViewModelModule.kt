@@ -1,6 +1,7 @@
 package com.combo.di
 
 import androidx.lifecycle.SavedStateHandle
+import com.combo.domain.ComboPngExporter
 import com.combo.feature.builder.ComboBuilderViewModel
 import com.combo.feature.combo_list.ComboListViewModel
 import com.combo.feature.library.LibraryViewModel
@@ -24,7 +25,15 @@ import org.koin.dsl.module
 val viewModelModule = module {
     viewModel { LibraryViewModel(photoRepo = get(), picker = get(), settingsRepository = get()) }
 
-    viewModel { ComboListViewModel(comboRepo = get(), photoRepo = get(), bitmapSource = get(), settingsRepository = get()) }
+    viewModel {
+        ComboListViewModel(
+            comboRepo = get(),
+            photoRepo = get(),
+            bitmapSource = get(),
+            settingsRepository = get(),
+            exportPng = get<ComboPngExporter>()::export,
+        )
+    }
 
     viewModel { PhotoViewerViewModel(SavedStateHandle(), photoRepo = get(), bitmapSource = get()) }
 

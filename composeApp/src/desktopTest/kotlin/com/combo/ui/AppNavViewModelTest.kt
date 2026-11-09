@@ -1,5 +1,6 @@
 package com.combo.ui
 
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performSemanticsAction
 import org.junit.Assert.assertEquals
@@ -16,11 +17,14 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import com.combo.core.image.ImageCodec
 import com.combo.core.image.ImagePicker
+import com.combo.core.image.PngDestination
+import com.combo.core.image.PngOutput
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.data.ComboWithItems
 import com.combo.di.viewModelModule
 import com.combo.domain.BitmapSource
+import com.combo.domain.ComboPngExporter
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoRepository
 import com.combo.feature.builder.EDITOR_CANVAS_TAG
@@ -63,6 +67,14 @@ class AppNavViewModelTest : UiTestBase() {
                     single<PhotoRepository> { photoRepo }
                     single<ComboRepository> { comboRepo }
                     single<BitmapSource> { bitmapSource }
+                    single {
+                        val output = object : PngOutput {
+                            override suspend fun chooseDestination(name: String): PngDestination? = null
+                            override suspend fun write(destination: PngDestination, image: ImageBitmap) =
+                                error("The test picker never returns a destination")
+                        }
+                        ComboPngExporter(comboRepo, photoRepo, bitmapSource, output, ioDispatcher)
+                    }
                     single<ImagePicker> { FakeImagePicker() }
                     single<ImageCodec> { StubImageCodec() }
                     single<IdGenerator> { IdGenerator { "gen-1" } }

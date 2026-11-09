@@ -93,6 +93,14 @@ object PcIcons {
         }
     }
 
+    val Export: ImageVector by lazy {
+        icon("Export") {
+            moveTo(12f, 3f); lineTo(12f, 15f)
+            moveTo(7f, 10f); lineTo(12f, 15f); lineTo(17f, 10f)
+            moveTo(4f, 16f); lineTo(4f, 21f); lineTo(20f, 21f); lineTo(20f, 16f)
+        }
+    }
+
     val Delete: ImageVector by lazy {
         icon("Delete") {
             moveTo(4f, 6f); lineTo(20f, 6f)

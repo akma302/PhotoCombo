@@ -60,7 +60,14 @@ class ComboListDesignSystemTest(
             override suspend fun get(photoId: String, requiredPx: Int) =
                 gridBitmap(photoId.removePrefix("p").toInt()).also { requests += photoId to requiredPx }
         }
-        val vm = ComboListViewModel(repository, FakePhotoRepository((1..6).map { photoEntity("p$it").copy(width = 320, height = 220) }), source, settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
+        val exported = mutableListOf<String>()
+        val vm = ComboListViewModel(
+            repository,
+            FakePhotoRepository((1..6).map { photoEntity("p$it").copy(width = 320, height = 220) }),
+            source,
+            FakeGallerySettingsRepository(),
+            exportPng = { id -> exported.add(id); "$id.png" },
+        )
         var created = 0
         val opened = mutableListOf<String>()
         setContent {
@@ -108,6 +115,9 @@ class ComboListDesignSystemTest(
         edit.performKeyInput { pressKey(Key.Enter) }
         assertEquals(listOf("c1"), opened)
         capture("focus")
+        onNodeWithTag("combo_export_c2").performScrollTo().performMouseInput { click() }
+        assertEquals(listOf("c2"), exported)
+        onNodeWithText("Exported c2.png").assertIsDisplayed()
         onNodeWithTag("combo_delete_c1").performClick()
         waitUntil { repository.state.value.size == 5 }
         onNodeWithTag("combo_card_c1").assertDoesNotExist()
@@ -166,7 +176,7 @@ class ComboGridResizeTest {
         val width = mutableStateOf(420.dp)
         setContent { PcDesktopTheme {
             Box(Modifier.width(width.value).fillMaxSize()) {
-                ComboListContent(gridCombos(), {}, {}, {}) { _, modifier -> Box(modifier.background(Color(0xFF547C80))) }
+                ComboListContent(gridCombos(), {}, {}, {}, {}) { _, modifier -> Box(modifier.background(Color(0xFF547C80))) }
             }
         } }
         fun bounds(id: Int) = onNodeWithTag("combo_preview_c$id").fetchSemanticsNode().boundsInRoot
