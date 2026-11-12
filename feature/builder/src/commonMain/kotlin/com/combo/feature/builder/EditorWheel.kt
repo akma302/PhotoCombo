@@ -66,6 +66,8 @@ internal fun Modifier.editorWheelZoom(
                 val event = awaitPointerEvent()
                 if (event.type == PointerEventType.Press) endSeries()
                 if (event.type != PointerEventType.Scroll) continue
+                // A wheel series must not replace the snapshot of an active pointer edit.
+                if (event.changes.any { it.pressed }) continue
                 val change = event.changes.firstOrNull() ?: continue
                 val dy = change.scrollDelta.y
                 if (dy == 0f) continue

@@ -6,7 +6,12 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.isOutOfBounds
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.combo.core.render.CanvasTransform
 import com.combo.core.render.Edge
@@ -18,8 +23,7 @@ internal enum class GestureKind { NONE, DRAG_ITEM, PAN_CONTENT, RESIZE, PAN_VIEW
 
 /**
  * Выбор цели жеста в момент касания холста: что именно тронул пользователь. Чистая
- * функция без побочных эффектов; события START для выбранной цели отправляет вызывающий
- * ([startGesture]).
+ * функция без побочных эффектов.
  *
  * Порядок проверок значим:
  *
@@ -28,7 +32,7 @@ internal enum class GestureKind { NONE, DRAG_ITEM, PAN_CONTENT, RESIZE, PAN_VIEW
  *    перетаскивает рамку, как и в любом другом её месте (см. п. 3).
  * 2. Попадание в СВОЮ выделенную рамку в режиме BORDER — сдвиг фото внутри рамки.
  * 3. Попадание в любую другую рамку (или в свою, но в режиме EDIT) — перетаскивание
- *    рамки; перед этим она выделяется ([BuilderEvent.ItemTapped]).
+ *    рамки.
  * 4. Мимо всех рамок — сдвиг и зум ВИДА (не самого холста).
  */
 internal fun classifyGesture(
@@ -41,34 +45,6 @@ internal fun classifyGesture(
     hitId != null && hitId == selectedId && mode == EditMode.BORDER -> GestureKind.PAN_CONTENT
     hitId != null -> GestureKind.DRAG_ITEM
     else -> GestureKind.PAN_VIEWPORT
-}
-
-/**
- * Отправляет событие СТАРТА для выбранной цели. Это отдельная функция, а не часть
- * [classifyGesture], потому что [classifyGesture] должна оставаться чистой: её проверяет
- * юнит-тест без Compose.
- *
- * Для DRAG_ITEM порядок обязателен: `ItemTapped` идёт ПЕРЕД `ItemDrag(START)`, чтобы
- * рамка была выделена к моменту, когда она начнёт двигаться. У сдвига и зума вида событий
- * нет вовсе: это состояние редактора, оно не входит в undo.
- */
-private fun startGesture(
-    kind: GestureKind,
-    id: String?,
-    edge: Edge?,
-    emit: (BuilderEvent) -> Unit,
-) {
-    when {
-        kind == GestureKind.RESIZE && id != null && edge != null ->
-            emit(BuilderEvent.BorderResize(id, edge, Offset.Zero, GesturePhase.START))
-        kind == GestureKind.PAN_CONTENT && id != null ->
-            emit(BuilderEvent.ContentPan(id, Offset.Zero, GesturePhase.START))
-        kind == GestureKind.DRAG_ITEM && id != null -> {
-            emit(BuilderEvent.ItemTapped(id))
-            emit(BuilderEvent.ItemDrag(id, Offset.Zero, GesturePhase.START))
-        }
-        else -> {}
-    }
 }
 
 /**
@@ -111,8 +87,8 @@ internal fun nearEdge(p: Offset, border: Rect, tolerance: Float): Edge? {
  *   не обнуляется на каждом шаге: при плавном симметричном разведении шагами меньше
  *   touchSlop размах иначе никогда не превысил бы slop относительно прошлого события, а
  *   центроид при этом стоял бы на месте — жест не начался бы никогда;
- * - `consume()` только ПОСЛЕ slop: иначе лёгкий сдвиг пальца «съедает» событие, и
- *   обработчик кликов отменяет тап по `consumed`.
+ * Press and movement share a snapshot. Classify against the old selection before a
+ * mouse press changes it, so dragging another frame in Photo mode still moves the frame.
  */
 internal fun Modifier.editorGestures(
     vm: ComboBuilderViewModel,
@@ -132,80 +108,90 @@ internal fun Modifier.editorGestures(
     }
 
     return this.pointerInput(Unit) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
-            var kind: GestureKind = GestureKind.NONE
-            // Рамка, зафиксированная на START: смена выделения посреди жеста
-            // больше не должна перенаправлять CHANGE/END на другую рамку.
-            var targetId: String? = null
-            var resizeEdge: Edge? = null
-            var pastSlop = false
-            var prev = down.position
-            var prevSpan = 0f
-            var lastCount = 1
-            // Опорная точка для slop. При появлении второго пальца центроид
-            // прыгает, поэтому ДО slop она переопределяется — иначе «просто
-            // коснулся двумя пальцами» начинало бы жест (пустой undo-шаг,
-            // isDirty). После slop опорная точка уже не нужна.
-            var slopRef = down.position
-            // Опорный размах для щипка. Сравнивать span с ПРЕДЫДУЩИМ событием
-            // бессмысленно: при плавном симметричном разведении шагами меньше
-            // touchSlop размах никогда не превысит slop относительно прошлого
-            // события, а центроид при этом стоит на месте — жест не начинался.
-            var spanRef = 0f
+        var editStarted = false
+        var previousUp: PointerInputChange? = null
+        var previousItemId: String? = null
 
-            while (true) {
-                val event = awaitPointerEvent()
-                val pressed = event.changes.filter { it.pressed }
-                if (pressed.isEmpty()) break
-                val centroid = centroidOf(pressed)
-                val span = if (pressed.size >= 2)
-                    hypot(
-                        pressed[0].position.x - pressed[1].position.x,
-                        pressed[0].position.y - pressed[1].position.y,
-                    ) else 0f
-
-                val countChanged = pressed.size != lastCount
-                if (countChanged && !pastSlop) {
-                    slopRef = centroid
-                    spanRef = span
-                    prev = centroid
-                    prevSpan = span
-                    lastCount = pressed.size
-                    continue
+        try {
+            awaitEachGesture {
+                val down = awaitFirstDown()
+                val mouse = down.type == PointerType.Mouse
+                val bringToFront = !currentEvent.keyboardModifiers.isShiftPressed
+                val initial = state.value
+                val hitId = vm.hitTest(toCanvas(down.position))
+                val edge = edgeHitAt(down.position, initial.selectedItemId)
+                val kind = classifyGesture(initial.mode, hitId, initial.selectedItemId, edge)
+                val targetId = when (kind) {
+                    GestureKind.RESIZE, GestureKind.PAN_CONTENT -> initial.selectedItemId
+                    GestureKind.DRAG_ITEM -> hitId
+                    else -> null
                 }
-                val moved = abs(centroid.x - slopRef.x) > viewConfiguration.touchSlop ||
-                    abs(centroid.y - slopRef.y) > viewConfiguration.touchSlop ||
-                    (pressed.size >= 2 && spanRef > 0f &&
-                        abs(span - spanRef) > viewConfiguration.touchSlop)
-
-                if (!pastSlop && moved) {
-                    pastSlop = true
-                    val st = state.value
-                    val selectedId = st.selectedItemId
-                    val hitId = vm.hitTest(toCanvas(down.position))
-                    val edgeHit = edgeHitAt(down.position, selectedId)
-                    kind = classifyGesture(st.mode, hitId, selectedId, edgeHit)
-                    targetId = when (kind) {
-                        GestureKind.RESIZE, GestureKind.PAN_CONTENT -> selectedId
-                        GestureKind.DRAG_ITEM -> hitId
-                        else -> null
+                down.consume()
+                if (mouse && targetId != null) {
+                    if (initial.saving) vm.onEvent(BuilderEvent.ItemTapped(targetId))
+                    else {
+                        editStarted = true
+                        vm.onEvent(BuilderEvent.ItemPressed(targetId, bringToFront))
                     }
-                    resizeEdge = if (kind == GestureKind.RESIZE) edgeHit else null
-                    startGesture(kind, targetId, resizeEdge, vm::onEvent)
                 }
 
-                lastCount = pressed.size
-                if (pastSlop) {
-                    val id = targetId
+                var up: PointerInputChange? = null
+                var pastSlop = false
+                var multiplePointers = false
+                var prev = down.position
+                var prevSpan = 0f
+                var lastCount = 1
+                var slopRef = down.position
+                var spanRef = 0f
+
+                while (true) {
+                    val event = awaitPointerEvent()
+                    if (event.type == PointerEventType.Scroll) continue
+                    if (event.changes.any { it.isConsumed }) break
+                    val pressed = event.changes.filter { it.pressed }
+                    if (pressed.isEmpty()) {
+                        up = event.changes.firstOrNull {
+                            it.changedToUp() && (pastSlop || !it.isOutOfBounds(size, extendedTouchPadding))
+                        }
+                        up?.consume()
+                        break
+                    }
+                    val centroid = centroidOf(pressed)
+                    multiplePointers = multiplePointers || pressed.size > 1
+                    val span = if (pressed.size >= 2)
+                        hypot(
+                            pressed[0].position.x - pressed[1].position.x,
+                            pressed[0].position.y - pressed[1].position.y,
+                        ) else 0f
+                    val countChanged = pressed.size != lastCount
+                    lastCount = pressed.size
                     if (countChanged) {
+                        if (!pastSlop) {
+                            slopRef = centroid
+                            spanRef = span
+                        } else {
+                            event.changes.forEach { it.consume() }
+                        }
                         prev = centroid
                         prevSpan = span
-                    } else {
+                        continue
+                    }
+                    val moved = abs(centroid.x - slopRef.x) > viewConfiguration.touchSlop ||
+                        abs(centroid.y - slopRef.y) > viewConfiguration.touchSlop ||
+                        (spanRef > 0f && abs(span - spanRef) > viewConfiguration.touchSlop)
+                    if (!pastSlop && moved) {
+                        pastSlop = true
+                        if (!mouse && targetId != null && !initial.saving) {
+                            editStarted = true
+                            vm.onEvent(BuilderEvent.ItemPressed(targetId, bringToFront = false))
+                        }
+                    }
+                    if (pastSlop) {
                         val delta = centroid - prev
+                        val id = targetId?.takeIf { editStarted }
                         when (kind) {
-                            GestureKind.RESIZE -> if (id != null && resizeEdge != null) vm.onEvent(
-                                BuilderEvent.BorderResize(id, resizeEdge, delta, GesturePhase.CHANGE)
+                            GestureKind.RESIZE -> if (id != null && edge != null) vm.onEvent(
+                                BuilderEvent.BorderResize(id, edge, delta, GesturePhase.CHANGE)
                             )
                             GestureKind.DRAG_ITEM -> if (id != null) {
                                 val f = if (prevSpan > 0f && span > 0f) span / prevSpan else 1f
@@ -230,34 +216,40 @@ internal fun Modifier.editorGestures(
                             }
                             GestureKind.NONE -> {}
                         }
-                        prev = centroid
-                        prevSpan = span
+                        event.changes.forEach { it.consume() }
                     }
-                    // consume() только ПОСЛЕ slop, иначе лёгкий сдвиг съедает тап:
-                    // The tap handler cancels its click when movement is consumed.
-                    event.changes.forEach { it.consume() }
-                } else {
                     prev = centroid
                     prevSpan = span
                 }
-            }
 
-            if (pastSlop) {
-                val id = targetId
-                when (kind) {
-                    GestureKind.RESIZE -> if (id != null && resizeEdge != null) vm.onEvent(
-                        BuilderEvent.BorderResize(id, resizeEdge, Offset.Zero, GesturePhase.END)
-                    )
-                    GestureKind.DRAG_ITEM -> if (id != null) vm.onEvent(
-                        BuilderEvent.ItemDrag(id, Offset.Zero, GesturePhase.END)
-                    )
-                    GestureKind.PAN_CONTENT -> if (id != null) vm.onEvent(
-                        BuilderEvent.ContentPan(id, Offset.Zero, GesturePhase.END)
-                    )
-                    else -> {}
+                if (editStarted) {
+                    vm.onEvent(BuilderEvent.PointerEditFinished(cancelled = up == null))
+                    editStarted = false
                 }
-                vm.refreshBitmaps()
+                if (pastSlop) vm.refreshBitmaps()
+                if (up == null || pastSlop || multiplePointers) {
+                    previousUp = null
+                    return@awaitEachGesture
+                }
+
+                val itemId = if (mouse) targetId else vm.hitTest(toCanvas(up.position))
+                if (itemId == null) {
+                    vm.onEvent(BuilderEvent.CanvasTapped)
+                } else if (!mouse) {
+                    vm.onEvent(BuilderEvent.ItemPressed(itemId, bringToFront))
+                    vm.onEvent(BuilderEvent.PointerEditFinished(cancelled = false))
+                }
+                val isDoubleTap = previousUp?.let { first ->
+                    val interval = down.uptimeMillis - first.uptimeMillis
+                    interval in viewConfiguration.doubleTapMinTimeMillis..viewConfiguration.doubleTapTimeoutMillis &&
+                        itemId == previousItemId && (down.position - first.position).getDistance() <= viewConfiguration.touchSlop
+                } ?: false
+                if (isDoubleTap) vm.onEvent(BuilderEvent.ToggleMode)
+                previousUp = up.takeUnless { isDoubleTap }
+                previousItemId = itemId
             }
+        } finally {
+            if (editStarted) vm.onEvent(BuilderEvent.PointerEditFinished(cancelled = true))
         }
     }
 }
