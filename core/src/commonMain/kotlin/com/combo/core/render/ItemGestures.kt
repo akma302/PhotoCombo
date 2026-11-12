@@ -10,8 +10,9 @@ object ItemGestures {
      * край, нечем было бы схватить и вернуть.
      */
     fun dragItem(item: ItemDraft, dScreen: Offset, vs: Float, canvasW: Float, canvasH: Float) {
-        item.centerX = (item.centerX + dScreen.x / vs).coerceIn(0f, canvasW)
-        item.centerY = (item.centerY + dScreen.y / vs).coerceIn(0f, canvasH)
+        val moved = moveFrame(item.border(), dScreen.x / vs, dScreen.y / vs, canvasW, canvasH)
+        item.centerX = moved.centerX
+        item.centerY = moved.centerY
     }
 
     /** Pinch элемента: рамка + scale её фото (относительный зум сохранён). */
@@ -58,3 +59,9 @@ object ItemGestures {
         }
     }
 }
+
+internal fun moveFrame(frame: Border, dx: Float, dy: Float, canvasW: Float, canvasH: Float): Border =
+    frame.copy(
+        centerX = (frame.centerX + dx).coerceIn(0f, canvasW),
+        centerY = (frame.centerY + dy).coerceIn(0f, canvasH),
+    )

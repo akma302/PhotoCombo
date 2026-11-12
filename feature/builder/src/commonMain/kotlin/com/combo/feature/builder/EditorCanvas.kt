@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.combo.core.render.CanvasTransform
 import com.combo.core.render.comboBackgroundOf
 import com.combo.core.render.drawCombo
+import com.combo.core.render.snap.SnapDistances
 
 /**
  * Вьюпорт редактора: следит за размером экрана, считает [CanvasTransform] и рисует холст.
@@ -64,6 +65,9 @@ internal fun EditorViewport(
     val density = LocalDensity.current
     val handlePx = with(density) { 24.dp.toPx() }
     val primaryColor = PcTheme.colors.accent
+    val snapDistancesPx = with(density) {
+        SnapDistances(capture = 5.dp.toPx(), release = 8.dp.toPx(), preview = 12.dp.toPx())
+    }
 
     // Блоки pointerInput ниже запускаются ОДИН раз (ключ Unit) — иначе смена выделения
     // или режима посреди жеста перезапускала бы блок, обрывая жест без END (терялись
@@ -84,6 +88,7 @@ internal fun EditorViewport(
         curState = curState,
         curTransform = curTransform,
         curHandlePx = curHandlePx,
+        curSnapDistancesPx = rememberUpdatedState(snapDistancesPx),
         modifier = modifier,
     )
 }
@@ -105,10 +110,13 @@ private fun EditorCanvas(
     curState: State<BuilderUiState>,
     curTransform: State<CanvasTransform>,
     curHandlePx: State<Float>,
+    curSnapDistancesPx: State<SnapDistances>,
     modifier: Modifier = Modifier,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = PcTheme.typography.caption.copy(color = PcTheme.colors.onAccent)
+    val guideColor = PcTheme.colors.snapGuide
+    val guideOutline = PcTheme.colors.workspace
     val frameIndex = state.items.indexOfFirst { it.id == state.selectedItemId }
     val label = if (frameIndex >= 0) textMeasurer.measure(AnnotatedString("Frame ${frameIndex + 1}"), labelStyle) else null
     Box(modifier.fillMaxSize().background(PcTheme.colors.workspace)) {
@@ -117,7 +125,7 @@ private fun EditorCanvas(
                 .fillMaxSize()
                 .testTag(EDITOR_CANVAS_TAG)
                 .onSizeChanged(onCanvasSized)
-                .editorGestures(vm, curHandlePx, curState, curTransform)
+                .editorGestures(vm, curHandlePx, curState, curTransform, curSnapDistancesPx)
                 // Колесо — отдельный цикл: у него нет UP-события, серию тиков завершает
                 // таймаут (см. editorWheelZoom).
                 .editorWheelZoom(vm, curState, curTransform, spaceHeld),
@@ -146,6 +154,7 @@ private fun EditorCanvas(
                 state.items.mapNotNull { if (loaded == 0) null else vm.frameFor(it) },
             )
             drawSelectionOverlay(state, transform, primaryColor)
+            drawSnapGuideOverlay(state, transform, guideColor, guideOutline)
             val selected = state.items.firstOrNull { it.id == state.selectedItemId }
             if (label != null && selected != null) {
                 val frame = selected.border().rect()

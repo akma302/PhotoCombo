@@ -15,7 +15,7 @@ Use the file and symbol names below with `rg --files` and `rg -n`.
 | Features and user actions | [feature/](feature/): library, combo-list, viewer, builder; `*Screen.kt`, `*ViewModel.kt`; editor events in `BuilderContract.kt` |
 | Navigation, ViewModel lifetime, DI | [composeApp/](composeApp/src/): `AppNav.kt`, `ScreenKey.kt`, `ViewModelStoreOwners.kt`, `di/` |
 | Shared gallery and item sizing | [ui-common/](ui-common/src/commonMain/kotlin/com/combo/ui/common/): `GalleryGrid.kt`, `PhotoGrid.kt`, `GalleryScaleState.kt`; persistence in `GallerySettingsRepository` and `GallerySettingsStorage` |
-| Geometry, framing, rendering | [core/render/](core/src/commonMain/kotlin/com/combo/core/render/): `Framing.kt`, `ItemFrames.kt`, `DrawItem.kt`, `DrawCombo.kt`; backgrounds in the adjacent `background/` directory |
+| Geometry, framing, rendering | [core/render/](core/src/commonMain/kotlin/com/combo/core/render/): `Framing.kt`, `ItemFrames.kt`, `DrawItem.kt`, `DrawCombo.kt`, `snap/FrameSnap.kt`; backgrounds in the adjacent `background/` directory |
 | Editing, Undo, combo saving | [builder/](feature/builder/src/commonMain/kotlin/com/combo/feature/builder/): `draft/`, `history/`, `FinalizeCanvas.kt`, `ComboBuilderViewModel.kt`; input in `EditorGestures.kt`, `EditorWheel.kt` |
 | Database, file paths, migrations | [data/](data/src/): `Entities.kt`, `AppDb.kt`, `Migrations.kt`, `PhotoStorage.kt`; schemas in [data/schemas/](data/schemas/) |
 | Repositories, import, image cache | [domain/](domain/src/commonMain/kotlin/com/combo/domain/): `Repositories.kt`, `Impls.kt`, `PhotoImporter.kt`, `PhotoAssets.kt`, `image/` |

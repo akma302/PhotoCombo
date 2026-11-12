@@ -46,6 +46,7 @@ val viewModelModule = module {
             ids = get(),
             clock = get(),
             ioDispatcher = get(),
+            guidePreviewSettings = get(),
         )
     }
 }
