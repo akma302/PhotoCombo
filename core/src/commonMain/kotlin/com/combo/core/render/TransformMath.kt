@@ -25,8 +25,8 @@ object TransformMath {
      * (на пределе его край лишь касается края рамки).
      */
     fun clampPan(pan: Offset, b: Border, content: Size) = Offset(
-        pan.x.coerceIn(-(b.width + content.width) / 2, (b.width + content.width) / 2),
-        pan.y.coerceIn(-(b.height + content.height) / 2, (b.height + content.height) / 2)
+        clampPhotoPan(pan.x, b.width, content.width),
+        clampPhotoPan(pan.y, b.height, content.height),
     )
 
     /** Масштаб «вписать целиком»: фото помещается в рамку полностью, по краям остаются поля. */
@@ -40,4 +40,9 @@ object TransformMath {
      * больше чем на [cap] экранных пикселей на пиксель исходника и «мылится».
      */
     fun maxContentScale(viewportScale: Float, cap: Float = 1.5f) = cap / viewportScale
+}
+
+internal fun clampPhotoPan(pan: Float, frameSize: Float, photoSize: Float): Float {
+    val limit = (frameSize + photoSize) / 2f
+    return pan.coerceIn(-limit, limit)
 }

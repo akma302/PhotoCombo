@@ -26,9 +26,8 @@ internal fun DrawScope.drawSnapGuideOverlay(
                 else Offset(guide.end, guide.coordinate)
             val from = transform.toScreen(start)
             val to = transform.toScreen(end)
-            val opacity = if (guide.preview) 0.48f else 1f
-            drawLine(outline.copy(alpha = opacity), from, to, 3.dp.toPx(), pathEffect = dash)
-            drawLine(color.copy(alpha = opacity), from, to, 1.5.dp.toPx(), pathEffect = dash)
+            drawLine(outline, from, to, 3.dp.toPx(), pathEffect = dash)
+            drawLine(color, from, to, 1.5.dp.toPx(), pathEffect = dash)
         }
     }
 }

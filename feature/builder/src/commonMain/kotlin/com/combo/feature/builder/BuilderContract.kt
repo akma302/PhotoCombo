@@ -40,7 +40,6 @@ const val TOOL_TAG_FILL = "builder_tool_fill"
 const val TOOL_TAG_ZOOM_IN = "builder_zoom_in"
 const val TOOL_TAG_ZOOM_OUT = "builder_zoom_out"
 const val BUILDER_ZOOM_TAG = "builder_zoom_value"
-const val BUILDER_GUIDE_PREVIEW_TAG = "builder_guide_preview"
 const val BUILDER_INSPECTOR_TAG = "builder_inspector"
 
 /** testTag'ы кнопок диалога выхода с несохранёнными изменениями. */
@@ -59,6 +58,12 @@ enum class GesturePhase { START, CHANGE, END, CANCEL }
 
 enum class EditMode { EDIT, BORDER }
 
+sealed interface SnapDragKind {
+    object MoveFrame : SnapDragKind
+    object PanPhoto : SnapDragKind
+    data class Resize(val edge: Edge, val oneSided: Boolean) : SnapDragKind
+}
+
 /** Сообщение при попытке сохранить комбо без рамок (рамка создаётся выбором фото). */
 const val MSG_NOTHING_TO_SAVE = "Add at least one photo"
 
@@ -71,15 +76,15 @@ sealed interface BuilderEvent {
     object CanvasTapped : BuilderEvent
     object ToggleMode : BuilderEvent
     data class ItemDrag(val id: String, val delta: Offset, val phase: GesturePhase) : BuilderEvent
-    data class SnapFrameDrag(
+    data class SnapDrag(
         val id: String,
+        val kind: SnapDragKind,
         val delta: Offset,
         val distances: SnapDistances,
         val bypass: Boolean,
     ) : BuilderEvent
-    object BypassFrameSnap : BuilderEvent
-    object ClearFrameSnap : BuilderEvent
-    data class SetGuidePreview(val enabled: Boolean) : BuilderEvent
+    object BypassSnap : BuilderEvent
+    object ClearSnap : BuilderEvent
     data class ItemPinch(val id: String, val factor: Float, val phase: GesturePhase) : BuilderEvent
     data class ContentPan(val id: String, val delta: Offset, val phase: GesturePhase) : BuilderEvent
     data class ContentZoom(val id: String, val factor: Float, val phase: GesturePhase) : BuilderEvent
@@ -125,7 +130,5 @@ data class BuilderUiState(
     val loaded: Boolean = false,
     val photos: Map<String, PhotoEntity> = emptyMap(),
     val libraryPhotos: List<PhotoEntity> = emptyList(),
-    val guidePreview: Boolean = false,
-    val guidePreviewReady: Boolean = true,
     val snapGuides: List<SnapGuide> = emptyList(),
 )

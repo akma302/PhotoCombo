@@ -1,17 +1,17 @@
 package com.combo
 
 import com.combo.core.render.Border
+import com.combo.core.render.Edge
 import com.combo.core.render.snap.FrameSnap
 import com.combo.core.render.snap.FrameSnapState
 import com.combo.core.render.snap.SnapAxis
 import com.combo.core.render.snap.SnapDistances
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FrameSnapTest {
-    private val distances = SnapDistances(capture = 5f, release = 8f, preview = 12f)
+    private val distances = SnapDistances(capture = 5f, release = 8f)
     private val target = Border(240f, 340f, 120f, 140f)
 
     @Test
@@ -70,22 +70,18 @@ class FrameSnapTest {
     }
 
     @Test
-    fun `preview changes guides only and bypass restores free position immediately`() {
+    fun `bypass restores free position immediately and guides appear only on capture`() {
         val frame = Border(220f, 585f, 60f, 60f)
         val engine = FrameSnap(1000f, 800f, frame, listOf(target))
-        val state = FrameSnapState(frame)
-        val off = engine.move(state, 10f, 0f, distances)
-        val on = engine.move(state, 10f, 0f, distances, preview = true)
-        assertEquals(off.placed, on.placed)
-        assertTrue(off.guides.isEmpty())
-        assertTrue(on.guides.single().preview)
+        val near = engine.move(FrameSnapState(frame), 10f, 0f, distances)
+        assertTrue(near.guides.isEmpty())
 
-        val snapped = engine.move(on.state, 6f, 0f, distances, preview = true)
-        assertFalse(snapped.guides.single().preview)
+        val snapped = engine.move(near.state, 6f, 0f, distances)
+        assertEquals(240f, snapped.guides.single().coordinate, 0f)
         val bypass = snapped.state.withoutSnap()
         assertEquals(236f, bypass.placed.centerX, 0f)
         assertTrue(bypass.guides.isEmpty())
-        assertTrue(engine.move(bypass.state, 0f, 0f, distances, preview = true).guides.isEmpty())
+        assertTrue(engine.move(bypass.state, 0f, 0f, distances).guides.isEmpty())
         assertEquals(237f, engine.move(bypass.state, 1f, 0f, distances, bypass = true).placed.centerX, 0f)
     }
 
@@ -93,7 +89,7 @@ class FrameSnapTest {
     fun `can move away from an already aligned frame and preserves canvas bounds`() {
         val frame = Border(target.centerX, 585f, 60f, 60f)
         val engine = FrameSnap(1000f, 800f, frame, listOf(target))
-        val movingAway = engine.move(FrameSnapState(frame), 3f, 0f, distances, preview = true)
+        val movingAway = engine.move(FrameSnapState(frame), 3f, 0f, distances)
         assertEquals(243f, movingAway.placed.centerX, 0f)
         assertTrue(movingAway.guides.isEmpty())
 
@@ -115,5 +111,70 @@ class FrameSnapTest {
         val held = engine.move(caught.state, -4f, 0f, distances)
         assertEquals(208f, held.placed.centerX, 0f)
         assertEquals(200f, held.state.free.centerX, 0f)
+    }
+
+    @Test
+    fun `photo snaps matching edges on both axes at any relative size`() {
+        val frame = Border(300f, 300f, 200f, 160f)
+        for (sizeDifference in listOf(60f, -60f)) {
+            for (edgeDirection in listOf(1f, -1f)) {
+                val center = 300f + edgeDirection * sizeDifference / 2f
+                val aligned = Border(center, center, frame.width + sizeDifference, frame.height + sizeDifference)
+                val photo = aligned.copy(centerX = center - 15f, centerY = center - 15f)
+                val snap = FrameSnap.photo(frame, photo)
+                val held = snap.move(FrameSnapState(photo), 12f, 12f, distances)
+                assertEquals(aligned, held.placed)
+                assertEquals(
+                    listOf(300f - edgeDirection * 100f, 300f - edgeDirection * 80f),
+                    held.guides.map { it.coordinate },
+                )
+                val xGuide = held.guides.first()
+                assertEquals(220f, xGuide.start, 0f)
+                assertEquals(380f, xGuide.end, 0f)
+
+                val releasedX = snap.move(held.state, 12f, 0f, distances)
+                assertEquals(aligned.copy(centerX = center + 9f), releasedX.placed)
+                assertEquals(SnapAxis.Y, releasedX.guides.single().axis)
+            }
+        }
+    }
+
+    @Test
+    fun `each dragged frame edge snaps to its canvas boundary while keeping its anchor`() {
+        val frame = Border(300f, 300f, 200f, 200f)
+        for (edge in Edge.entries) {
+            val horizontal = edge == Edge.LEFT || edge == Edge.RIGHT
+            val direction = if (edge == Edge.LEFT || edge == Edge.TOP) -1f else 1f
+            val boundary = if (direction < 0f) 0f else 600f
+            val delta = direction * 197f
+            for (oneSided in listOf(true, false)) {
+                val snap = FrameSnap.resize(600f, 600f, frame, emptyList(), edge, 50f, oneSided)
+                val held = snap.move(
+                    FrameSnapState(frame), if (horizontal) delta else 0f, if (horizontal) 0f else delta, distances,
+                )
+                assertEquals(boundary, held.guides.single().coordinate, 0f)
+                val center = if (oneSided) 300f + direction * 100f else 300f
+                val size = if (oneSided) 400f else 600f
+                val expected = if (horizontal) frame.copy(centerX = center, width = size)
+                else frame.copy(centerY = center, height = size)
+                assertEquals(expected, held.placed)
+            }
+        }
+    }
+
+    @Test
+    fun `resize cannot snap past minimum size and bypass keeps the fixed edge`() {
+        val frame = Border(400f, 300f, 200f, 160f)
+        val nearby = Border(550f, 200f, 20f, 40f)
+        val tooClose = Border(330f, 200f, 38f, 40f)
+        val snap = FrameSnap.resize(800f, 600f, frame, listOf(nearby, tooClose), Edge.RIGHT, 50f, oneSided = true)
+        val held = snap.move(FrameSnapState(frame), 37f, 0f, distances)
+        assertEquals(540f, held.guides.single().coordinate, 0f)
+        assertEquals(frame.copy(centerX = 420f, width = 240f), held.placed)
+        val bypass = held.state.withoutSnap()
+        assertEquals(frame.copy(centerX = 418.5f, width = 237f), bypass.placed)
+        val minimum = snap.move(bypass.state, -500f, 0f, distances)
+        assertEquals(frame.copy(centerX = 325f, width = 50f), minimum.placed)
+        assertTrue(minimum.guides.isEmpty())
     }
 }

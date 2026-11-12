@@ -12,27 +12,19 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.lifecycle.SavedStateHandle
-import com.combo.FakeLogger
 import com.combo.ImageFixtures
-import com.combo.core.platform.DesktopAppDirs
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.data.ComboWithItems
-import com.combo.data.GuidePreviewStorage
 import com.combo.domain.BitmapSource
-import com.combo.domain.FileGuidePreviewSettings
-import com.combo.domain.GuidePreviewSettings
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
 import com.combo.ui.StubBitmapSource
@@ -42,14 +34,10 @@ import com.combo.ui.comboEntity
 import com.combo.ui.comboItemEntity
 import com.combo.ui.photoEntity
 import kotlinx.coroutines.CompletableDeferred
-import okio.FileSystem
-import okio.Path.Companion.toOkioPath
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
 import java.io.File
 
 /**
@@ -67,9 +55,6 @@ import java.io.File
 @OptIn(ExperimentalTestApi::class, InternalComposeUiApi::class)
 class ComboBuilderGesturesTest : UiTestBase() {
 
-    @get:Rule
-    val files = TemporaryFolder()
-
     private var nextId = 0
 
     private fun builder(
@@ -77,7 +62,6 @@ class ComboBuilderGesturesTest : UiTestBase() {
         repo: FakePhotoRepository,
         comboRepo: FakeComboRepository = FakeComboRepository(),
         comboId: String? = null,
-        guidePreviewSettings: GuidePreviewSettings? = null,
         bitmapSource: BitmapSource = StubBitmapSource(),
     ): ComboBuilderViewModel =
         ComboBuilderViewModel(
@@ -88,7 +72,6 @@ class ComboBuilderGesturesTest : UiTestBase() {
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = ioDispatcher,
-            guidePreviewSettings = guidePreviewSettings,
         )
 
     private fun ComposeUiTest.setBuilderContent(
@@ -173,7 +156,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     }
 
     @Test
-    fun guidesPreviewCaptureBreakAwayBothWaysAndReleaseOnCtrlWithinOneDrag() = runComposeUiTest {
+    fun frameMoveShowsGuidesOnlyOnCaptureAndReleasesBothWaysOrOnCtrl() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val combo = ComboWithItems(comboEntity("combo"), listOf(
             comboItemEntity("moving", "combo", zIndex = 0, photoId = "p1").copy(
@@ -183,18 +166,13 @@ class ComboBuilderGesturesTest : UiTestBase() {
                 centerX = 760f, centerY = 280f, width = 200f, height = 200f,
             ),
         ))
-        val storage = GuidePreviewStorage(DesktopAppDirs(files.root.toOkioPath()), FileSystem.SYSTEM)
-        val preference = FileGuidePreviewSettings(storage, ioDispatcher, FakeLogger())
         val source = object : BitmapSource {
             override suspend fun get(photoId: String, requiredPx: Int) =
                 ImageFixtures.solidBitmap(32, 22, if (photoId == "p1") 0xFF604C79.toInt() else 0xFF315B70.toInt())
         }
-        val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo", preference, source)
+        val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo", source)
         setBuilderContent(vm, repo)
         waitUntil { vm.bitmaps.value.keys.containsAll(listOf("p1", "p2")) }
-        val toggle = onNodeWithTag(BUILDER_GUIDE_PREVIEW_TAG)
-        toggle.assertIsOff().performClick().assertIsOn()
-        assertTrue(FileGuidePreviewSettings(storage, ioDispatcher, FakeLogger()).load())
         assertFalse(vm.state.value.isDirty)
 
         val st = vm.state.value
@@ -214,12 +192,11 @@ class ComboBuilderGesturesTest : UiTestBase() {
         assertEquals("moving", vm.state.value.items.last().id)
         move(-10f, 1_016L)
         assertEquals(760f - 10f / scale, movingX(), 0.001f)
-        assertTrue(vm.state.value.snapGuides.single().preview)
-        File(previews, "builder-guide-preview.png").writeBytes(ImageFixtures.pngBytes(canvas.captureToImage()))
+        assertTrue(vm.state.value.snapGuides.isEmpty())
 
         move(-3f, 1_032L)
         assertEquals(760f, movingX(), 0.001f)
-        assertFalse(vm.state.value.snapGuides.single().preview)
+        assertEquals(660f, vm.state.value.snapGuides.single().coordinate, 0.001f)
         File(previews, "builder-guide-active.png").writeBytes(ImageFixtures.pngBytes(canvas.captureToImage()))
         move(10f, 1_048L)
         assertEquals(760f + 10f / scale, movingX(), 0.001f)
@@ -243,8 +220,104 @@ class ComboBuilderGesturesTest : UiTestBase() {
         assertEquals(400f, movingX(), 0.001f)
         assertEquals(listOf("moving", "target"), vm.state.value.items.map { it.id })
         assertFalse(vm.state.value.canUndo)
-        toggle.assertIsOn().performClick().assertIsOff()
-        assertFalse(FileGuidePreviewSettings(storage, ioDispatcher, FakeLogger()).load())
+    }
+
+    @Test
+    fun photoPanSnapsItsOwnEdgeAndCtrlRestoresTheFreePosition() = runComposeUiTest {
+        val photo = photoEntity("p1")
+        val repo = FakePhotoRepository(listOf(photo))
+        val moving = comboItemEntity("moving", "combo").copy(
+            centerX = 600f, centerY = 450f, width = 400f, height = 320f, contentScale = 0.5f,
+        )
+        val combo = ComboWithItems(comboEntity("combo"), listOf(moving))
+        val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo")
+        setBuilderContent(vm, repo)
+        selectPhotoMode(vm, moving.id)
+        val st = vm.state.value
+        val scale = st.viewport.scale(Size(st.canvasW, st.canvasH), Size(st.screenW, st.screenH))
+        val original = st.items.single()
+        val frame = original.border()
+        val originalPan = Offset(original.panX, original.panY)
+        val contentScale = original.contentScale
+        val snapPan = (photo.width * contentScale - frame.width) / 2f
+        val start = local(st, frame.centerX, frame.centerY)
+        val near = start + Offset(snapPan * scale - 3f, 0f)
+        val canvas = onNodeWithTag(EDITOR_CANVAS_TAG)
+
+        canvasPointer(PointerEventType.Press, start, time = 1_000L)
+        canvasPointer(PointerEventType.Move, near, time = 1_016L)
+        waitForIdle()
+        val held = vm.state.value.items.single()
+        assertEquals(snapPan, held.panX, 0.001f)
+        assertEquals(originalPan.y, held.panY, 0f)
+        assertEquals(frame, held.border())
+        assertEquals(contentScale, held.contentScale, 0f)
+        assertEquals(frame.rect().left, vm.state.value.snapGuides.single().coordinate, 0.001f)
+
+        canvas.performKeyInput { keyDown(Key.CtrlLeft) }
+        assertEquals(snapPan - 3f / scale, vm.state.value.items.single().panX, 0.001f)
+        assertTrue(vm.state.value.snapGuides.isEmpty())
+        canvasPointer(PointerEventType.Release, near, time = 1_032L)
+        canvas.performKeyInput { keyUp(Key.CtrlLeft) }
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(originalPan.x, vm.state.value.items.single().panX, 0f)
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun shiftResizeKeepsOppositeEdgeFixedThroughSnapReleaseAndUndo() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
+        val combo = ComboWithItems(comboEntity("combo"), listOf(
+            comboItemEntity("moving", "combo", zIndex = 0, photoId = "p1").copy(
+                centerX = 400f, centerY = 450f, width = 200f, height = 200f,
+            ),
+            comboItemEntity("target", "combo", zIndex = 1, photoId = "p2").copy(
+                centerX = 650f, centerY = 250f, width = 100f, height = 120f,
+            ),
+        ))
+        val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo")
+        setBuilderContent(vm, repo)
+        selectPhotoMode(vm, "moving")
+        val st = vm.state.value
+        val scale = st.viewport.scale(Size(st.canvasW, st.canvasH), Size(st.screenW, st.screenH))
+        val start = local(st, 500f, 450f)
+        val aligned = local(st, 600f, 450f)
+        fun moving() = vm.state.value.items.single { it.id == "moving" }.border().rect()
+        fun move(pixelsFromGuide: Float, time: Long) {
+            canvasPointer(PointerEventType.Move, aligned + Offset(pixelsFromGuide, 0f), time)
+            waitForIdle()
+            assertEquals(300f, moving().left, 0.001f)
+        }
+
+        canvasPointer(PointerEventType.Press, start, time = 1_000L, shift = true)
+        move(-3f, 1_016L)
+        assertEquals(600f, moving().right, 0.001f)
+        assertEquals(600f, vm.state.value.snapGuides.single().coordinate, 0.001f)
+        move(10f, 1_032L)
+        assertEquals(600f + 10f / scale, moving().right, 0.001f)
+        assertTrue(vm.state.value.snapGuides.isEmpty())
+        move(3f, 1_048L)
+        assertEquals(600f, moving().right, 0.001f)
+        move(-10f, 1_064L)
+        assertEquals(600f - 10f / scale, moving().right, 0.001f)
+        move(-3f, 1_080L)
+        canvasPointer(PointerEventType.Release, aligned + Offset(-3f, 0f), time = 1_096L)
+        assertEquals(600f, moving().right, 0.001f)
+        assertTrue(vm.state.value.snapGuides.isEmpty())
+        assertTrue(vm.state.value.canUndo)
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(500f, moving().right, 0.001f)
+        assertEquals(300f, moving().left, 0.001f)
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    private fun ComposeUiTest.selectPhotoMode(vm: ComboBuilderViewModel, itemId: String) {
+        runOnUiThread {
+            vm.onEvent(BuilderEvent.ItemTapped(itemId))
+            vm.onEvent(BuilderEvent.ToggleMode)
+        }
+        waitForIdle()
+        assertEquals(EditMode.BORDER, vm.state.value.mode)
     }
 
     @Test

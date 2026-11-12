@@ -2,7 +2,6 @@ package com.combo.core.render
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import kotlin.math.max
 
 object ItemGestures {
     /**
@@ -48,16 +47,42 @@ object ItemGestures {
         else minOf(c.contentScale, maxOf(target, min))
     }
 
-    /** Ресайз рамки за грани, якорь — центр (MVP-решение); только width ИЛИ height → любой аспект. */
+    /** Ресайз рамки за грань с фиксированным центром. */
     fun resizeBorder(item: ItemDraft, edge: Edge, dScreen: Offset, vs: Float, minSize: Float) {
-        val d = dScreen / vs
-        when (edge) {
-            Edge.RIGHT -> item.width = max(minSize, item.width + 2 * d.x)
-            Edge.LEFT -> item.width = max(minSize, item.width - 2 * d.x)
-            Edge.BOTTOM -> item.height = max(minSize, item.height + 2 * d.y)
-            Edge.TOP -> item.height = max(minSize, item.height - 2 * d.y)
-        }
+        val border = item.border()
+        val resized = FrameEdgeResize(border, edge, minSize, oneSided = false)
+            .move(border, dScreen.x / vs, dScreen.y / vs)
+        item.width = resized.width
+        item.height = resized.height
     }
+}
+
+/** A resize keeps the same anchor for the whole gesture. */
+internal class FrameEdgeResize(frame: Border, edge: Edge, minSize: Float, private val oneSided: Boolean) {
+    val horizontal = edge == Edge.LEFT || edge == Edge.RIGHT
+    val towardEnd = edge == Edge.RIGHT || edge == Edge.BOTTOM
+    private val direction = if (towardEnd) 1f else -1f
+    private val anchor = center(frame) - (if (oneSided) direction * halfSize(frame) else 0f)
+    private val minExtent = if (oneSided) minSize else minSize / 2f
+
+    fun coordinate(frame: Border): Float = center(frame) + direction * halfSize(frame)
+
+    fun canReach(coordinate: Float): Boolean = extentAt(coordinate) >= minExtent
+
+    fun move(frame: Border, dx: Float, dy: Float): Border =
+        place(frame, coordinate(frame) + (if (horizontal) dx else dy))
+
+    fun place(frame: Border, coordinate: Float): Border {
+        val extent = extentAt(coordinate).coerceAtLeast(minExtent)
+        val center = if (oneSided) anchor + direction * extent / 2f else anchor
+        val size = if (oneSided) extent else extent * 2f
+        return if (horizontal) frame.copy(centerX = center, width = size)
+        else frame.copy(centerY = center, height = size)
+    }
+
+    private fun center(frame: Border) = if (horizontal) frame.centerX else frame.centerY
+    private fun halfSize(frame: Border) = if (horizontal) frame.width / 2f else frame.height / 2f
+    private fun extentAt(coordinate: Float) = (coordinate - anchor) * direction
 }
 
 internal fun moveFrame(frame: Border, dx: Float, dy: Float, canvasW: Float, canvasH: Float): Border =

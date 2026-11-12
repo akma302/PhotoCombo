@@ -11,9 +11,11 @@ import com.combo.core.model.FramingMode
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.core.render.ItemDraft
+import com.combo.core.render.Border
 import com.combo.core.render.ItemFrame
 import com.combo.core.render.ItemGestures
 import com.combo.core.render.Viewport
+import com.combo.core.render.TransformMath
 import com.combo.core.render.buildItemFrame
 import com.combo.core.render.minBorderSize
 import com.combo.core.render.relayout
@@ -25,7 +27,6 @@ import com.combo.data.PhotoEntity
 import com.combo.data.srcSize
 import com.combo.domain.BitmapSource
 import com.combo.domain.ComboRepository
-import com.combo.domain.GuidePreviewSettings
 import com.combo.domain.PhotoAssets
 import com.combo.domain.PhotoRepository
 import com.combo.feature.builder.draft.ComboSnap
@@ -39,7 +40,6 @@ import com.combo.feature.builder.draft.toSnap
 import com.combo.feature.builder.draft.trimmedToFrames
 import com.combo.feature.builder.history.DraftHistory
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -75,10 +75,9 @@ class ComboBuilderViewModel(
     private val ids: IdGenerator,
     private val clock: WallClock,
     private val ioDispatcher: CoroutineDispatcher,
-    private val guidePreviewSettings: GuidePreviewSettings? = null,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(BuilderUiState(guidePreviewReady = guidePreviewSettings == null))
+    private val _state = MutableStateFlow(BuilderUiState())
     val state: StateFlow<BuilderUiState> = _state.asStateFlow()
     val selectedPhotoSize: StateFlow<PhotoSize?> = state
         .map { it.selectedPhotoSize() }
@@ -104,15 +103,16 @@ class ComboBuilderViewModel(
 
     private var createdAt: Long = 0
     private var bitmapJob: Job? = null
-    private var frameSnap: FrameSnapSession? = null
+    private var snapSession: SnapSession? = null
 
-    private class FrameSnapSession(val id: String, val engine: FrameSnap, var state: FrameSnapState)
+    private class SnapSession(
+        val id: String,
+        val kind: SnapDragKind,
+        val engine: FrameSnap,
+        var state: FrameSnapState,
+    )
 
     init {
-        if (guidePreviewSettings != null) viewModelScope.launch {
-            val enabled = guidePreviewSettings.load()
-            _state.update { it.copy(guidePreview = enabled, guidePreviewReady = true) }
-        }
         val comboId: String? = savedStateHandle["comboId"]
         val photoIds: List<String> = savedStateHandle.get<String>("photos")
             ?.split(',')?.filter { it.isNotBlank() } ?: emptyList()
@@ -204,7 +204,7 @@ class ComboBuilderViewModel(
                 selectItem(e.id, e.bringToFront)
             }
             is BuilderEvent.PointerEditFinished -> {
-                clearFrameSnap()
+                clearSnap()
                 gesture(if (e.cancelled) GesturePhase.CANCEL else GesturePhase.END) {}
             }
             BuilderEvent.CanvasTapped -> _state.update {
@@ -220,10 +220,9 @@ class ComboBuilderViewModel(
                     emitRevision()
                 }
             }
-            is BuilderEvent.SnapFrameDrag -> withItem(e.id) { item -> moveFrameWithSnap(item, e) }
-            BuilderEvent.BypassFrameSnap -> bypassFrameSnap()
-            BuilderEvent.ClearFrameSnap -> clearFrameSnap()
-            is BuilderEvent.SetGuidePreview -> setGuidePreview(e.enabled)
+            is BuilderEvent.SnapDrag -> withItem(e.id) { item -> moveWithSnap(item, e) }
+            BuilderEvent.BypassSnap -> bypassSnap()
+            BuilderEvent.ClearSnap -> clearSnap()
             is BuilderEvent.ItemPinch -> withItem(e.id) { item ->
                 gesture(e.phase) {
                     val minSize = minBorderSize(_state.value.canvasW, _state.value.canvasH)
@@ -400,48 +399,59 @@ class ComboBuilderViewModel(
         }
     }
 
-    private fun moveFrameWithSnap(item: ItemDraft, event: BuilderEvent.SnapFrameDrag) {
-        val s = _state.value
-        val session = frameSnap?.takeIf { it.id == item.id } ?: run {
+    private fun moveWithSnap(item: ItemDraft, event: BuilderEvent.SnapDrag) {
+        val session = snapSession?.takeIf { it.id == item.id && it.kind == event.kind } ?: run {
+            val s = _state.value
             val frame = item.border()
-            val targets = s.items.filter { it.id != item.id }.sortedBy { it.id }.map { it.border() }
-            FrameSnapSession(item.id, FrameSnap(s.canvasW, s.canvasH, frame, targets), FrameSnapState(frame))
-                .also { frameSnap = it }
+            val kind = event.kind
+            if (kind == SnapDragKind.PanPhoto) {
+                if (item.framingMode == FramingMode.FIT) return
+                val src = s.photos[item.photoId] ?: return
+                val size = TransformMath.contentSize(src.width, src.height, item.contentScale)
+                val photo = Border(frame.centerX + item.panX, frame.centerY + item.panY, size.width, size.height)
+                SnapSession(item.id, kind, FrameSnap.photo(frame, photo), FrameSnapState(photo))
+            } else {
+                val targets = s.items.filter { it.id != item.id }.sortedBy { it.id }.map { it.border() }
+                val engine = if (kind is SnapDragKind.Resize) {
+                    FrameSnap.resize(
+                        s.canvasW, s.canvasH, frame, targets, kind.edge,
+                        minBorderSize(s.canvasW, s.canvasH), kind.oneSided,
+                    )
+                } else FrameSnap(s.canvasW, s.canvasH, frame, targets)
+                SnapSession(item.id, kind, engine, FrameSnapState(frame))
+            }
         }
+        snapSession = session
         val step = session.engine.move(
-            session.state, event.delta.x, event.delta.y, event.distances, event.bypass, s.guidePreview,
+            session.state, event.delta.x, event.delta.y, event.distances, event.bypass,
         )
         applySnap(item, session, step)
     }
 
-    private fun bypassFrameSnap() {
-        val session = frameSnap ?: return
+    private fun bypassSnap() {
+        val session = snapSession ?: return
         if (_state.value.snapGuides.isEmpty()) return
         withItem(session.id) { applySnap(it, session, session.state.withoutSnap()) }
     }
 
-    private fun applySnap(item: ItemDraft, session: FrameSnapSession, step: SnapStep) {
+    private fun applySnap(item: ItemDraft, session: SnapSession, step: SnapStep) {
         session.state = step.state
-        item.centerX = step.placed.centerX
-        item.centerY = step.placed.centerY
+        val placed = step.placed
+        if (session.kind == SnapDragKind.PanPhoto) {
+            item.panX = placed.centerX - item.centerX
+            item.panY = placed.centerY - item.centerY
+        } else {
+            item.centerX = placed.centerX
+            item.centerY = placed.centerY
+            item.width = placed.width
+            item.height = placed.height
+        }
         _state.update { it.copy(snapGuides = step.guides, revision = it.revision + 1) }
     }
 
-    private fun clearFrameSnap() {
-        frameSnap = null
+    private fun clearSnap() {
+        snapSession = null
         if (_state.value.snapGuides.isNotEmpty()) _state.update { it.copy(snapGuides = emptyList()) }
-    }
-
-    private fun setGuidePreview(enabled: Boolean) {
-        val s = _state.value
-        if (!s.guidePreviewReady || s.guidePreview == enabled) return
-        _state.update {
-            it.copy(guidePreview = enabled, snapGuides = it.snapGuides.filter { guide -> enabled || !guide.preview })
-        }
-        val settings = guidePreviewSettings ?: return
-        viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            if (!settings.save(enabled)) _messages.send("Could not save guide preview preference")
-        }
     }
 
     private fun deleteItem(id: String) {

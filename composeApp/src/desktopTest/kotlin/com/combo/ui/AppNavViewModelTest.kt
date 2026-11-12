@@ -64,14 +64,6 @@ class AppNavViewModelTest : UiTestBase() {
                 viewModelModule,
                 module { single<com.combo.domain.GallerySettingsRepository> { settings } },
                 module {
-                    single<com.combo.domain.GuidePreviewSettings> {
-                        object : com.combo.domain.GuidePreviewSettings {
-                            override suspend fun load() = false
-                            override suspend fun save(enabled: Boolean) = true
-                        }
-                    }
-                },
-                module {
                     single<PhotoRepository> { photoRepo }
                     single<ComboRepository> { comboRepo }
                     single<BitmapSource> { bitmapSource }
