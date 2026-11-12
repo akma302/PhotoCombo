@@ -2,9 +2,6 @@ package com.combo.feature.builder
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import com.combo.ui.common.designsystem.theme.PcTheme
@@ -25,9 +22,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.isShiftPressed
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -97,8 +91,7 @@ internal fun EditorViewport(
 /**
  * Полотно редактора: рамка с фоном и `Canvas` с холстом.
  *
- * Порядок модификаторов на `Canvas` значим: сначала [editorTaps], затем жесты
- * [editorGestures] — оба блока живут с ключом `Unit` и оба получают события в этом порядке.
+ * The inner wheel handler finishes its undo series before the press starts a pointer edit.
  */
 @Composable
 private fun EditorCanvas(
@@ -124,7 +117,6 @@ private fun EditorCanvas(
                 .fillMaxSize()
                 .testTag(EDITOR_CANVAS_TAG)
                 .onSizeChanged(onCanvasSized)
-                .editorTaps(vm, curTransform)
                 .editorGestures(vm, curHandlePx, curState, curTransform)
                 // Колесо — отдельный цикл: у него нет UP-события, серию тиков завершает
                 // таймаут (см. editorWheelZoom).
@@ -170,33 +162,3 @@ private fun EditorCanvas(
         }
     }
 }
-
-private fun Modifier.editorTaps(vm: ComboBuilderViewModel, transform: State<CanvasTransform>): Modifier =
-    pointerInput(Unit) {
-        var previousUp: PointerInputChange? = null
-        var previousItemId: String? = null
-        awaitEachGesture {
-            val down = awaitFirstDown()
-            val preserveOrder = currentEvent.keyboardModifiers.isShiftPressed
-            down.consume()
-            val up = waitForUpOrCancellation()
-            if (up == null) {
-                previousUp = null
-                return@awaitEachGesture
-            }
-            up.consume()
-            val itemId = vm.hitTest(transform.value.toCanvas(up.position))
-
-            // Apply the first click immediately. A nearby second click can also toggle edit mode.
-            val isDoubleTap = previousUp?.let { first ->
-                val interval = down.uptimeMillis - first.uptimeMillis
-                interval in viewConfiguration.doubleTapMinTimeMillis..viewConfiguration.doubleTapTimeoutMillis &&
-                    itemId == previousItemId && (down.position - first.position).getDistance() <= viewConfiguration.touchSlop
-            } ?: false
-            if (itemId == null) vm.onEvent(BuilderEvent.CanvasTapped)
-            else vm.onEvent(BuilderEvent.ItemTapped(itemId, bringToFront = !preserveOrder))
-            if (isDoubleTap) vm.onEvent(BuilderEvent.ToggleMode)
-            previousUp = up.takeUnless { isDoubleTap }
-            previousItemId = itemId
-        }
-    }

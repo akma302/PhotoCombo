@@ -1,6 +1,7 @@
 package com.combo.feature.builder
 
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.PointerButton
@@ -66,10 +67,16 @@ class ComboBuilderGesturesTest : UiTestBase() {
             ioDispatcher = ioDispatcher,
         )
 
-    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel, repo: FakePhotoRepository) {
+    private fun ComposeUiTest.setBuilderContent(
+        vm: ComboBuilderViewModel,
+        repo: FakePhotoRepository,
+        visible: () -> Boolean = { true },
+    ) {
         val koin = trackKoin(repo)
         setContent {
-            TestScreen(koin, backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
+            TestScreen(koin, backDispatcher) {
+                if (visible()) ComboBuilderScreen(onBack = {}, vm = vm)
+            }
         }
         waitUntil(timeoutMillis = 5_000) {
             vm.state.value.loaded && vm.state.value.screenW > 0f
@@ -117,21 +124,28 @@ class ComboBuilderGesturesTest : UiTestBase() {
         settleGestures()
     }
 
-    private fun ComposeUiTest.canvasClick(at: Offset, time: Long, shift: Boolean = false) {
+    private fun ComposeUiTest.canvasPointer(
+        type: PointerEventType,
+        at: Offset,
+        time: Long,
+        shift: Boolean = false,
+    ) {
         val node = onNodeWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNode()
         val root = node.root as PlatformRootForTest
         val position = node.positionInRoot + at
-        val modifiers = PointerKeyboardModifiers(isShiftPressed = shift)
         runOnUiThread {
             root.sendPointerEvent(
-                PointerEventType.Press, position, timeMillis = time,
-                buttons = PointerButtons(isPrimaryPressed = true), keyboardModifiers = modifiers, button = PointerButton(0),
-            )
-            root.sendPointerEvent(
-                PointerEventType.Release, position, timeMillis = time + 16,
-                buttons = PointerButtons(), keyboardModifiers = modifiers, button = PointerButton(0),
+                type, position, timeMillis = time,
+                buttons = PointerButtons(isPrimaryPressed = type != PointerEventType.Release),
+                keyboardModifiers = PointerKeyboardModifiers(isShiftPressed = shift),
+                button = if (type == PointerEventType.Move) null else PointerButton(0),
             )
         }
+    }
+
+    private fun ComposeUiTest.canvasClick(at: Offset, time: Long) {
+        canvasPointer(PointerEventType.Press, at, time)
+        canvasPointer(PointerEventType.Release, at, time + 16)
     }
 
     @Test
@@ -153,16 +167,20 @@ class ComboBuilderGesturesTest : UiTestBase() {
         val exposed = local(vm.state.value, 400f, 450f)
         val overlap = local(vm.state.value, 600f, 450f)
 
-        canvasClick(exposed, time = 1_000L, shift = true)
+        canvasPointer(PointerEventType.Press, exposed, time = 1_000L, shift = true)
         assertEquals(initial.first(), vm.state.value.selectedItemId)
         assertEquals(initial, vm.state.value.items.map { it.id })
+        canvasPointer(PointerEventType.Release, exposed, time = 1_016L)
         assertFalse(vm.state.value.isDirty)
         assertFalse(vm.state.value.canUndo)
 
-        canvasClick(exposed, time = 2_000L)
+        canvasPointer(PointerEventType.Press, exposed, time = 2_000L)
         val raised = initial.drop(1) + initial.first()
         assertEquals(raised, vm.state.value.items.map { it.id })
         assertEquals(listOf(0, 1, 2), vm.state.value.items.map { it.zIndex })
+        assertFalse(vm.state.value.isDirty)
+        assertFalse(vm.state.value.canUndo)
+        canvasPointer(PointerEventType.Release, exposed, time = 2_016L)
         assertTrue(vm.state.value.isDirty)
         assertTrue(vm.state.value.canUndo)
 
@@ -185,6 +203,67 @@ class ComboBuilderGesturesTest : UiTestBase() {
         waitUntil(timeoutMillis = 5_000) { comboRepo.savedCombos.isNotEmpty() }
         assertEquals(raised, comboRepo.savedCombos.single().second.map { it.id })
         assertEquals(listOf(0, 1, 2), comboRepo.savedCombos.single().second.map { it.zIndex })
+    }
+
+    @Test
+    fun pressAndDragMovesTheRaisedFrameWithOneUndoStep() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
+        val vm = builder(listOf("p1", "p2"), repo)
+        setBuilderContent(vm, repo)
+        val st = vm.state.value
+        val initial = st.items.associate { it.id to it.border() }
+        val first = st.items.first().id
+        val second = st.items.last().id
+        val from = local(st, 640f, 450f)
+        val to = local(st, 960f, 450f)
+
+        canvasPointer(PointerEventType.Press, from, time = 1_000L)
+        assertEquals(first, vm.state.value.selectedItemId)
+        assertEquals(listOf(second, first), vm.state.value.items.map { it.id })
+        assertFalse(vm.state.value.canUndo)
+
+        canvasPointer(PointerEventType.Move, to, time = 1_016L)
+        assertTrue(vm.state.value.items.last().border().centerX > initial.getValue(first).centerX)
+        assertEquals(initial.getValue(second), vm.state.value.items.first().border())
+        assertFalse(vm.state.value.canUndo)
+        canvasPointer(PointerEventType.Release, to, time = 1_032L)
+        assertTrue(vm.state.value.canUndo)
+
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(initial.keys.toList(), vm.state.value.items.map { it.id })
+        assertEquals(initial, vm.state.value.items.associate { it.id to it.border() })
+        assertFalse(vm.state.value.canUndo)
+
+        // Shift applies at press time. Releasing Shift while dragging keeps the layer in place.
+        canvasPointer(PointerEventType.Press, from, time = 2_000L, shift = true)
+        canvasPointer(PointerEventType.Move, to, time = 2_016L)
+        assertEquals(initial.keys.toList(), vm.state.value.items.map { it.id })
+        assertTrue(vm.state.value.items.first().border().centerX > initial.getValue(first).centerX)
+        canvasPointer(PointerEventType.Release, to, time = 2_032L)
+        assertTrue(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun removingTheCanvasDuringDragRollsBackThePendingLayerAndMovement() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
+        val vm = builder(listOf("p1", "p2"), repo)
+        val visible = mutableStateOf(true)
+        setBuilderContent(vm, repo) { visible.value }
+        val st = vm.state.value
+        val initial = st.items.associate { it.id to it.border() }
+        val center = centerOf(st, 0)
+        val at = local(st, center.x, center.y)
+
+        canvasPointer(PointerEventType.Press, at, time = 1_000L)
+        assertEquals(initial.keys.reversed(), vm.state.value.items.map { it.id })
+        canvasPointer(PointerEventType.Move, at + Offset(80f, 0f), time = 1_016L)
+        assertTrue(vm.state.value.items.last().border().centerX > center.x)
+        runOnUiThread { visible.value = false }
+        waitForIdle()
+
+        assertEquals(initial.keys.toList(), vm.state.value.items.map { it.id })
+        assertEquals(initial, vm.state.value.items.associate { it.id to it.border() })
+        assertFalse(vm.state.value.canUndo)
     }
 
     @Test
@@ -306,26 +385,26 @@ class ComboBuilderGesturesTest : UiTestBase() {
         assertEquals(EditMode.BORDER, vm.state.value.mode)
 
         // Первый ресайз — левая грань первой рамки (канвасная координата 0).
-        val left = vm.state.value.items[0].border()
+        val resizedId = vm.state.value.items.first().id
+        val left = vm.state.value.items.first().border()
         dragEdge(
             vm.state.value,
             Offset(left.centerX - left.width / 2, left.centerY),
             Offset(-80f, 0f),
         )
-        val afterFirst = vm.state.value.items[0].border().width
-        assertTrue("ресайз за левую грань не сработал", afterFirst > left.width + 50f)
+        val afterFirst = vm.state.value.items.single { it.id == resizedId }.border()
+        assertTrue("ресайз за левую грань не сработал", afterFirst.width > left.width + 50f)
 
         // Повторный ресайз — правая грань на её НОВОМ месте. До фикса проба грани
         // сравнивала несмасштабированный прямоугольник с экранной точкой: мимо
         // грани — и жест вырождался в сдвиг, размер не менялся.
-        val right = vm.state.value.items[0].border()
         dragEdge(
             vm.state.value,
-            Offset(right.centerX + right.width / 2, right.centerY),
+            Offset(afterFirst.centerX + afterFirst.width / 2, afterFirst.centerY),
             Offset(80f, 0f),
         )
-        val afterSecond = vm.state.value.items[0].border().width
-        assertTrue("повторный ресайз за правую грань не сработал", afterSecond > afterFirst + 50f)
+        val afterSecond = vm.state.value.items.single { it.id == resizedId }.border().width
+        assertTrue("повторный ресайз за правую грань не сработал", afterSecond > afterFirst.width + 50f)
     }
 
     // ---------- клик с микросдвигом ----------

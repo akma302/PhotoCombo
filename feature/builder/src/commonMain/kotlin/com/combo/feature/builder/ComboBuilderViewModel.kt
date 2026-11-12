@@ -185,7 +185,13 @@ class ComboBuilderViewModel(
      */
     fun onEvent(e: BuilderEvent) {
         when (e) {
-            is BuilderEvent.ItemTapped -> selectItem(e.id, e.bringToFront)
+            is BuilderEvent.ItemTapped -> selectItem(e.id)
+            is BuilderEvent.ItemPressed -> {
+                history.begin()
+                selectItem(e.id, e.bringToFront)
+            }
+            is BuilderEvent.PointerEditFinished ->
+                gesture(if (e.cancelled) GesturePhase.CANCEL else GesturePhase.END) {}
             BuilderEvent.CanvasTapped -> _state.update {
                 it.copy(selectedItemId = null, revision = it.revision + 1)
             }
@@ -358,19 +364,18 @@ class ComboBuilderViewModel(
         markDirtyAndEmit()
     }
 
-    private fun selectItem(id: String, bringToFront: Boolean) {
+    private fun selectItem(id: String, bringToFront: Boolean = false) {
         val s = _state.value
         val index = s.items.indexOfFirst { it.id == id }
         if (index < 0) return
         val reordered = if (bringToFront && !s.saving) {
-            DraftEditor.moveToFront(s.items, index, ::checkpointForEdit)
+            DraftEditor.moveToFront(s.items, index)
         } else null
         if (reordered == null && s.selectedItemId == id) return
         _state.update {
             it.copy(
                 items = reordered ?: it.items,
                 selectedItemId = id,
-                isDirty = it.isDirty || reordered != null,
                 revision = it.revision + 1,
             )
         }
