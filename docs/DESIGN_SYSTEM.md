@@ -32,6 +32,8 @@ Launch commands and screenshot locations: [DEVELOPMENT](DEVELOPMENT.md).
   Action labels and groups wrap when space is limited; actions remain reachable with larger fonts.
 - Builder: side inspector in wide windows, tools below the canvas in narrow windows.
   Frame/Photo selects a mode, Fit/Fill are commands, and Always fit is a separate checkbox.
+- Builder: mint dashed guides show active frame alignment. The Guide preview checkbox reveals
+  dimmer candidate guides while dragging. Hold Ctrl during a drag for free placement.
 - Combos: no outer card frame or repeated title; resolution and Edit/Export PNG/Delete appear below the preview.
   Previews preserve their full aspect ratios and share a common height within each row.
 

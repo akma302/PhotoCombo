@@ -21,6 +21,7 @@ data class PcColors(
     val onDanger: Color,
     val scrim: Color,
     val shadow: Color,
+    val snapGuide: Color = Color(0xFF7EF3C8),
 ) {
     companion object {
         val Dark = PcColors(

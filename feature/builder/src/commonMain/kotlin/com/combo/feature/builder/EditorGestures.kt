@@ -11,10 +11,12 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.isOutOfBounds
+import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.combo.core.render.CanvasTransform
 import com.combo.core.render.Edge
+import com.combo.core.render.snap.SnapDistances
 import kotlin.math.abs
 import kotlin.math.hypot
 
@@ -95,6 +97,7 @@ internal fun Modifier.editorGestures(
     handlePx: State<Float>,
     state: State<BuilderUiState>,
     transform: State<CanvasTransform>,
+    snapDistancesPx: State<SnapDistances>,
 ): Modifier {
     fun toCanvas(p: Offset): Offset = transform.value.toCanvas(p)
 
@@ -166,6 +169,7 @@ internal fun Modifier.editorGestures(
                     val countChanged = pressed.size != lastCount
                     lastCount = pressed.size
                     if (countChanged) {
+                        if (pastSlop && kind == GestureKind.DRAG_ITEM) vm.onEvent(BuilderEvent.ClearFrameSnap)
                         if (!pastSlop) {
                             slopRef = centroid
                             spanRef = span
@@ -194,10 +198,22 @@ internal fun Modifier.editorGestures(
                                 BuilderEvent.BorderResize(id, edge, delta, GesturePhase.CHANGE)
                             )
                             GestureKind.DRAG_ITEM -> if (id != null) {
-                                val f = if (prevSpan > 0f && span > 0f) span / prevSpan else 1f
-                                vm.onEvent(BuilderEvent.ItemDrag(id, delta, GesturePhase.CHANGE))
-                                if (span > 0f && prevSpan > 0f)
-                                    vm.onEvent(BuilderEvent.ItemPinch(id, f, GesturePhase.CHANGE))
+                                if (pressed.size == 1) {
+                                    val scale = transform.value.scale
+                                    val distances = snapDistancesPx.value
+                                    vm.onEvent(BuilderEvent.SnapFrameDrag(
+                                        id, delta / scale,
+                                        SnapDistances(
+                                            distances.capture / scale, distances.release / scale, distances.preview / scale,
+                                        ),
+                                        event.keyboardModifiers.isCtrlPressed,
+                                    ))
+                                } else {
+                                    vm.onEvent(BuilderEvent.ItemDrag(id, delta, GesturePhase.CHANGE))
+                                    if (span > 0f && prevSpan > 0f) {
+                                        vm.onEvent(BuilderEvent.ItemPinch(id, span / prevSpan, GesturePhase.CHANGE))
+                                    }
+                                }
                             }
                             GestureKind.PAN_CONTENT -> if (id != null) {
                                 val f = if (prevSpan > 0f && span > 0f) span / prevSpan else 1f

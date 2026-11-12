@@ -83,6 +83,11 @@ fun ComboBuilderScreen(
                 if (event.key == Key.Spacebar && event.type == KeyEventType.KeyUp) {
                     spaceHeld.value = false
                 }
+                if (shortcutsFocused && event.type == KeyEventType.KeyDown &&
+                    (event.key == Key.CtrlLeft || event.key == Key.CtrlRight)
+                ) {
+                    vm.onEvent(BuilderEvent.BypassFrameSnap)
+                }
                 false
             }
             // Space remains a text or button action while a child control has focus.
