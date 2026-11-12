@@ -66,7 +66,7 @@ internal fun EditorViewport(
     val handlePx = with(density) { 24.dp.toPx() }
     val primaryColor = PcTheme.colors.accent
     val snapDistancesPx = with(density) {
-        SnapDistances(capture = 5.dp.toPx(), release = 8.dp.toPx(), preview = 12.dp.toPx())
+        SnapDistances(capture = 5.dp.toPx(), release = 8.dp.toPx())
     }
 
     // Блоки pointerInput ниже запускаются ОДИН раз (ключ Unit) — иначе смена выделения

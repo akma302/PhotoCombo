@@ -119,11 +119,18 @@ internal fun Modifier.editorGestures(
             awaitEachGesture {
                 val down = awaitFirstDown()
                 val mouse = down.type == PointerType.Mouse
-                val bringToFront = !currentEvent.keyboardModifiers.isShiftPressed
+                val shiftPressed = currentEvent.keyboardModifiers.isShiftPressed
+                val bringToFront = !shiftPressed
                 val initial = state.value
                 val hitId = vm.hitTest(toCanvas(down.position))
                 val edge = edgeHitAt(down.position, initial.selectedItemId)
                 val kind = classifyGesture(initial.mode, hitId, initial.selectedItemId, edge)
+                val snapKind = when (kind) {
+                    GestureKind.DRAG_ITEM -> SnapDragKind.MoveFrame
+                    GestureKind.PAN_CONTENT -> SnapDragKind.PanPhoto
+                    GestureKind.RESIZE -> edge?.let { SnapDragKind.Resize(it, oneSided = shiftPressed) }
+                    else -> null
+                }
                 val targetId = when (kind) {
                     GestureKind.RESIZE, GestureKind.PAN_CONTENT -> initial.selectedItemId
                     GestureKind.DRAG_ITEM -> hitId
@@ -169,7 +176,7 @@ internal fun Modifier.editorGestures(
                     val countChanged = pressed.size != lastCount
                     lastCount = pressed.size
                     if (countChanged) {
-                        if (pastSlop && kind == GestureKind.DRAG_ITEM) vm.onEvent(BuilderEvent.ClearFrameSnap)
+                        if (pastSlop && editStarted) vm.onEvent(BuilderEvent.ClearSnap)
                         if (!pastSlop) {
                             slopRef = centroid
                             spanRef = span
@@ -193,26 +200,22 @@ internal fun Modifier.editorGestures(
                     if (pastSlop) {
                         val delta = centroid - prev
                         val id = targetId?.takeIf { editStarted }
-                        when (kind) {
+                        if (id != null && snapKind != null && pressed.size == 1) {
+                            val scale = transform.value.scale
+                            val distances = snapDistancesPx.value
+                            vm.onEvent(BuilderEvent.SnapDrag(
+                                id, snapKind, delta / scale,
+                                SnapDistances(distances.capture / scale, distances.release / scale),
+                                event.keyboardModifiers.isCtrlPressed,
+                            ))
+                        } else when (kind) {
                             GestureKind.RESIZE -> if (id != null && edge != null) vm.onEvent(
                                 BuilderEvent.BorderResize(id, edge, delta, GesturePhase.CHANGE)
                             )
                             GestureKind.DRAG_ITEM -> if (id != null) {
-                                if (pressed.size == 1) {
-                                    val scale = transform.value.scale
-                                    val distances = snapDistancesPx.value
-                                    vm.onEvent(BuilderEvent.SnapFrameDrag(
-                                        id, delta / scale,
-                                        SnapDistances(
-                                            distances.capture / scale, distances.release / scale, distances.preview / scale,
-                                        ),
-                                        event.keyboardModifiers.isCtrlPressed,
-                                    ))
-                                } else {
-                                    vm.onEvent(BuilderEvent.ItemDrag(id, delta, GesturePhase.CHANGE))
-                                    if (span > 0f && prevSpan > 0f) {
-                                        vm.onEvent(BuilderEvent.ItemPinch(id, span / prevSpan, GesturePhase.CHANGE))
-                                    }
+                                vm.onEvent(BuilderEvent.ItemDrag(id, delta, GesturePhase.CHANGE))
+                                if (span > 0f && prevSpan > 0f) {
+                                    vm.onEvent(BuilderEvent.ItemPinch(id, span / prevSpan, GesturePhase.CHANGE))
                                 }
                             }
                             GestureKind.PAN_CONTENT -> if (id != null) {

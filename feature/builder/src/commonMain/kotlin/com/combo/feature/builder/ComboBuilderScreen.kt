@@ -86,7 +86,7 @@ fun ComboBuilderScreen(
                 if (shortcutsFocused && event.type == KeyEventType.KeyDown &&
                     (event.key == Key.CtrlLeft || event.key == Key.CtrlRight)
                 ) {
-                    vm.onEvent(BuilderEvent.BypassFrameSnap)
+                    vm.onEvent(BuilderEvent.BypassSnap)
                 }
                 false
             }

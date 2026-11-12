@@ -5,10 +5,7 @@ import com.combo.core.platform.WallClock
 import com.combo.data.PhotoStorage
 import com.combo.data.FileGallerySettingsStorage
 import com.combo.data.GallerySettingsStorage
-import com.combo.data.GuidePreviewStorage
-import com.combo.domain.FileGuidePreviewSettings
 import com.combo.domain.GallerySettingsRepository
-import com.combo.domain.GuidePreviewSettings
 import com.combo.domain.GallerySettingsRepositoryImpl
 import com.combo.domain.ComboRepository
 import com.combo.domain.ComboRepositoryImpl
@@ -29,7 +26,6 @@ import org.koin.dsl.module
 val appModule = module {
     single<GallerySettingsStorage> { FileGallerySettingsStorage(get(), get()) }
     single<GallerySettingsRepository> { GallerySettingsRepositoryImpl(get(), get(), get()) }
-    single<GuidePreviewSettings> { FileGuidePreviewSettings(GuidePreviewStorage(get(), get()), get(), get()) }
     single { PhotoStorage(dirs = get(), files = get()) }
 
     single {
