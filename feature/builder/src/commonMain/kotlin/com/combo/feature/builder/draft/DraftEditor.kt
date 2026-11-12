@@ -69,7 +69,7 @@ internal object DraftEditor {
         from: Int,
         beforeApply: () -> Unit = {},
     ): List<ItemDraft>? {
-        if (from !in 0 until items.lastIndex) return null
+        if (from < 0 || from >= items.lastIndex) return null
 
         beforeApply()
         val list = items.toMutableList()
