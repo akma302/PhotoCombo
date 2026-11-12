@@ -33,9 +33,9 @@ internal fun BuilderViewControls(state: BuilderUiState, onEvent: (BuilderEvent) 
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (showHint) {
+                val dragHint = if (state.mode == EditMode.EDIT) "Drag a frame" else "Drag a photo or a frame edge"
                 PcText(
-                    if (state.mode == EditMode.EDIT) "Drag a frame · Ctrl + scroll to zoom the view"
-                    else "Drag a photo · Drag an edge to resize the frame",
+                    "$dragHint · Ctrl + scroll for fine zoom · Space + scroll for view zoom",
                     style = PcTheme.typography.caption,
                     color = PcTheme.colors.textSecondary,
                     modifier = Modifier.weight(1f),

@@ -50,6 +50,7 @@ internal fun EditorViewport(
     vm: ComboBuilderViewModel,
     state: BuilderUiState,
     bitmaps: Map<String, ImageBitmap>,
+    spaceHeld: State<Boolean>,
     modifier: Modifier = Modifier,
 ) {
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
@@ -83,6 +84,7 @@ internal fun EditorViewport(
         state = state,
         transform = transform,
         bitmaps = bitmaps,
+        spaceHeld = spaceHeld,
         primaryColor = primaryColor,
         onCanvasSized = { boxSize = it },
         curState = curState,
@@ -104,6 +106,7 @@ private fun EditorCanvas(
     state: BuilderUiState,
     transform: CanvasTransform,
     bitmaps: Map<String, ImageBitmap>,
+    spaceHeld: State<Boolean>,
     primaryColor: Color,
     onCanvasSized: (IntSize) -> Unit,
     curState: State<BuilderUiState>,
@@ -125,7 +128,7 @@ private fun EditorCanvas(
                 .editorGestures(vm, curHandlePx, curState, curTransform)
                 // Колесо — отдельный цикл: у него нет UP-события, серию тиков завершает
                 // таймаут (см. editorWheelZoom).
-                .editorWheelZoom(vm, curState, curTransform),
+                .editorWheelZoom(vm, curState, curTransform, spaceHeld),
         ) {
             // Захват [bitmaps] draw-лямбдой: см. KDoc EditorViewport.
             val loaded = bitmaps.size
