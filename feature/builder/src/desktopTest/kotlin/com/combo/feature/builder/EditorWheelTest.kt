@@ -1,15 +1,28 @@
 package com.combo.feature.builder
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.text.TextRange
 import androidx.lifecycle.SavedStateHandle
+import com.combo.core.render.CanvasTransform
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.ui.FakeComboRepository
@@ -22,21 +35,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.awt.Canvas
+import java.awt.event.KeyEvent as AwtKeyEvent
 
 /**
  * Колесо мыши на холсте редактора — замена щипка: цель выбирается как у касаний (чужая
  * рамка в EDIT масштабируется целиком, выбранная в BORDER — только её фото, пустое место —
  * вид), а серия тиков копится в ОДИН undo-шаг.
  *
- * Ctrl+колесо (всегда вид) UI-тестом не покрыто: инжектор мыши skiko-тестов отправляет
- * события без модификаторов клавиатуры, поэтому Ctrl-ветку проверяют руками.
- *
  * Координаты ввода — ЛОКАЛЬНЫЕ для узла холста (так их принимает `performMouseInput`) и
  * считаются по тем же формулам, что и сам холст редактора. Пауза серии колеса — это
  * задержка в pointerInput-корутине: в skiko-тестах её двигает только mainClock, поэтому
  * после серии нужен `advanceTimeBy`.
  */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, InternalComposeUiApi::class)
 class EditorWheelTest : UiTestBase() {
 
     private var nextId = 0
@@ -93,6 +105,145 @@ class EditorWheelTest : UiTestBase() {
     private fun ComposeUiTest.settleGestures() {
         mainClock.advanceTimeBy(400)
         waitForIdle()
+    }
+
+    private fun ComposeUiTest.scrollUp(at: Offset, vararg ctrlPressed: Boolean) {
+        // Skiko's performMouseInput omits keyboard modifiers from its pointer events.
+        val canvas = onNodeWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNode()
+        val root = canvas.root as PlatformRootForTest
+        val position = canvas.positionInRoot + at
+        val time = mainClock.currentTime
+        runOnIdle {
+            for ((index, ctrl) in ctrlPressed.withIndex()) {
+                root.sendPointerEvent(
+                    eventType = PointerEventType.Scroll,
+                    position = position,
+                    scrollDelta = Offset(0f, -1f),
+                    timeMillis = time + index,
+                    keyboardModifiers = PointerKeyboardModifiers(isCtrlPressed = ctrl),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun ctrlChangesFrameZoomStepWithinOneUndoSeries() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1")))
+        val vm = builder(listOf("p1"), repo)
+        setBuilderContent(vm, repo)
+        val before = vm.state.value.items.single().border()
+
+        scrollUp(local(vm.state.value, before.centerX, before.centerY), true, false, true)
+        settleGestures()
+
+        val expected = before.width * 1.02f * 1.1f * 1.02f
+        assertEquals(expected, vm.state.value.items.single().width, 0.001f)
+        assertEquals(1f, vm.state.value.viewport.zoom, 0f)
+        assertTrue(vm.state.value.canUndo)
+
+        vm.onEvent(BuilderEvent.Undo)
+        waitForIdle()
+        assertEquals(before, vm.state.value.items.single().border())
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun ctrlInPhotoModeFineZoomsOnlyThePhotoInTheFrame() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1")))
+        val vm = builder(listOf("p1"), repo)
+        setBuilderContent(vm, repo)
+        vm.onEvent(BuilderEvent.ToggleMode)
+        waitForIdle()
+        val frame = vm.state.value.items.single()
+        val border = frame.border()
+        val contentScale = frame.contentScale
+
+        scrollUp(local(vm.state.value, border.centerX, border.centerY), true)
+        settleGestures()
+
+        assertEquals(contentScale * 1.02f, vm.state.value.items.single().contentScale, 0.001f)
+        assertEquals(border, vm.state.value.items.single().border())
+        assertEquals(1f, vm.state.value.viewport.zoom, 0f)
+    }
+
+    @Test
+    fun ctrlOnEmptySpaceFineZoomsTheViewAroundThePointer() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1")))
+        val vm = builder(listOf("p1"), repo)
+        setBuilderContent(vm, repo)
+        val before = vm.state.value
+        val at = emptySpotLocal(before)
+        val canvas = Size(before.canvasW, before.canvasH)
+        val screen = Size(before.screenW, before.screenH)
+        val anchor = CanvasTransform.ofViewport(before.viewport, canvas, screen).toCanvas(at)
+
+        scrollUp(at, true)
+        waitForIdle()
+
+        val after = vm.state.value
+        val anchored = CanvasTransform.ofViewport(after.viewport, canvas, screen).toScreen(anchor)
+        assertEquals(1.02f, after.viewport.zoom, 0.001f)
+        assertEquals(at.x, anchored.x, 0.001f)
+        assertEquals(at.y, anchored.y, 0.001f)
+        assertFalse(after.canUndo)
+    }
+
+    @Test
+    fun spaceForcesViewportZoomOverAFrameUntilReleased() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1")))
+        val vm = builder(listOf("p1"), repo)
+        setBuilderContent(vm, repo)
+        val before = vm.state.value.items.single().border()
+        val canvas = onNodeWithTag(EDITOR_CANVAS_TAG)
+        canvas.performKeyInput { keyDown(Key.Spacebar) }
+
+        scrollUp(local(vm.state.value, before.centerX, before.centerY), false, true)
+        waitForIdle()
+        val expectedViewZoom = 1.1f * 1.02f
+        assertEquals(expectedViewZoom, vm.state.value.viewport.zoom, 0.001f)
+        assertEquals(before, vm.state.value.items.single().border())
+        assertFalse(vm.state.value.canUndo)
+
+        canvas.performKeyInput { keyUp(Key.Spacebar) }
+        scrollUp(local(vm.state.value, before.centerX, before.centerY), false)
+        settleGestures()
+        assertEquals(expectedViewZoom, vm.state.value.viewport.zoom, 0.001f)
+        assertEquals(before.width * 1.1f, vm.state.value.items.single().width, 0.001f)
+        assertTrue(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun spaceTypesInTheNameAndZoomsTheViewAfterClickingTheCanvas() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1")))
+        val vm = builder(listOf("p1"), repo)
+        setBuilderContent(vm, repo)
+        val name = vm.state.value.name
+        val field = onNodeWithTag(TOOL_TAG_NAME).requestFocus()
+        field.performTextInputSelection(TextRange(name.length))
+        val root = checkNotNull(field.fetchSemanticsNode().root)
+        val typed = AwtKeyEvent(Canvas(), AwtKeyEvent.KEY_TYPED, 0L, 0, AwtKeyEvent.VK_UNDEFINED, ' ')
+
+        runOnIdle {
+            root.sendKeyEvent(KeyEvent(Key.Spacebar, KeyEventType.KeyDown))
+            root.sendKeyEvent(KeyEvent(Key.Spacebar, KeyEventType.Unknown, codePoint = ' '.code, nativeEvent = typed))
+            root.sendKeyEvent(KeyEvent(Key.Spacebar, KeyEventType.KeyUp))
+        }
+        waitForIdle()
+
+        assertEquals("$name ", vm.state.value.name)
+
+        val frame = vm.state.value.items.single().border()
+        val at = local(vm.state.value, frame.centerX, frame.centerY)
+        val canvas = onNodeWithTag(EDITOR_CANVAS_TAG)
+        canvas.performMouseInput { click(at) }
+        settleGestures()
+        canvas.performKeyInput { keyDown(Key.Spacebar) }
+        scrollUp(at, false)
+        canvas.performKeyInput { keyUp(Key.Spacebar) }
+
+        assertEquals(1.1f, vm.state.value.viewport.zoom, 0.001f)
+        assertEquals(frame, vm.state.value.items.single().border())
+        assertEquals("$name ", vm.state.value.name)
     }
 
     /**

@@ -1,5 +1,8 @@
 package com.combo.feature.builder
 
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -23,6 +26,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import com.combo.ui.common.CollectMessages
@@ -46,6 +61,14 @@ fun ComboBuilderScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     var inspectorExpanded by remember { mutableStateOf(true) }
     var pickMode by remember { mutableStateOf(BuilderPickMode.NONE) }
+    val spaceHeld = remember { mutableStateOf(false) }
+    val shortcutFocus = remember { FocusRequester() }
+    var shortcutsFocused by remember { mutableStateOf(false) }
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(Unit) { shortcutFocus.requestFocus() }
+    LaunchedEffect(windowFocused) {
+        if (!windowFocused) spaceHeld.value = false
+    }
 
     fun requestExit() {
         if (vm.state.value.isDirty) showExitDialog = true else onBack()
@@ -54,7 +77,28 @@ fun ComboBuilderScreen(
     CollectMessages(vm.messages, snackbar)
     RegisterBackHandler(enabled = state.loaded) { requestExit() }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    BoxWithConstraints(
+        Modifier.fillMaxSize()
+            .onPreviewKeyEvent { event ->
+                if (event.key == Key.Spacebar && event.type == KeyEventType.KeyUp) {
+                    spaceHeld.value = false
+                }
+                false
+            }
+            // Space remains a text or button action while a child control has focus.
+            .onKeyEvent { event ->
+                if (shortcutsFocused && event.key == Key.Spacebar && event.type == KeyEventType.KeyDown) {
+                    spaceHeld.value = true
+                }
+                false
+            }
+            .onFocusChanged { focus ->
+                shortcutsFocused = focus.isFocused
+                spaceHeld.value = false
+            }
+            .focusRequester(shortcutFocus)
+            .focusable(),
+    ) {
         val wide = maxWidth >= BUILDER_WIDE_MIN
         PcSurface(Modifier.fillMaxSize(), color = PcTheme.colors.app) {
             Column(Modifier.fillMaxSize()) {
@@ -68,7 +112,17 @@ fun ComboBuilderScreen(
                             wide = wide,
                             inspectorExpanded = inspectorExpanded,
                             modifier = Modifier.fillMaxSize(),
-                            canvas = { EditorViewport(vm, state, bitmaps, Modifier.padding(if (wide) 32.dp else 20.dp)) },
+                            canvas = {
+                                EditorViewport(
+                                    vm, state, bitmaps, spaceHeld,
+                                    Modifier.padding(if (wide) 32.dp else 20.dp).pointerInput(shortcutFocus) {
+                                        awaitEachGesture {
+                                            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                                            shortcutFocus.requestFocus()
+                                        }
+                                    },
+                                )
+                            },
                             inspector = { BuilderInspector(state, wide, vm::onEvent, photoSize) { pickMode = BuilderPickMode.REPLACE } },
                         )
                     }

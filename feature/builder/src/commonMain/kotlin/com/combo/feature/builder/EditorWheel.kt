@@ -12,8 +12,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Зум на один щелчок колеса; дробные значения (тачпады) дают плавный зум. */
+/** Zoom factor per wheel detent. Fractional deltas keep trackpad zoom smooth. */
 private const val WHEEL_ZOOM_STEP = 1.1f
+private const val FINE_WHEEL_ZOOM_STEP = 1.02f
 
 /**
  * Пауза после последнего тика колеса, по которой серия считается завершённой. Пока серия
@@ -28,7 +29,7 @@ private const val WHEEL_IDLE_END_MS = 250L
  * Цель выбирается тем же [classifyGesture], что и у касаний: рамка в EDIT (или чужая
  * рамка) масштабируется целиком ([BuilderEvent.ItemPinch]), выбранная рамка в BORDER —
  * только её фото ([BuilderEvent.ContentZoom]), пустое место — вид ([BuilderEvent.ViewportZoom]).
- * Ctrl+колесо всегда зумит вид: так вид можно увеличить, не уводя курсор с рамки.
+ * Ctrl reduces the step, and Space explicitly targets the viewport.
  *
  * В отличие от касаний, у колеса нет UP: серия тиков завершается по паузе
  * [WHEEL_IDLE_END_MS], поэтому `START` и `END` живут в этом блоке, а не в VM.
@@ -37,6 +38,7 @@ internal fun Modifier.editorWheelZoom(
     vm: ComboBuilderViewModel,
     state: State<BuilderUiState>,
     transform: State<CanvasTransform>,
+    spaceHeld: State<Boolean>,
 ): Modifier = this.pointerInput(Unit) {
     coroutineScope {
         var seriesKind = GestureKind.NONE
@@ -69,19 +71,12 @@ internal fun Modifier.editorWheelZoom(
                 change.consume()
 
                 // Вверх по колесу (dy < 0) — увеличение, вниз — уменьшение.
-                val factor = WHEEL_ZOOM_STEP.pow(-dy)
+                val step = if (event.keyboardModifiers.isCtrlPressed) FINE_WHEEL_ZOOM_STEP else WHEEL_ZOOM_STEP
+                val factor = step.pow(-dy)
                 val st = state.value
                 val position = change.position
-                val kind = if (event.keyboardModifiers.isCtrlPressed) {
-                    GestureKind.PAN_VIEWPORT
-                } else {
-                    classifyGesture(
-                        st.mode,
-                        vm.hitTest(transform.value.toCanvas(position)),
-                        st.selectedItemId,
-                        null,
-                    )
-                }
+                val hitId = if (spaceHeld.value) null else vm.hitTest(transform.value.toCanvas(position))
+                val kind = classifyGesture(st.mode, hitId, st.selectedItemId, null)
 
                 if (kind == GestureKind.PAN_VIEWPORT) {
                     // Вид не входит в undo, поэтому у него нет ни фаз, ни серии.
@@ -92,7 +87,7 @@ internal fun Modifier.editorWheelZoom(
 
                 val id = when (kind) {
                     GestureKind.PAN_CONTENT -> st.selectedItemId
-                    GestureKind.DRAG_ITEM -> vm.hitTest(transform.value.toCanvas(position))
+                    GestureKind.DRAG_ITEM -> hitId
                     else -> null
                 }
                 // Смена цели посреди серии (курсор ушёл на другую рамку) завершает
