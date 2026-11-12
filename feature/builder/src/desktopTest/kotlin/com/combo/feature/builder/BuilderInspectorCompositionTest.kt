@@ -88,8 +88,6 @@ class BuilderInspectorCompositionTest {
         assertTrue("флажок не растянут с центрированием", auto.width < fit.width + fill.width)
         val actions = listOf(
             bounds(TOOL_TAG_REPLACE_PHOTO),
-            onNodeWithContentDescription("Move one layer up").fetchSemanticsNode().boundsInRoot,
-            onNodeWithContentDescription("Move one layer down").fetchSemanticsNode().boundsInRoot,
             bounds(TOOL_TAG_DEL),
         )
         actions.forEach {
@@ -101,15 +99,13 @@ class BuilderInspectorCompositionTest {
         onNodeWithTag(TOOL_TAG_FIT).performClick()
         onNodeWithTag(TOOL_TAG_FILL).performClick()
         onNodeWithTag(TOOL_TAG_REPLACE_PHOTO).performClick()
-        onNodeWithContentDescription("Move one layer up").performClick()
-        onNodeWithContentDescription("Move one layer down").performClick()
+        onNodeWithContentDescription("Move one layer up").assertDoesNotExist()
+        onNodeWithContentDescription("Move one layer down").assertDoesNotExist()
         onNodeWithTag(TOOL_TAG_DEL).performClick()
         assertEquals(1, replacements)
         assertEquals(listOf(
             BuilderEvent.ApplyPreset("frame-1", FitPreset.FIT),
             BuilderEvent.ApplyPreset("frame-1", FitPreset.FILL),
-            BuilderEvent.ReorderItem("frame-1", true),
-            BuilderEvent.ReorderItem("frame-1", false),
             BuilderEvent.DeleteItem("frame-1"),
         ), events)
     }
@@ -127,8 +123,6 @@ class BuilderInspectorCompositionTest {
         }
         val actions = listOf(
             onNodeWithTag(TOOL_TAG_REPLACE_PHOTO),
-            onNodeWithContentDescription("Move one layer up"),
-            onNodeWithContentDescription("Move one layer down"),
             onNodeWithTag(TOOL_TAG_DEL),
         ).map { it.assertIsDisplayed().fetchSemanticsNode().boundsInRoot }
         actions.forEach {

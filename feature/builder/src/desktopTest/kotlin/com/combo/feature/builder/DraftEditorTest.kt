@@ -267,37 +267,27 @@ class DraftEditorTest {
         assertEquals("p2", target.photoId)
     }
 
-    // ---------- reorder ----------
+    // ---------- layer order ----------
 
     @Test
-    fun `reordering forward swaps the item and renumbers zIndex`() {
+    fun `moving to front keeps the other layers in order and renumbers zIndex`() {
         val items = listOf(item("a", zIndex = 0), item("b", zIndex = 1), item("c", zIndex = 2))
 
-        val next = DraftEditor.reorder(items, 0, forward = true, beforeApply = ::markCheckpoint)
+        val next = DraftEditor.moveToFront(items, 0, beforeApply = ::markCheckpoint)
 
-        assertEquals(listOf("b", "a", "c"), next!!.map { it.id })
+        assertEquals(listOf("b", "c", "a"), next!!.map { it.id })
         assertEquals(listOf(0, 1, 2), next.map { it.zIndex })
         assertEquals(1, checkpoints)
     }
 
     @Test
-    fun `reordering backward swaps the item`() {
-        val items = listOf(item("a"), item("b"), item("c"))
-
-        val next = DraftEditor.reorder(items, 2, forward = false, beforeApply = ::markCheckpoint)
-
-        assertEquals(listOf("a", "c", "b"), next!!.map { it.id })
-    }
-
-    /** У первого назад и у последнего вперёд соседа нет — пустой undo-шаг недопустим. */
-    @Test
-    fun `there is nothing to reorder at the edges`() {
+    fun `a front or missing frame does not create a checkpoint`() {
         val items = listOf(item("a"), item("b"))
 
-        assertNull(DraftEditor.reorder(items, 0, forward = false, beforeApply = ::markCheckpoint))
-        assertNull(DraftEditor.reorder(items, 1, forward = true, beforeApply = ::markCheckpoint))
-        assertNull("индекс вне списка отвергается", DraftEditor.reorder(items, 5, true, ::markCheckpoint))
-        assertNull("пустой список отвергается", DraftEditor.reorder(emptyList(), 0, true, ::markCheckpoint))
+        assertNull(DraftEditor.moveToFront(items, 1, ::markCheckpoint))
+        assertNull(DraftEditor.moveToFront(items, -1, ::markCheckpoint))
+        assertNull(DraftEditor.moveToFront(items, 5, ::markCheckpoint))
+        assertNull(DraftEditor.moveToFront(emptyList(), 0, ::markCheckpoint))
         assertEquals(0, checkpoints)
     }
 
@@ -306,7 +296,7 @@ class DraftEditorTest {
     fun `the source list keeps its order`() {
         val items = listOf(item("a"), item("b"))
 
-        DraftEditor.reorder(items, 0, forward = true, beforeApply = ::markCheckpoint)
+        DraftEditor.moveToFront(items, 0, beforeApply = ::markCheckpoint)
 
         assertEquals(listOf("a", "b"), items.map { it.id })
     }

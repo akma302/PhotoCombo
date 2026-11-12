@@ -55,7 +55,7 @@ internal data class NewItems(
  * undo-шаг — лишний Undo, который ничего не отменяет, и `isDirty` у комбо, которое
  * пользователь не менял.
  *
- * Побочный эффект есть ровно один и он по замыслу: [reorder] и [deleteItem]
+ * Побочный эффект есть ровно один и он по замыслу: [moveToFront] и [deleteItem]
  * перенумеровывают `zIndex` у переданных объектов [ItemDraft]. Драфты мутабельны и
  * лежат в состоянии по ссылке, копировать их — значит разорвать эту связь; поэтому
  * перенумерация делается на месте, а порядок элементов списка возвращается новым
@@ -63,32 +63,17 @@ internal data class NewItems(
  */
 internal object DraftEditor {
 
-    /**
-     * Поменять местами рамку [from] с соседней и вернуть новый упорядоченный список
-     * (`null` — переставлять некуда).
-     *
-     * Порядок слоёв — это [ItemDraft.zIndex], а он перенумеровывается подряд: `toEntities`
-     * пишет индекс по позиции в списке, значит список и `zIndex` обязаны совпадать, иначе
-     * после сохранения и перезагрузки порядок слоёв тихо поменяется местами.
-     *
-     * Возвращается НОВЫЙ список: состояние хранит `List<ItemDraft>`, и перестановка должна
-     * публиковаться новым объектом, иначе подписчики не увидят изменения.
-     */
-    fun reorder(
+    /** Move one frame above all others, keeping their relative order and z-indices in sync. */
+    fun moveToFront(
         items: List<ItemDraft>,
         from: Int,
-        forward: Boolean,
         beforeApply: () -> Unit = {},
     ): List<ItemDraft>? {
-        if (from !in items.indices) return null
-        val swapWith = if (forward) from + 1 else from - 1
-        if (swapWith !in items.indices) return null
+        if (from < 0 || from >= items.lastIndex) return null
 
         beforeApply()
         val list = items.toMutableList()
-        val tmp = list[from]
-        list[from] = list[swapWith]
-        list[swapWith] = tmp
+        list.add(list.removeAt(from))
         list.forEachIndexed { i, d -> d.zIndex = i }
         return list.toList()
     }
