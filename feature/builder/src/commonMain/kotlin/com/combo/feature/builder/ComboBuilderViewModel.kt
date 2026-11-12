@@ -185,9 +185,7 @@ class ComboBuilderViewModel(
      */
     fun onEvent(e: BuilderEvent) {
         when (e) {
-            is BuilderEvent.ItemTapped -> _state.update {
-                it.copy(selectedItemId = e.id, revision = it.revision + 1)
-            }
+            is BuilderEvent.ItemTapped -> selectItem(e.id, e.bringToFront)
             BuilderEvent.CanvasTapped -> _state.update {
                 it.copy(selectedItemId = null, revision = it.revision + 1)
             }
@@ -240,7 +238,6 @@ class ComboBuilderViewModel(
             is BuilderEvent.ReplacePhoto -> withItem(e.id) { replacePhoto(it, e.photoId) }
             is BuilderEvent.ApplyPreset -> withItem(e.id) { applyPreset(it, e.preset) }
             is BuilderEvent.SetFramingMode -> withItem(e.id) { setFramingMode(it, e.mode) }
-            is BuilderEvent.ReorderItem -> reorderItem(e.id, e.forward)
             is BuilderEvent.DeleteItem -> deleteItem(e.id)
             is BuilderEvent.SetAspect -> {
                 checkpointForEdit()
@@ -361,13 +358,22 @@ class ComboBuilderViewModel(
         markDirtyAndEmit()
     }
 
-    private fun reorderItem(id: String, forward: Boolean) {
+    private fun selectItem(id: String, bringToFront: Boolean) {
         val s = _state.value
-        val next = DraftEditor.reorder(
-            s.items, s.items.indexOfFirst { it.id == id }, forward, ::checkpointForEdit,
-        ) ?: return
-        _state.update { it.copy(items = next) }
-        markDirtyAndEmit()
+        val index = s.items.indexOfFirst { it.id == id }
+        if (index < 0) return
+        val reordered = if (bringToFront && !s.saving) {
+            DraftEditor.moveToFront(s.items, index, ::checkpointForEdit)
+        } else null
+        if (reordered == null && s.selectedItemId == id) return
+        _state.update {
+            it.copy(
+                items = reordered ?: it.items,
+                selectedItemId = id,
+                isDirty = it.isDirty || reordered != null,
+                revision = it.revision + 1,
+            )
+        }
     }
 
     private fun deleteItem(id: String) {

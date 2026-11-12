@@ -1,22 +1,35 @@
 package com.combo.feature.builder
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerButtons
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.lifecycle.SavedStateHandle
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
+import com.combo.data.ComboWithItems
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
+import com.combo.ui.comboEntity
+import com.combo.ui.comboItemEntity
 import com.combo.ui.photoEntity
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,15 +45,20 @@ import org.junit.Test
  * двумя пальцами) мышью не воспроизводятся: их место в desktop-вводе занимает колесо,
  * и его сценарии проверяет [EditorWheelTest].
  */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, InternalComposeUiApi::class)
 class ComboBuilderGesturesTest : UiTestBase() {
 
     private var nextId = 0
 
-    private fun builder(photoIds: List<String>, repo: FakePhotoRepository): ComboBuilderViewModel =
+    private fun builder(
+        photoIds: List<String>,
+        repo: FakePhotoRepository,
+        comboRepo: FakeComboRepository = FakeComboRepository(),
+        comboId: String? = null,
+    ): ComboBuilderViewModel =
         ComboBuilderViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("photos" to photoIds.joinToString(","))),
-            comboRepo = FakeComboRepository(),
+            savedStateHandle = SavedStateHandle(mapOf("photos" to photoIds.joinToString(","), "comboId" to comboId)),
+            comboRepo = comboRepo,
             photoRepo = repo,
             bitmapSource = StubBitmapSource(),
             ids = IdGenerator { "gen-${nextId++}" },
@@ -85,10 +103,6 @@ class ComboBuilderGesturesTest : UiTestBase() {
         return Offset(b.centerX, b.centerY)
     }
 
-    /**
-     * Разбор тапа в detectTapGestures ждёт истечения таймаута двойного тапа, а колесо —
-     * паузы серии; в skiko-тестах это виртуальное время двигает только mainClock.
-     */
     private fun ComposeUiTest.settleGestures() {
         mainClock.advanceTimeBy(400)
         waitForIdle()
@@ -101,6 +115,122 @@ class ComboBuilderGesturesTest : UiTestBase() {
             release()
         }
         settleGestures()
+    }
+
+    private fun ComposeUiTest.canvasClick(at: Offset, time: Long, shift: Boolean = false) {
+        val node = onNodeWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNode()
+        val root = node.root as PlatformRootForTest
+        val position = node.positionInRoot + at
+        val modifiers = PointerKeyboardModifiers(isShiftPressed = shift)
+        runOnUiThread {
+            root.sendPointerEvent(
+                PointerEventType.Press, position, timeMillis = time,
+                buttons = PointerButtons(isPrimaryPressed = true), keyboardModifiers = modifiers, button = PointerButton(0),
+            )
+            root.sendPointerEvent(
+                PointerEventType.Release, position, timeMillis = time + 16,
+                buttons = PointerButtons(), keyboardModifiers = modifiers, button = PointerButton(0),
+            )
+        }
+    }
+
+    @Test
+    fun shiftClickSelectsInPlaceAndClickImmediatelyRaisesAndSavesTheLayer() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2"), photoEntity("p3")))
+        val comboRepo = FakeComboRepository(listOf(ComboWithItems(
+            comboEntity("combo"),
+            (0..2).map { index ->
+                comboItemEntity("frame-$index", "combo", zIndex = index, photoId = "p${index + 1}").copy(
+                    centerX = 400f + 400f * index, width = 600f, height = 450f,
+                )
+            },
+        )))
+        val allowSave = CompletableDeferred<Unit>()
+        comboRepo.saveGate = { allowSave.await() }
+        val vm = builder(emptyList(), repo, comboRepo, comboId = "combo")
+        setBuilderContent(vm, repo)
+        val initial = vm.state.value.items.map { it.id }
+        val exposed = local(vm.state.value, 400f, 450f)
+        val overlap = local(vm.state.value, 600f, 450f)
+
+        canvasClick(exposed, time = 1_000L, shift = true)
+        assertEquals(initial.first(), vm.state.value.selectedItemId)
+        assertEquals(initial, vm.state.value.items.map { it.id })
+        assertFalse(vm.state.value.isDirty)
+        assertFalse(vm.state.value.canUndo)
+
+        canvasClick(exposed, time = 2_000L)
+        val raised = initial.drop(1) + initial.first()
+        assertEquals(raised, vm.state.value.items.map { it.id })
+        assertEquals(listOf(0, 1, 2), vm.state.value.items.map { it.zIndex })
+        assertTrue(vm.state.value.isDirty)
+        assertTrue(vm.state.value.canUndo)
+
+        canvasClick(overlap, time = 3_000L)
+        assertEquals(initial.first(), vm.state.value.selectedItemId)
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(initial, vm.state.value.items.map { it.id })
+        assertFalse(vm.state.value.canUndo)
+        runOnUiThread {
+            vm.onEvent(BuilderEvent.Redo)
+            vm.onEvent(BuilderEvent.Save)
+        }
+        try {
+            assertTrue(vm.state.value.saving)
+            canvasClick(local(vm.state.value, 1_350f, 450f), time = 4_000L)
+            assertEquals(raised, vm.state.value.items.map { it.id })
+        } finally {
+            allowSave.complete(Unit)
+        }
+        waitUntil(timeoutMillis = 5_000) { comboRepo.savedCombos.isNotEmpty() }
+        assertEquals(raised, comboRepo.savedCombos.single().second.map { it.id })
+        assertEquals(listOf(0, 1, 2), comboRepo.savedCombos.single().second.map { it.zIndex })
+    }
+
+    @Test
+    fun doubleClickRaisesTheFrameAndTogglesModeWithOneLayerUndoStep() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
+        val vm = builder(listOf("p1", "p2"), repo)
+        setBuilderContent(vm, repo)
+        val st = vm.state.value
+        val initial = st.items.map { it.id }
+        val at = centerOf(st, 0)
+
+        onNodeWithTag(EDITOR_CANVAS_TAG).performMouseInput { doubleClick(local(st, at.x, at.y)) }
+
+        assertEquals(EditMode.BORDER, vm.state.value.mode)
+        assertEquals(initial.reversed(), vm.state.value.items.map { it.id })
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(initial, vm.state.value.items.map { it.id })
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun clickAfterWheelKeepsSeparateUndoStepsForTheResizeAndLayerOrder() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
+        val vm = builder(listOf("p1", "p2"), repo)
+        setBuilderContent(vm, repo)
+        val st = vm.state.value
+        val initial = st.items.map { it.id }
+        val width = st.items.first().border().width
+        val center = centerOf(st, 0)
+        val at = local(st, center.x, center.y)
+
+        onNodeWithTag(EDITOR_CANVAS_TAG).performMouseInput {
+            moveTo(at)
+            scroll(-1f)
+            click(at)
+        }
+
+        val resized = vm.state.value.items.last().border().width
+        assertTrue(resized > width)
+        assertEquals(initial.reversed(), vm.state.value.items.map { it.id })
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(initial, vm.state.value.items.map { it.id })
+        assertEquals(resized, vm.state.value.items.first().border().width, 0.001f)
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(width, vm.state.value.items.first().border().width, 0.001f)
+        assertFalse(vm.state.value.canUndo)
     }
 
     /** Ресайз за грань: пресс точно на грани, протяжка половинами, release. */

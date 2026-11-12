@@ -112,7 +112,7 @@ internal fun nearEdge(p: Offset, border: Rect, tolerance: Float): Edge? {
  *   touchSlop размах иначе никогда не превысил бы slop относительно прошлого события, а
  *   центроид при этом стоял бы на месте — жест не начался бы никогда;
  * - `consume()` только ПОСЛЕ slop: иначе лёгкий сдвиг пальца «съедает» событие, и
- *   `detectTapGestures` не распознаёт тап (он отменяет тап по `consumed`).
+ *   обработчик кликов отменяет тап по `consumed`.
  */
 internal fun Modifier.editorGestures(
     vm: ComboBuilderViewModel,
@@ -234,7 +234,7 @@ internal fun Modifier.editorGestures(
                         prevSpan = span
                     }
                     // consume() только ПОСЛЕ slop, иначе лёгкий сдвиг съедает тап:
-                    // detectTapGestures отменяет тап, если событие уже consumed.
+                    // The tap handler cancels its click when movement is consumed.
                     event.changes.forEach { it.consume() }
                 } else {
                     prev = centroid

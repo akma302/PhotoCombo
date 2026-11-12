@@ -62,7 +62,7 @@ const val MSG_NOTHING_TO_SAVE = "Add at least one photo"
 // ---------- события ----------
 
 sealed interface BuilderEvent {
-    data class ItemTapped(val id: String) : BuilderEvent
+    data class ItemTapped(val id: String, val bringToFront: Boolean = false) : BuilderEvent
     object CanvasTapped : BuilderEvent
     object ToggleMode : BuilderEvent
     data class ItemDrag(val id: String, val delta: Offset, val phase: GesturePhase) : BuilderEvent
@@ -76,7 +76,6 @@ sealed interface BuilderEvent {
     data class ReplacePhoto(val id: String, val photoId: String) : BuilderEvent
     data class ApplyPreset(val id: String, val preset: FitPreset) : BuilderEvent
     data class SetFramingMode(val id: String, val mode: FramingMode) : BuilderEvent
-    data class ReorderItem(val id: String, val forward: Boolean) : BuilderEvent
     data class DeleteItem(val id: String) : BuilderEvent
     data class SetAspect(val w: Int, val h: Int) : BuilderEvent
     data class SetBackground(val spec: BackgroundSpec) : BuilderEvent

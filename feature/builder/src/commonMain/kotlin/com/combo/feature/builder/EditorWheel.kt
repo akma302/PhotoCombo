@@ -62,6 +62,7 @@ internal fun Modifier.editorWheelZoom(
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent()
+                if (event.type == PointerEventType.Press) endSeries()
                 if (event.type != PointerEventType.Scroll) continue
                 val change = event.changes.firstOrNull() ?: continue
                 val dy = change.scrollDelta.y

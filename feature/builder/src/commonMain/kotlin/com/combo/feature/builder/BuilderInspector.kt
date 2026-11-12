@@ -107,8 +107,6 @@ internal fun BuilderInspector(
                     Modifier.testTag(TOOL_TAG_REPLACE_PHOTO).semantics { contentDescription = "Replace photo" },
                     enabled = enabled, icon = PcIcons.ReplacePhoto,
                 ) else BuilderIconButton(PcIcons.ReplacePhoto, "Replace photo", onReplace, Modifier.testTag(TOOL_TAG_REPLACE_PHOTO), enabled)
-                BuilderIconButton(PcIcons.LayerUp, "Move one layer up", { onEvent(BuilderEvent.ReorderItem(item.id, true)) }, enabled = enabled && state.items.indexOf(item) < state.items.lastIndex)
-                BuilderIconButton(PcIcons.LayerDown, "Move one layer down", { onEvent(BuilderEvent.ReorderItem(item.id, false)) }, enabled = enabled && state.items.indexOf(item) > 0)
                 CompositionLocalProvider(LocalPcContentColor provides PcTheme.colors.danger) {
                     BuilderIconButton(
                         PcIcons.Delete, "Delete frame", { onEvent(BuilderEvent.DeleteItem(item.id)) },
@@ -125,6 +123,13 @@ internal fun BuilderInspector(
                     autoFit -> "Drag an edge to resize the frame.\nAlways fit keeps the photo centred."
                     else -> "Drag inside to move the photo.\nDrag an edge to resize the frame."
                 },
+                style = PcTheme.typography.caption,
+                color = PcTheme.colors.textSecondary,
+            )
+        }
+        if (state.items.size > 1) {
+            PcText(
+                "Click to bring to front. Shift-click to keep layer order.",
                 style = PcTheme.typography.caption,
                 color = PcTheme.colors.textSecondary,
             )
