@@ -38,3 +38,18 @@ fun DrawScope.drawItem(f: ItemFrame) {
 
 private fun Rect.toIntOffset() = IntOffset(left.roundToInt(), top.roundToInt())
 private fun Rect.toIntSize() = IntSize(width.roundToInt(), height.roundToInt())
+
+/** Bounds of the photo pixels drawn in the frame, in canvas coordinates. */
+fun visiblePhotoBounds(border: Border, srcW: Int, srcH: Int, framing: Framing): Rect {
+    if (framing.scale <= 0f || !framing.scale.isFinite()) return Rect.Zero
+    val dst = TransformMath.contentRect(border, srcW, srcH, framing.scale, Offset(framing.panX, framing.panY))
+    if (!dst.left.isFinite() || !dst.top.isFinite() || !dst.width.isFinite() || !dst.height.isFinite()) return Rect.Zero
+    val offset = dst.toIntOffset()
+    val size = dst.toIntSize()
+    return Rect(
+        offset.x.toFloat(),
+        offset.y.toFloat(),
+        offset.x.toFloat() + size.width,
+        offset.y.toFloat() + size.height,
+    ).intersect(border.rect())
+}

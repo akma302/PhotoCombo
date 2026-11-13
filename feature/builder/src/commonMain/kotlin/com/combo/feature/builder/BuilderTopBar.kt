@@ -14,6 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.combo.feature.builder.draft.ComboSnap
+import com.combo.feature.builder.draft.toSnap
+import com.combo.feature.builder.draft.trimmedToPhotos
 import com.combo.ui.common.designsystem.components.PcButton
 import com.combo.ui.common.designsystem.components.PcButtonVariant
 import com.combo.ui.common.designsystem.components.PcTextField
@@ -24,6 +27,7 @@ import com.combo.ui.common.designsystem.theme.PcTheme
 /** Название редактируется на месте, не вытесняя историю и основное действие сохранения. */
 @Composable
 internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> Unit, onEvent: (BuilderEvent) -> Unit) {
+    val canSave = state.loaded && !state.saving && (state.isDirty || state.hasMarginsToTrim())
     Row(
         Modifier.fillMaxWidth().background(PcTheme.colors.panel).heightIn(min = 57.dp).padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -53,7 +57,7 @@ internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> U
         Spacer(Modifier.width(8.dp))
         PcButton(
             text = "Save",
-            enabled = state.loaded && !state.saving && state.isDirty,
+            enabled = canSave,
             busy = state.saving,
             onClick = { onEvent(BuilderEvent.Save) },
             modifier = Modifier.testTag(TOOL_TAG_SAVE),
@@ -61,4 +65,10 @@ internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> U
             icon = PcIcons.Check,
         )
     }
+}
+
+private fun BuilderUiState.hasMarginsToTrim(): Boolean {
+    val draft = ComboSnap(canvasW, canvasH, background, items.map { it.toSnap() })
+    val cropped = draft.trimmedToPhotos(photos)
+    return cropped.canvasW != canvasW || cropped.canvasH != canvasH
 }
