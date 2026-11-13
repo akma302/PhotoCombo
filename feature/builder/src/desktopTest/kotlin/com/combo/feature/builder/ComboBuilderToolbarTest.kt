@@ -20,13 +20,17 @@ import com.combo.Const
 import com.combo.core.model.FramingMode
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
+import com.combo.data.ComboWithItems
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
+import com.combo.ui.comboEntity
+import com.combo.ui.comboItemEntity
 import com.combo.ui.photoEntity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 /**
@@ -40,10 +44,15 @@ class ComboBuilderToolbarTest : UiTestBase() {
 
     private var nextId = 0
 
-    private fun builder(photoIds: List<String>, repo: FakePhotoRepository): ComboBuilderViewModel =
+    private fun builder(
+        photoIds: List<String>,
+        repo: FakePhotoRepository,
+        comboRepo: FakeComboRepository = FakeComboRepository(),
+        comboId: String? = null,
+    ): ComboBuilderViewModel =
         ComboBuilderViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("photos" to photoIds.joinToString(","))),
-            comboRepo = FakeComboRepository(),
+            savedStateHandle = SavedStateHandle(mapOf("photos" to photoIds.joinToString(","), "comboId" to comboId)),
+            comboRepo = comboRepo,
             photoRepo = repo,
             bitmapSource = StubBitmapSource(),
             ids = IdGenerator { "gen-${nextId++}" },
@@ -59,6 +68,23 @@ class ComboBuilderToolbarTest : UiTestBase() {
         waitUntil(timeoutMillis = 5_000) {
             vm.state.value.loaded && vm.state.value.screenW > 0f
         }
+    }
+
+    @Test
+    fun existingComboWithMarginsCanBeSavedWithoutAnotherEdit() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1")))
+        val comboRepo = FakeComboRepository(listOf(ComboWithItems(
+            comboEntity("c1"),
+            listOf(comboItemEntity("large-frame", "c1").copy(framingMode = "FIT")),
+        )))
+        val vm = builder(emptyList(), repo, comboRepo, "c1")
+        setBuilderContent(vm, repo)
+        assertFalse(vm.state.value.isDirty)
+        onNodeWithTag(TOOL_TAG_SAVE).assertIsEnabled().performClick()
+        waitUntil { comboRepo.savedCombos.isNotEmpty() }
+        val saved = comboRepo.savedCombos.single().first
+        assertEquals(1350, saved.canvasWidth)
+        assertEquals(900, saved.canvasHeight)
     }
 
     /** Без выделения опасного действия нет в интерфейсе. */

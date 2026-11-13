@@ -37,6 +37,7 @@ import com.combo.feature.builder.draft.toDraft
 import com.combo.feature.builder.draft.toDrafts
 import com.combo.feature.builder.draft.toEntities
 import com.combo.feature.builder.draft.toSnap
+import com.combo.feature.builder.draft.trimmedToPhotos
 import com.combo.feature.builder.history.DraftHistory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -609,7 +610,7 @@ class ComboBuilderViewModel(
         _state.update { it.copy(saving = true) }
         // Драфты мутабельны и мутируются на главном потоке — читаем их ЗДЕСЬ, до ухода
         // на IO, иначе в комбо может попасть полу-изменённая рамка.
-        val draft = snapshot()
+        val draft = snapshot().trimmedToPhotos(s.photos)
         val id = s.comboId ?: ids.newId()
         val now = clock.nowMillis()
         val created = if (createdAt > 0) createdAt else now

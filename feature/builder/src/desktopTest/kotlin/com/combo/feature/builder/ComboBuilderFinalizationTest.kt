@@ -1,10 +1,18 @@
 package com.combo.feature.builder
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asSkiaBitmap
+import com.combo.ImageFixtures
 import com.combo.core.background.BackgroundSpec
+import com.combo.core.image.PngDestination
+import com.combo.core.image.PngOutput
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.data.ComboWithItems
+import com.combo.domain.BitmapSource
+import com.combo.domain.ComboPngExporter
+import com.combo.feature.builder.draft.FitPreset
 import com.combo.feature.builder.draft.toSnap
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
@@ -14,9 +22,11 @@ import com.combo.ui.comboItemEntity
 import com.combo.ui.photoEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import okio.Path.Companion.toPath
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,10 +57,14 @@ class ComboBuilderFinalizationTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun builder(repo: FakeComboRepository): ComboBuilderViewModel = ComboBuilderViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("comboId" to "c1")),
+    private fun builder(
+        repo: FakeComboRepository,
+        comboId: String? = "c1",
+        photos: FakePhotoRepository = FakePhotoRepository(listOf(photoEntity("p1"))),
+    ): ComboBuilderViewModel = ComboBuilderViewModel(
+        savedStateHandle = SavedStateHandle(mapOf("comboId" to comboId, "photos" to "p1")),
         comboRepo = repo,
-        photoRepo = FakePhotoRepository(listOf(photoEntity("p1"))),
+        photoRepo = photos,
         bitmapSource = StubBitmapSource(),
         ids = IdGenerator { "new-id" },
         clock = WallClock { 1_000L },
@@ -58,7 +72,7 @@ class ComboBuilderFinalizationTest {
     ).also { dispatcher.scheduler.advanceUntilIdle() }
 
     @Test
-    fun `save preserves the chosen canvas and frame coordinates including frames crossing its edge`() {
+    fun `save crops to the visible photos and translates the unmodified frame geometry`() {
         val repo = FakeComboRepository(listOf(original))
         val vm = builder(repo)
         val draftsBefore = vm.state.value.items.map { it.toSnap() }
@@ -67,17 +81,54 @@ class ComboBuilderFinalizationTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         val (combo, items) = repo.savedCombos.single()
-        assertEquals(1600, combo.canvasWidth)
-        assertEquals(900, combo.canvasHeight)
+        assertEquals(1400, combo.canvasWidth)
+        assertEquals(333, combo.canvasHeight)
         assertEquals(original.combo.id, combo.id)
         assertEquals(original.combo.name, combo.name)
         assertEquals(original.combo.createdAt, combo.createdAt)
         assertEquals(original.combo.background, combo.background)
         assertEquals(1_000L, combo.updatedAt)
-        assertEquals(original.items, items)
+        assertEquals(original.items.map { it.copy(centerX = it.centerX - 200f, centerY = it.centerY - 217f) }, items)
         assertEquals(draftsBefore, vm.state.value.items.map { it.toSnap() })
         assertEquals(1600f, vm.state.value.canvasW, 0f)
         assertEquals(900f, vm.state.value.canvasH, 0f)
+    }
+
+    @Test
+    fun `new combo exports the photo bounds inside its frame and keeps its scale`() = runBlocking {
+        val photos = FakePhotoRepository(listOf(photoEntity("p1")))
+        val repo = FakeComboRepository()
+        val vm = builder(repo, comboId = null, photos = photos)
+        val item = vm.state.value.items.single()
+        vm.onEvent(BuilderEvent.ApplyPreset(item.id, FitPreset.FIT))
+        vm.onEvent(BuilderEvent.ContentZoom(item.id, 0.5f, GesturePhase.CHANGE))
+        val photoScale = item.contentScale
+        vm.onEvent(BuilderEvent.Save)
+        dispatcher.scheduler.advanceUntilIdle()
+        val (combo, items) = repo.savedCombos.single()
+        assertEquals(675, combo.canvasWidth)
+        assertEquals(450, combo.canvasHeight)
+        assertEquals(photoScale, items.single().contentScale, 0f)
+        assertEquals(1600f, vm.state.value.canvasW, 0f)
+        repo.emit(listOf(ComboWithItems(combo, items)))
+
+        val red = 0xFFFF0000.toInt()
+        val source = object : BitmapSource {
+            override suspend fun get(photoId: String, requiredPx: Int) = ImageFixtures.solidBitmap(8, 8, red)
+        }
+        var exported: ImageBitmap? = null
+        val output = object : PngOutput {
+            override suspend fun chooseDestination(name: String) = PngDestination("combo.png".toPath(), false)
+            override suspend fun write(destination: PngDestination, image: ImageBitmap) {
+                exported = image
+            }
+        }
+        ComboPngExporter(repo, photos, source, output, Dispatchers.Unconfined).export(combo.id)
+        val image = checkNotNull(exported).asSkiaBitmap()
+        assertEquals(675, image.width)
+        assertEquals(450, image.height)
+        assertEquals(red, image.getColor(0, 0))
+        assertEquals(red, image.getColor(674, 449))
     }
 
     @Test

@@ -34,6 +34,7 @@ Launch commands and screenshot locations: [DEVELOPMENT](DEVELOPMENT.md).
   Frame/Photo selects a mode, Fit/Fill are commands, and Always fit is a separate checkbox.
   Canvas offers quick resolutions and exact width entry at the current aspect ratio. View shows the actual display
   scale. Whole canvas centers the canvas and scales it down only when needed.
+  Saving crops the working canvas to the outer bounds of the visible photos. PNG uses the saved bounds.
 - Builder: mint dashed guides show active alignment. Hold Ctrl during a drag for free placement.
   In Photo mode, Shift at the start of an edge drag keeps the opposite edge fixed.
 - Combos: no outer card frame or repeated title; resolution and Edit/Export PNG/Delete appear below the preview.
