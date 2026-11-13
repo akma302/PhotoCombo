@@ -288,6 +288,30 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
     }
 
     @Test
+    fun quickCanvasResolutionsApplyImmediatelyAndFollowTheAspectRatio() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        resize(420)
+        onNodeWithText("Canvas 1600 × 900 px").performClick()
+        onNodeWithText("1920 × 1080").assertIsDisplayed().performClick()
+        onNodeWithTag("canvas_size_dialog").assertDoesNotExist()
+        onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
+        onNodeWithText("16:9").assertIsDisplayed()
+        onNodeWithText("Canvas 1920 × 1080 px").performClick()
+        onNodeWithText("1920 × 1080").assertIsNotEnabled()
+        onNodeWithText("Cancel").performClick()
+        runOnIdle { vm.onEvent(BuilderEvent.Undo) }
+        onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+
+        onNodeWithTag(TOOL_TAG_ASPECT).performClick()
+        onNodeWithText("9:16").performClick()
+        onNodeWithText("Canvas 900 × 1600 px").performClick()
+        onNodeWithText("1080 × 1920").performClick()
+        onNodeWithText("Canvas 1080 × 1920 px").assertIsDisplayed()
+        onNodeWithText("9:16").assertIsDisplayed()
+    }
+
+    @Test
     fun canvasResolutionCanBeEditedWithoutChangingTheAspectRatio() = runSkikoComposeUiTest(Size(1200f, 800f)) {
         val vm = builder()
         show(vm)

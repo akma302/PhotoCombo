@@ -32,7 +32,7 @@ Launch commands and screenshot locations: [DEVELOPMENT](DEVELOPMENT.md).
   Action labels and groups wrap when space is limited; actions remain reachable with larger fonts.
 - Builder: side inspector in wide windows, tools below the canvas in narrow windows.
   Frame/Photo selects a mode, Fit/Fill are commands, and Always fit is a separate checkbox.
-  Canvas opens the resolution editor and preserves the current aspect ratio. View shows the actual display
+  Canvas offers quick resolutions and exact width entry at the current aspect ratio. View shows the actual display
   scale. Whole canvas centers the canvas and scales it down only when needed.
 - Builder: mint dashed guides show active alignment. Hold Ctrl during a drag for free placement.
   In Photo mode, Shift at the start of an edge drag keeps the opposite edge fixed.

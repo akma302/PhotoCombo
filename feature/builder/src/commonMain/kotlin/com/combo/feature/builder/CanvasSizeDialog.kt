@@ -2,6 +2,8 @@ package com.combo.feature.builder
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,8 +21,10 @@ import com.combo.ui.common.designsystem.components.PcDialog
 import com.combo.ui.common.designsystem.components.PcTextField
 import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.theme.PcTheme
+import kotlin.math.roundToInt
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 internal fun CanvasSizeDialog(
     size: CanvasFormat,
     onApply: (CanvasFormat) -> Unit,
@@ -28,6 +32,7 @@ internal fun CanvasSizeDialog(
 ) {
     RegisterBackHandler { onDismiss() }
     val ratio = size.aspectRatio()
+    val quickSizes = remember(ratio) { quickResolutions(ratio) }
     var widthText by remember(size) { mutableStateOf(size.w.toString()) }
     val width = widthText.trim().toIntOrNull()
     val height = width?.let { it.toLong() / ratio.w * ratio.h }
@@ -54,6 +59,21 @@ internal fun CanvasSizeDialog(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.md)) {
             PcText("Aspect ratio ${ratio.w}:${ratio.h}")
+            if (quickSizes.any { it != size }) {
+                PcText("Quick sizes", style = PcTheme.typography.label)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm),
+                ) {
+                    for (preset in quickSizes) {
+                        PcButton(
+                            text = "${preset.w} × ${preset.h}",
+                            onClick = { onApply(preset) },
+                            enabled = preset != size,
+                        )
+                    }
+                }
+            }
             PcTextField(
                 value = widthText,
                 onValueChange = { widthText = it },
@@ -64,4 +84,15 @@ internal fun CanvasSizeDialog(
             PcText(if (result == null) "Height —" else "Height ${result.h} px")
         }
     }
+}
+
+/** Target common short-edge sizes, rounding to a whole multiple of the exact ratio. */
+private fun quickResolutions(ratio: CanvasFormat): List<CanvasFormat> {
+    val shortEdge = minOf(ratio.w, ratio.h)
+    return listOf(720, 1080, 1440, 2160).mapNotNull { target ->
+        val multiplier = (target.toDouble() / shortEdge).roundToInt().coerceAtLeast(1)
+        val width = ratio.w.toLong() * multiplier
+        val height = ratio.h.toLong() * multiplier
+        if (height <= Const.MAX_CANVAS_PIXELS / width) CanvasFormat(width.toInt(), height.toInt()) else null
+    }.distinct()
 }
