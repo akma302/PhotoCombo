@@ -32,6 +32,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import kotlin.math.roundToInt
 
 /** Реальное изменение ширины одной сцены: геометрия, диалоги и управление холстом. */
 @OptIn(ExperimentalTestApi::class)
@@ -171,6 +173,8 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
                     onNodeWithTag(TOOL_TAG_SAVE).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_ADD_ITEM).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsDisplayed()
+                    onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+                    onNodeWithTag(BUILDER_ZOOM_TAG).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_MODE_FRAME).performClick()
                     capture("builder-ds-$windowWidth-$density-$font")
                     if (windowWidth == 1200) capture("builder-inspector-frame-$density-$font", BUILDER_INSPECTOR_TAG)
@@ -257,18 +261,84 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         resize(420)
         val items = vm.state.value.items.map { it.toSnap() }
         val dirty = vm.state.value.isDirty
+        val fittedScale = vm.state.value.let { minOf(it.screenW / 1600f, it.screenH / 900f) }
+        val fittedPercent = (100f * fittedScale).roundToInt()
+        onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+        onNodeWithText("View ${fittedPercent}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsNotEnabled()
 
         onNodeWithTag(TOOL_TAG_ZOOM_IN).performClick()
         waitForIdle()
-        onNodeWithText("120%").assertIsDisplayed()
+        onNodeWithText("View ${(120f * fittedScale).roundToInt()}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsEnabled().performClick()
         waitForIdle()
-        onNodeWithText("100%").assertIsDisplayed()
+        onNodeWithText("View ${fittedPercent}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsNotEnabled()
         assertEquals(items, vm.state.value.items.map { it.toSnap() })
         assertEquals(dirty, vm.state.value.isDirty)
         assertTrue(!vm.state.value.canUndo)
+
+        runOnIdle { vm.onEvent(BuilderEvent.SetAspect(320, 180)) }
+        onNodeWithText("Canvas 320 × 180 px").assertIsDisplayed()
+        onNodeWithText("View 100%").assertIsDisplayed()
+        onNodeWithTag(TOOL_TAG_ZOOM_IN).performClick()
+        onNodeWithText("View 120%").assertIsDisplayed()
+        onNodeWithTag(TOOL_TAG_FIT_VIEW).performClick()
+        onNodeWithText("View 100%").assertIsDisplayed()
+    }
+
+    @Test
+    fun quickCanvasResolutionsApplyImmediatelyAndFollowTheAspectRatio() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        resize(420)
+        onNodeWithText("Canvas 1600 × 900 px").performClick()
+        onNodeWithText("1920 × 1080").assertIsDisplayed().performClick()
+        onNodeWithTag("canvas_size_dialog").assertDoesNotExist()
+        onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
+        onNodeWithText("16:9").assertIsDisplayed()
+        onNodeWithText("Canvas 1920 × 1080 px").performClick()
+        onNodeWithText("1920 × 1080").assertIsNotEnabled()
+        onNodeWithText("Cancel").performClick()
+        runOnIdle { vm.onEvent(BuilderEvent.Undo) }
+        onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+
+        onNodeWithTag(TOOL_TAG_ASPECT).performClick()
+        onNodeWithText("9:16").performClick()
+        onNodeWithText("Canvas 900 × 1600 px").performClick()
+        onNodeWithText("1080 × 1920").performClick()
+        onNodeWithText("Canvas 1080 × 1920 px").assertIsDisplayed()
+        onNodeWithText("9:16").assertIsDisplayed()
+    }
+
+    @Test
+    fun canvasResolutionCanBeEditedWithoutChangingTheAspectRatio() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        resize(420)
+        val original = vm.state.value.items.first().toSnap()
+        onNodeWithText("Canvas 1600 × 900 px").performClick()
+        val input = onNodeWithContentDescription("Width (px)")
+        input.performTextReplacement("1919")
+        onNodeWithText("Apply").assertIsNotEnabled()
+        input.performTextReplacement("16000")
+        onNodeWithText("Apply").assertIsNotEnabled()
+        input.performTextReplacement("1920")
+        onNodeWithText("Height 1080 px").assertIsDisplayed()
+        capture("builder-canvas-resolution", "canvas_size_dialog")
+        onNodeWithText("Apply").performClick()
+        onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
+        onNodeWithText("16:9").assertIsDisplayed()
+        assertEquals(original.width * 1.2f, vm.state.value.items.first().width, 0.001f)
+        assertEquals(original.contentScale * 1.2f, vm.state.value.items.first().contentScale, 0.001f)
+
+        onNodeWithText("Canvas 1920 × 1080 px").performClick()
+        input.performTextReplacement("1280")
+        onNodeWithText("Cancel").performClick()
+        onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
+        runOnIdle { vm.onEvent(BuilderEvent.Undo) }
+        onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+        assertEquals(original, vm.state.value.items.first().toSnap())
     }
 
     @Test
@@ -281,6 +351,7 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         waitForIdle()
         assertEquals(1200f, vm.state.value.canvasW, 0f)
         assertEquals(1200f, vm.state.value.canvasH, 0f)
+        onNodeWithText("Canvas 1200 × 1200 px").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_BACKGROUND).performClick()
         onNodeWithText("Black").performClick()
         waitForIdle()

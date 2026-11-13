@@ -1,6 +1,7 @@
 package com.combo.feature.builder
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import com.combo.core.background.BackgroundSpec
 import com.combo.core.model.FramingMode
 import com.combo.core.render.Edge
@@ -131,4 +132,7 @@ data class BuilderUiState(
     val photos: Map<String, PhotoEntity> = emptyMap(),
     val libraryPhotos: List<PhotoEntity> = emptyList(),
     val snapGuides: List<SnapGuide> = emptyList(),
-)
+) {
+    internal val canvasSize: Size get() = Size(canvasW, canvasH)
+    internal val viewportSize: Size get() = Size(screenW.coerceAtLeast(1f), screenH.coerceAtLeast(1f))
+}

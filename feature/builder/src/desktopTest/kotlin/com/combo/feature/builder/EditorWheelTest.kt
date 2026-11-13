@@ -167,6 +167,30 @@ class EditorWheelTest : UiTestBase() {
     }
 
     @Test
+    fun photoWheelAppliesTheSameScaleStepAtDifferentViewZooms() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1").copy(width = 564, height = 902)))
+        val vm = builder(listOf("p1"), repo)
+        setBuilderContent(vm, repo)
+        val photo = vm.state.value.items.single()
+        val frame = photo.border()
+        val startScale = photo.contentScale
+        runOnIdle { vm.onEvent(BuilderEvent.ToggleMode) }
+
+        for (viewZoom in listOf(1f, 4f)) {
+            val focus = local(vm.state.value, frame.centerX, frame.centerY)
+            runOnIdle { vm.onEvent(BuilderEvent.ViewportZoom(viewZoom, focus)) }
+            scrollUp(local(vm.state.value, frame.centerX, frame.centerY), false)
+            settleGestures()
+
+            val zoomed = vm.state.value.items.single()
+            assertEquals(startScale * 1.1f, zoomed.contentScale, 0.001f)
+            assertEquals(frame, zoomed.border())
+            assertEquals(viewZoom, vm.state.value.viewport.zoom, 0f)
+            runOnIdle { vm.onEvent(BuilderEvent.Undo) }
+        }
+    }
+
+    @Test
     fun ctrlOnEmptySpaceFineZoomsTheViewAroundThePointer() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)

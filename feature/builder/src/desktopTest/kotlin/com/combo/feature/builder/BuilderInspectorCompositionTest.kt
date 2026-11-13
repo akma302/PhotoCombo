@@ -42,10 +42,10 @@ class BuilderInspectorCompositionTest {
         setContent { PcDesktopTheme { BuilderInspector(current, wide = true, onEvent = {}, photoSize = current.selectedPhotoSize(), onReplace = {}) } }
         onNodeWithText("1600 × 1200 px").assertIsDisplayed()
         onNodeWithText("Original 800 × 600 px").assertIsDisplayed()
-        onNodeWithText("Photo size · 200%").assertIsDisplayed()
+        onNodeWithText("Photo on canvas · 200%").assertIsDisplayed()
         runOnIdle { current = current.copy(selectedItemId = "second") }
         onNodeWithText("300 × 150 px").assertIsDisplayed()
-        onNodeWithText("Photo size · 25%").assertIsDisplayed()
+        onNodeWithText("Photo on canvas · 25%").assertIsDisplayed()
         onNodeWithText("1600 × 1200 px").assertDoesNotExist()
         runOnIdle { current = current.copy(selectedItemId = null) }
         onNodeWithText("300 × 150 px").assertDoesNotExist()

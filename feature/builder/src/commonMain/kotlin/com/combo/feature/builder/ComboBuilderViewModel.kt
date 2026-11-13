@@ -37,7 +37,6 @@ import com.combo.feature.builder.draft.toDraft
 import com.combo.feature.builder.draft.toDrafts
 import com.combo.feature.builder.draft.toEntities
 import com.combo.feature.builder.draft.toSnap
-import com.combo.feature.builder.draft.trimmedToFrames
 import com.combo.feature.builder.history.DraftHistory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -247,7 +246,7 @@ class ComboBuilderViewModel(
                 // а на каждом CHANGE это лишний декод.
                 gesture(e.phase, refreshOnEnd = true) {
                     val src = _state.value.photos[item.photoId]?.srcSize() ?: return@gesture
-                    ItemGestures.zoomContent(item, e.factor, item.border(), src, currentVs())
+                    ItemGestures.zoomContent(item, e.factor, src)
                     emitRevision()
                 }
             }
@@ -264,8 +263,11 @@ class ComboBuilderViewModel(
             is BuilderEvent.SetFramingMode -> withItem(e.id) { setFramingMode(it, e.mode) }
             is BuilderEvent.DeleteItem -> deleteItem(e.id)
             is BuilderEvent.SetAspect -> {
-                checkpointForEdit()
                 val s = _state.value
+                if (e.w <= 0 || e.h <= 0 || e.w.toLong() * e.h > Const.MAX_CANVAS_PIXELS ||
+                    (s.canvasW == e.w.toFloat() && s.canvasH == e.h.toFloat())
+                ) return
+                checkpointForEdit()
                 // Рамки следуют за холстом пропорционально, а фото внутри FREE-рамок
                 // сохраняют приближение относительно заполнения. Один чистый relayout,
                 // чтобы undo/redo и отрисовка видели одно и то же.
@@ -289,8 +291,8 @@ class ComboBuilderViewModel(
                     viewport = s.viewport.zoomedAround(
                         factor = e.factor,
                         focus = e.focus,
-                        screen = Size(s.screenW.coerceAtLeast(1f), s.screenH.coerceAtLeast(1f)),
-                        canvas = Size(s.canvasW, s.canvasH),
+                        screen = s.viewportSize,
+                        canvas = s.canvasSize,
                     ),
                 )
             }.also { refreshBitmaps() }
@@ -607,22 +609,22 @@ class ComboBuilderViewModel(
         _state.update { it.copy(saving = true) }
         // Драфты мутабельны и мутируются на главном потоке — читаем их ЗДЕСЬ, до ухода
         // на IO, иначе в комбо может попасть полу-изменённая рамка.
-        val finalized = snapshot().trimmedToFrames()
+        val draft = snapshot()
         val id = s.comboId ?: ids.newId()
         val now = clock.nowMillis()
         val created = if (createdAt > 0) createdAt else now
         val combo = ComboEntity(
             id = id,
             name = s.name.ifBlank { "Combo" },
-            canvasWidth = finalized.canvasW.toInt(),
-            canvasHeight = finalized.canvasH.toInt(),
-            background = s.background,
+            canvasWidth = draft.canvasW.toInt(),
+            canvasHeight = draft.canvasH.toInt(),
+            background = draft.background,
             createdAt = created,
             updatedAt = now,
         )
         // Поля рамок и фото собирает `toEntities()`: enum'ы — через `.name` (enum'ы в базе
         // хранятся строками), zIndex — по индексу в списке.
-        val items = finalized.items.map { it.toDraft() }.toEntities(id)
+        val items = draft.items.map { it.toDraft() }.toEntities(id)
         viewModelScope.launch(ioDispatcher) {
             try {
                 comboRepo.saveCombo(combo, items)
@@ -668,10 +670,7 @@ class ComboBuilderViewModel(
 
     fun currentVs(): Float {
         val s = _state.value
-        return s.viewport.scale(
-            Size(s.canvasW, s.canvasH),
-            Size(s.screenW.coerceAtLeast(1f), s.screenH.coerceAtLeast(1f)),
-        )
+        return s.viewport.scale(s.canvasSize, s.viewportSize)
     }
 
     fun hitTest(canvasPoint: Offset): String? =

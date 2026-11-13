@@ -40,6 +40,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
+import com.combo.core.render.CanvasFormat
 import com.combo.ui.common.CollectMessages
 import com.combo.ui.common.RegisterBackHandler
 import kotlinx.coroutines.launch
@@ -59,6 +60,7 @@ fun ComboBuilderScreen(
     val bitmaps by vm.bitmaps.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     var showExitDialog by remember { mutableStateOf(false) }
+    var showCanvasSizeDialog by remember { mutableStateOf(false) }
     var inspectorExpanded by remember { mutableStateOf(true) }
     var pickMode by remember { mutableStateOf(BuilderPickMode.NONE) }
     val spaceHeld = remember { mutableStateOf(false) }
@@ -143,11 +145,27 @@ fun ComboBuilderScreen(
                     }
                 }
                 PcDivider()
-                BuilderViewControls(state, vm::onEvent, if (wide) ({ inspectorExpanded = !inspectorExpanded }) else null, inspectorExpanded)
+                BuilderViewControls(
+                    state = state,
+                    onEvent = vm::onEvent,
+                    onResizeCanvas = { showCanvasSizeDialog = true },
+                    onToggleInspector = if (wide) ({ inspectorExpanded = !inspectorExpanded }) else null,
+                    inspectorExpanded = inspectorExpanded,
+                )
             }
         }
     }
     BuilderPhotoPicker(pickMode, state, vm::onEvent) { pickMode = BuilderPickMode.NONE }
+    if (showCanvasSizeDialog) {
+        CanvasSizeDialog(
+            size = CanvasFormat(state.canvasW.toInt(), state.canvasH.toInt()),
+            onApply = { size ->
+                vm.onEvent(BuilderEvent.SetAspect(size.w, size.h))
+                showCanvasSizeDialog = false
+            },
+            onDismiss = { showCanvasSizeDialog = false },
+        )
+    }
     if (showExitDialog) {
         ExitDialog(
             state = state,

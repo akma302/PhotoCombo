@@ -6,7 +6,19 @@ import kotlin.math.abs
 import com.combo.core.model.FramingMode
 
 /** Формат холста: `width x height` в пикселях. */
-data class CanvasFormat(val w: Int, val h: Int)
+data class CanvasFormat(val w: Int, val h: Int) {
+    fun aspectRatio(): CanvasFormat {
+        if (w <= 0 || h <= 0) return this
+        var a = w
+        var b = h
+        while (b != 0) {
+            val remainder = a % b
+            a = b
+            b = remainder
+        }
+        return CanvasFormat(w / a, h / a)
+    }
+}
 
 /**
  * Минимально допустимая сторона рамки: [Const.MIN_BORDER_FRACTION] от меньшей стороны
@@ -31,28 +43,16 @@ object AspectPresets {
         CanvasFormat(1200, 1600),
     )
 
-    private val names: Map<CanvasFormat, String> = mapOf(
-        CanvasFormat(1600, 900) to "16:9",
-        CanvasFormat(900, 1600) to "9:16",
-        CanvasFormat(1200, 1200) to "1:1",
-        CanvasFormat(1600, 1200) to "4:3",
-        CanvasFormat(1200, 1600) to "3:4",
-    )
-
     /** Если текущий размер не совпал ни с одним пресетом — следующим идёт первый. */
     fun next(current: CanvasFormat): CanvasFormat {
         val idx = all.indexOf(current)
         return if (idx < 0) all.first() else all[(idx + 1) % all.size]
     }
 
-    /**
-     * Подпись для кнопки: `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, а для произвольного
-     * размера — `Custom WxH`. Именно по совпадению с пресетом, а не по сокращению
-     * дроби: иначе 1000×700 показалось бы «10:7» вместо `Custom 1000x700`.
-     */
+    /** Label standard proportions independently of the selected resolution. */
     fun label(w: Int, h: Int): String {
-        val f = CanvasFormat(w, h)
-        return names[f] ?: "Custom ${w}x${h}"
+        val ratio = CanvasFormat(w, h).aspectRatio()
+        return if (all.any { it.aspectRatio() == ratio }) "${ratio.w}:${ratio.h}" else "Custom ${w}x${h}"
     }
 }
 
@@ -85,6 +85,14 @@ fun relayout(
     val kx = newW / oldW
     val ky = newH / oldH
     if (!kx.isFinite() || !ky.isFinite()) return
+    if (kx == ky && kx != 1f) {
+        for (item in items) {
+            item.centerX *= kx
+            item.centerY *= kx
+            ItemGestures.resizeItemProportionally(item, kx)
+        }
+        return
+    }
     val minSide = minBorderSize(newW, newH)
 
     for (item in items) {

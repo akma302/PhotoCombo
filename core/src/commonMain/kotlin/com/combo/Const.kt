@@ -11,6 +11,9 @@ object Const {
     /** Предел числа рамок в одном комбо. */
     const val MAX_ITEMS = 10
 
+    /** Maximum pixel count supported by PNG export. */
+    const val MAX_CANVAS_PIXELS = 32_000_000L
+
     /** Наименьшая сторона рамки — доля меньшей стороны холста. */
     const val MIN_BORDER_FRACTION = 0.08f
 
