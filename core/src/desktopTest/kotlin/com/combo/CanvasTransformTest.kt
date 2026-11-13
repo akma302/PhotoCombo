@@ -10,8 +10,6 @@ import org.junit.Test
 /**
  * [CanvasTransform]: преобразование «экран ↔ холст» для редактора и списка.
  *
- * Эталонные формулы (`min(sw/cw, sh/ch)`, центрирование, сдвиг вида) считаются прямо в
- * тесте и сравниваются с результатом функции.
  */
 class CanvasTransformTest {
 
@@ -80,11 +78,11 @@ class CanvasTransformTest {
     }
 
     @Test
-    fun `canvas centre lands in the middle of the screen when there is no pan`() {
-        val screen = Size(1000f, 600f)
-        val t = CanvasTransform.ofViewport(Viewport(), canvas, screen)
-        val centreOnScreen = t.toScreen(Offset(canvas.width / 2, canvas.height / 2))
-        assertEquals(screen.width / 2, centreOnScreen.x, 1e-3f)
-        assertEquals(screen.height / 2, centreOnScreen.y, 1e-3f)
+    fun `whole canvas centers at up to actual size and manual zoom can exceed it`() {
+        assertEquals(CanvasTransform(0.5f, Offset.Zero), CanvasTransform.ofViewport(Viewport(), canvas, Size(800f, 450f)))
+        assertEquals(CanvasTransform(1f, Offset.Zero), CanvasTransform.ofViewport(Viewport(), canvas, canvas))
+        val largeScreen = Size(2400f, 1350f)
+        assertEquals(CanvasTransform(1f, Offset(400f, 225f)), CanvasTransform.ofViewport(Viewport(), canvas, largeScreen))
+        assertEquals(CanvasTransform(1.5f, Offset.Zero), CanvasTransform.ofViewport(Viewport(zoom = 1.5f), canvas, largeScreen))
     }
 }

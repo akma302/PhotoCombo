@@ -53,6 +53,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import kotlin.math.roundToInt
 
 /** Реальное изменение ширины одной сцены: геометрия, диалоги и управление холстом. */
 @OptIn(ExperimentalTestApi::class)
@@ -171,6 +172,8 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
                     onNodeWithTag(TOOL_TAG_SAVE).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_ADD_ITEM).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsDisplayed()
+                    onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+                    onNodeWithTag(BUILDER_ZOOM_TAG).assertIsDisplayed()
                     onNodeWithTag(TOOL_TAG_MODE_FRAME).performClick()
                     capture("builder-ds-$windowWidth-$density-$font")
                     if (windowWidth == 1200) capture("builder-inspector-frame-$density-$font", BUILDER_INSPECTOR_TAG)
@@ -257,18 +260,30 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         resize(420)
         val items = vm.state.value.items.map { it.toSnap() }
         val dirty = vm.state.value.isDirty
+        val fittedScale = vm.state.value.let { minOf(it.screenW / 1600f, it.screenH / 900f) }
+        val fittedPercent = (100f * fittedScale).roundToInt()
+        onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+        onNodeWithText("View ${fittedPercent}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsNotEnabled()
 
         onNodeWithTag(TOOL_TAG_ZOOM_IN).performClick()
         waitForIdle()
-        onNodeWithText("120%").assertIsDisplayed()
+        onNodeWithText("View ${(120f * fittedScale).roundToInt()}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsEnabled().performClick()
         waitForIdle()
-        onNodeWithText("100%").assertIsDisplayed()
+        onNodeWithText("View ${fittedPercent}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsNotEnabled()
         assertEquals(items, vm.state.value.items.map { it.toSnap() })
         assertEquals(dirty, vm.state.value.isDirty)
         assertTrue(!vm.state.value.canUndo)
+
+        runOnIdle { vm.onEvent(BuilderEvent.SetAspect(320, 180)) }
+        onNodeWithText("Canvas 320 × 180 px").assertIsDisplayed()
+        onNodeWithText("View 100%").assertIsDisplayed()
+        onNodeWithTag(TOOL_TAG_ZOOM_IN).performClick()
+        onNodeWithText("View 120%").assertIsDisplayed()
+        onNodeWithTag(TOOL_TAG_FIT_VIEW).performClick()
+        onNodeWithText("View 100%").assertIsDisplayed()
     }
 
     @Test
@@ -281,6 +296,7 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         waitForIdle()
         assertEquals(1200f, vm.state.value.canvasW, 0f)
         assertEquals(1200f, vm.state.value.canvasH, 0f)
+        onNodeWithText("Canvas 1200 × 1200 px").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_BACKGROUND).performClick()
         onNodeWithText("Black").performClick()
         waitForIdle()

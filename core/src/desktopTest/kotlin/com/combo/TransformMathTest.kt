@@ -46,12 +46,6 @@ class TransformMathTest {
     }
 
     @Test
-    fun `maxContentScale caps by viewport scale`() {
-        assertEquals(1.0f, TransformMath.maxContentScale(1.5f), 0.001f)
-        assertEquals(0.5f, TransformMath.maxContentScale(3f), 0.001f)
-    }
-
-    @Test
     fun `border rect matches center and size`() {
         val r = border.rect()
         assertEquals(0f, r.left, 0.001f)

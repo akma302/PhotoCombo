@@ -56,11 +56,7 @@ internal fun EditorViewport(
         }
     }
 
-    val cw = state.canvasW
-    val ch = state.canvasH
-    val sw = state.screenW.coerceAtLeast(1f)
-    val sh = state.screenH.coerceAtLeast(1f)
-    val transform = CanvasTransform.ofViewport(state.viewport, Size(cw, ch), Size(sw, sh))
+    val transform = CanvasTransform.ofViewport(state.viewport, state.canvasSize, state.viewportSize)
 
     val density = LocalDensity.current
     val handlePx = with(density) { 24.dp.toPx() }

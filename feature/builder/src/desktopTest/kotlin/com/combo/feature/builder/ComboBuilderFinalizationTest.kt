@@ -35,7 +35,7 @@ class ComboBuilderFinalizationTest {
                 contentScale = 0.7f, panX = 12f, panY = -8f,
             ),
             comboItemEntity("right", "c1", 1).copy(
-                centerX = 600f, centerY = 350f, width = 200f, height = 500f,
+                centerX = 1500f, centerY = 350f, width = 400f, height = 500f,
                 framingMode = "FIT", contentScale = 0.3f, panX = -20f, panY = 10f,
             ),
         ),
@@ -58,7 +58,7 @@ class ComboBuilderFinalizationTest {
     ).also { dispatcher.scheduler.advanceUntilIdle() }
 
     @Test
-    fun `save trims external margins and translates frames without changing their contents`() {
+    fun `save preserves the chosen canvas and frame coordinates including frames crossing its edge`() {
         val repo = FakeComboRepository(listOf(original))
         val vm = builder(repo)
         val draftsBefore = vm.state.value.items.map { it.toSnap() }
@@ -67,17 +67,14 @@ class ComboBuilderFinalizationTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         val (combo, items) = repo.savedCombos.single()
-        assertEquals(500, combo.canvasWidth)
-        assertEquals(500, combo.canvasHeight)
+        assertEquals(1600, combo.canvasWidth)
+        assertEquals(900, combo.canvasHeight)
         assertEquals(original.combo.id, combo.id)
         assertEquals(original.combo.name, combo.name)
         assertEquals(original.combo.createdAt, combo.createdAt)
         assertEquals(original.combo.background, combo.background)
         assertEquals(1_000L, combo.updatedAt)
-        assertEquals(
-            original.items.map { it.copy(centerX = it.centerX - 200f, centerY = it.centerY - 100f) },
-            items,
-        )
+        assertEquals(original.items, items)
         assertEquals(draftsBefore, vm.state.value.items.map { it.toSnap() })
         assertEquals(1600f, vm.state.value.canvasW, 0f)
         assertEquals(900f, vm.state.value.canvasH, 0f)

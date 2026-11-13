@@ -35,16 +35,15 @@ object ItemGestures {
         c.panY = clamped.y
     }
 
-    fun zoomContent(c: ItemDraft, f: Float, b: Border, src: Size, vs: Float) {
-        val min = TransformMath.fitScale(b, src) * 0.25f
-        // Для мелких фото fitScale*0.25 может оказаться ВЫШЕ потолка (cap/vs) —
-        // coerceIn(min, max) на таком диапазоне бросает IllegalArgumentException.
-        val max = maxOf(min, TransformMath.maxContentScale(vs))
+    fun zoomContent(c: ItemDraft, f: Float, src: Size) {
+        val shortestSide = minOf(src.width, src.height)
+        if (shortestSide <= 0f) return
         val target = c.contentScale * f
-        // Зум «на увеличение» никогда не уменьшает масштаб (иначе щипок за потолком
-        // внезапно отдалял фото), а «на уменьшение» не опускает ниже min.
-        c.contentScale = if (f >= 1f) maxOf(c.contentScale, minOf(target, max))
-        else minOf(c.contentScale, maxOf(target, min))
+        if (!target.isFinite() || f < 0f) return
+        // Keep the smallest rendered dimension at one canvas pixel.
+        val min = 1f / shortestSide
+        // A photo already below the minimum can still be zoomed in gradually.
+        c.contentScale = if (f >= 1f) target else target.coerceAtLeast(minOf(c.contentScale, min))
     }
 
     /** Ресайз рамки за грань с фиксированным центром. */

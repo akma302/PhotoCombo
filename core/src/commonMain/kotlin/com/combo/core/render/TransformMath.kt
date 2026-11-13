@@ -34,12 +34,6 @@ object TransformMath {
 
     /** Масштаб «заполнить»: фото закрывает рамку целиком, лишнее обрезается. */
     fun fillScale(b: Border, src: Size) = maxOf(b.width / src.width, b.height / src.height)
-
-    /**
-     * Потолок масштаба фото: `scale * viewportScale ≤ cap`. Дальше картинка увеличивается
-     * больше чем на [cap] экранных пикселей на пиксель исходника и «мылится».
-     */
-    fun maxContentScale(viewportScale: Float, cap: Float = 1.5f) = cap / viewportScale
 }
 
 internal fun clampPhotoPan(pan: Float, frameSize: Float, photoSize: Float): Float {

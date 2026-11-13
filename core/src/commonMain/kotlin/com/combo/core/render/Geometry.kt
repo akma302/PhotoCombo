@@ -12,8 +12,9 @@ data class Border(val centerX: Float, val centerY: Float, val width: Float, val 
 enum class Edge { LEFT, TOP, RIGHT, BOTTOM }
 
 data class Viewport(val zoom: Float = 1f, val pan: Offset = Offset.Zero) {
+    /** Fit the whole canvas at up to 1:1 before applying the user's zoom. */
     fun scale(canvas: Size, screen: Size) =
-        minOf(screen.width / canvas.width, screen.height / canvas.height) * zoom
+        minOf(1f, screen.width / canvas.width, screen.height / canvas.height) * zoom
 
     fun toCanvas(screenDelta: Offset, vs: Float) = screenDelta / vs
 }

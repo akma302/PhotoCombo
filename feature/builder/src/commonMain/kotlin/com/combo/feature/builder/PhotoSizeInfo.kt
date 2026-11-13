@@ -10,8 +10,9 @@ import com.combo.ui.common.designsystem.theme.PcTheme
 
 @Composable
 internal fun PhotoSizeInfo(size: PhotoSize, modifier: Modifier = Modifier) {
+    val scale = if (size.percent == 0) "<1%" else "${size.percent}%"
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        PcText("Photo size · ${size.percent}%", style = PcTheme.typography.caption, color = PcTheme.colors.textSecondary)
+        PcText("Photo on canvas · $scale", style = PcTheme.typography.caption, color = PcTheme.colors.textSecondary)
         PcText("${size.scaledWidth} × ${size.scaledHeight} px")
         PcText("Original ${size.originalWidth} × ${size.originalHeight} px", style = PcTheme.typography.caption, color = PcTheme.colors.textSecondary)
     }

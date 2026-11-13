@@ -2,12 +2,10 @@ package com.combo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import com.combo.core.render.Border
 import com.combo.core.render.ItemDraft
 import com.combo.core.render.ItemGestures
 import com.combo.core.render.TransformMath
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ItemGesturesTest {
@@ -34,46 +32,32 @@ class ItemGesturesTest {
     // ---------- зум фото: границы масштаба ----------
 
     @Test
-    fun `zoomContent does not throw when min scale is above cap`() {
-        // Рамка намного больше фото: fitScale*0.25 > maxContentScale(vs), и
-        // coerceIn(min, max) с min > max бросил бы IllegalArgumentException.
-        val b = Border(100f, 100f, 4000f, 4000f)
+    fun `zoom in grows gradually when the current scale is below the minimum`() {
         val src = Size(10f, 10f)
+        val c = item(scale = 0.05f)
+        ItemGestures.zoomContent(c, 1.2f, src)
+        assertEquals(0.06f, c.contentScale, 0.0001f)
+    }
+
+    @Test
+    fun `photo zoom can restore the original scale after zooming out`() {
+        val src = Size(564f, 902f)
+        val c = item(scale = 2.2f)
+        val frame = c.border()
+        ItemGestures.zoomContent(c, 0.5f / 2.2f, src)
+        assertEquals(0.5f, c.contentScale, 0.0001f)
+
+        ItemGestures.zoomContent(c, 2.2f / 0.5f, src)
+        assertEquals(2.2f, c.contentScale, 0.0001f)
+        assertEquals(frame, c.border())
+    }
+
+    @Test
+    fun `zoom out keeps the shorter side at one canvas pixel`() {
+        val src = Size(564f, 902f)
         val c = item(scale = 0.5f)
-        ItemGestures.zoomContent(c, 1.2f, b, src, vs = 4f)
-        assertTrue(c.contentScale > 0f)
-    }
-
-    @Test
-    fun `zoom in never shrinks content above cap`() {
-        val b = Border(100f, 100f, 200f, 100f)
-        val src = Size(400f, 400f)
-        val cap = TransformMath.maxContentScale(1f)
-        val c = item(scale = cap * 2f) // выше потолка (например, после zoom вида)
-        ItemGestures.zoomContent(c, 1.5f, b, src, vs = 1f)
-        assertEquals("zoom-in не должен уменьшать масштаб", cap * 2f, c.contentScale, 0.0001f)
-    }
-
-    @Test
-    fun `zoom in grows content up to cap`() {
-        val b = Border(100f, 100f, 200f, 100f)
-        val src = Size(400f, 400f)
-        val c = item(scale = 0.1f)
-        ItemGestures.zoomContent(c, 2f, b, src, vs = 1f)
-        assertEquals(0.2f, c.contentScale, 0.0001f)
-
-        ItemGestures.zoomContent(c, 100f, b, src, vs = 1f)
-        assertEquals(TransformMath.maxContentScale(1f), c.contentScale, 0.0001f)
-    }
-
-    @Test
-    fun `zoom out never drops content below min`() {
-        val b = Border(100f, 100f, 200f, 100f)
-        val src = Size(400f, 400f)
-        val min = TransformMath.fitScale(b, src) * 0.25f
-        val c = item(scale = min * 2f)
-        ItemGestures.zoomContent(c, 0.001f, b, src, vs = 1f)
-        assertEquals(min, c.contentScale, 0.0001f)
+        ItemGestures.zoomContent(c, 0.001f, src)
+        assertEquals(1f, c.contentScale * src.width, 0.0001f)
     }
 
     // ---------- щипок рамки ----------
