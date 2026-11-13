@@ -17,6 +17,10 @@ object ItemGestures {
     /** Pinch элемента: рамка + scale её фото (относительный зум сохранён). */
     fun pinchItem(item: ItemDraft, f: Float, minSize: Float) {
         if (item.width * f < minSize || item.height * f < minSize) return
+        resizeItemProportionally(item, f)
+    }
+
+    internal fun resizeItemProportionally(item: ItemDraft, f: Float) {
         item.width *= f
         item.height *= f
         // pan живёт в координатах холста, поэтому при масштабировании рамки он должен

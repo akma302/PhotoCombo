@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import com.combo.Const
 import com.combo.core.image.PngOutput
 import com.combo.core.render.CanvasTransform
 import com.combo.core.render.buildItemFrame
@@ -22,8 +23,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlin.math.ceil
 
-private const val MAX_CANVAS_PIXELS = 32_000_000L
-
 class ComboPngExporter(
     private val combos: ComboRepository,
     private val photos: PhotoRepository,
@@ -37,7 +36,7 @@ class ComboPngExporter(
         val combo = snapshot.combo
         val width = combo.canvasWidth
         val height = combo.canvasHeight
-        require(width > 0 && height > 0 && width.toLong() * height <= MAX_CANVAS_PIXELS) {
+        require(width > 0 && height > 0 && width.toLong() * height <= Const.MAX_CANVAS_PIXELS) {
             "The saved canvas size is outside the supported range for PNG export."
         }
         require(snapshot.items.isNotEmpty()) { "This combo has no photos to export." }

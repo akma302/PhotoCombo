@@ -32,6 +32,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -284,6 +285,36 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         onNodeWithText("View 120%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).performClick()
         onNodeWithText("View 100%").assertIsDisplayed()
+    }
+
+    @Test
+    fun canvasResolutionCanBeEditedWithoutChangingTheAspectRatio() = runSkikoComposeUiTest(Size(1200f, 800f)) {
+        val vm = builder()
+        show(vm)
+        resize(420)
+        val original = vm.state.value.items.first().toSnap()
+        onNodeWithText("Canvas 1600 × 900 px").performClick()
+        val input = onNodeWithContentDescription("Width (px)")
+        input.performTextReplacement("1919")
+        onNodeWithText("Apply").assertIsNotEnabled()
+        input.performTextReplacement("16000")
+        onNodeWithText("Apply").assertIsNotEnabled()
+        input.performTextReplacement("1920")
+        onNodeWithText("Height 1080 px").assertIsDisplayed()
+        capture("builder-canvas-resolution", "canvas_size_dialog")
+        onNodeWithText("Apply").performClick()
+        onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
+        onNodeWithText("16:9").assertIsDisplayed()
+        assertEquals(original.width * 1.2f, vm.state.value.items.first().width, 0.001f)
+        assertEquals(original.contentScale * 1.2f, vm.state.value.items.first().contentScale, 0.001f)
+
+        onNodeWithText("Canvas 1920 × 1080 px").performClick()
+        input.performTextReplacement("1280")
+        onNodeWithText("Cancel").performClick()
+        onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
+        runOnIdle { vm.onEvent(BuilderEvent.Undo) }
+        onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
+        assertEquals(original, vm.state.value.items.first().toSnap())
     }
 
     @Test

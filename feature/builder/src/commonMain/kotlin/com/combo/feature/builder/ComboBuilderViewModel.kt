@@ -263,8 +263,11 @@ class ComboBuilderViewModel(
             is BuilderEvent.SetFramingMode -> withItem(e.id) { setFramingMode(it, e.mode) }
             is BuilderEvent.DeleteItem -> deleteItem(e.id)
             is BuilderEvent.SetAspect -> {
-                checkpointForEdit()
                 val s = _state.value
+                if (e.w <= 0 || e.h <= 0 || e.w.toLong() * e.h > Const.MAX_CANVAS_PIXELS ||
+                    (s.canvasW == e.w.toFloat() && s.canvasH == e.h.toFloat())
+                ) return
+                checkpointForEdit()
                 // Рамки следуют за холстом пропорционально, а фото внутри FREE-рамок
                 // сохраняют приближение относительно заполнения. Один чистый relayout,
                 // чтобы undo/redo и отрисовка видели одно и то же.

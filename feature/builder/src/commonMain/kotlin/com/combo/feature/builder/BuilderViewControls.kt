@@ -26,7 +26,13 @@ import kotlin.math.roundToInt
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-internal fun BuilderViewControls(state: BuilderUiState, onEvent: (BuilderEvent) -> Unit, onToggleInspector: (() -> Unit)? = null, inspectorExpanded: Boolean = true) {
+internal fun BuilderViewControls(
+    state: BuilderUiState,
+    onEvent: (BuilderEvent) -> Unit,
+    onResizeCanvas: () -> Unit,
+    onToggleInspector: (() -> Unit)? = null,
+    inspectorExpanded: Boolean = true,
+) {
     fun zoom(factor: Float) = onEvent(BuilderEvent.ViewportZoom(factor, Offset(state.screenW / 2f, state.screenH / 2f)))
     val viewLabel = if (state.loaded && state.screenW > 0f && state.screenH > 0f) {
         val scale = state.viewport.scale(state.canvasSize, state.viewportSize)
@@ -41,9 +47,12 @@ internal fun BuilderViewControls(state: BuilderUiState, onEvent: (BuilderEvent) 
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             if (state.loaded) {
-                PcText(
-                    "Canvas ${state.canvasW.toInt()} × ${state.canvasH.toInt()} px",
-                    style = PcTheme.typography.control,
+                PcButton(
+                    text = "Canvas ${state.canvasW.toInt()} × ${state.canvasH.toInt()} px",
+                    onClick = onResizeCanvas,
+                    enabled = !state.saving,
+                    icon = PcIcons.Edit,
+                    variant = PcButtonVariant.Ghost,
                 )
             }
             if (showHint) {

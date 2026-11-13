@@ -27,7 +27,10 @@ internal fun BuilderCanvasToolbar(state: BuilderUiState, onEvent: (BuilderEvent)
     val enabled = state.loaded && !state.saving
     val format = CanvasFormat(state.canvasW.toInt(), state.canvasH.toInt())
     // Произвольные сохранённые значения остаются выбранными до явного выбора пресета.
-    val formats = if (format in AspectPresets.all) AspectPresets.all else listOf(format) + AspectPresets.all
+    val ratio = format.aspectRatio()
+    val matching = AspectPresets.all.firstOrNull { it.aspectRatio() == ratio }
+    val formats = if (matching == null) listOf(format) + AspectPresets.all
+        else AspectPresets.all.map { if (it == matching) format else it }
     val backgrounds = if (state.background in BackgroundPresets.cycle) BackgroundPresets.cycle
         else listOf(state.background) + BackgroundPresets.cycle
     BuilderSettingsLayout(Modifier.fillMaxWidth().background(PcTheme.colors.panel).heightIn(min = 51.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -35,7 +38,7 @@ internal fun BuilderCanvasToolbar(state: BuilderUiState, onEvent: (BuilderEvent)
             value = format,
             options = formats.map { PcOption(it, AspectPresets.label(it.w, it.h), PcIcons.AspectRatio) },
             onValueChange = { onEvent(BuilderEvent.SetAspect(it.w, it.h)) },
-            contentDescription = "Canvas format",
+            contentDescription = "Canvas aspect ratio",
             modifier = Modifier.testTag(TOOL_TAG_ASPECT),
             enabled = enabled,
         )
