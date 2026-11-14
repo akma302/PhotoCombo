@@ -5,12 +5,12 @@ import androidx.compose.ui.geometry.Size
 import com.combo.core.background.BackgroundSpec
 import com.combo.core.model.FramingMode
 import com.combo.core.render.Edge
-import com.combo.core.render.ItemDraft
 import com.combo.core.render.Viewport
 import com.combo.core.render.snap.SnapDistances
 import com.combo.core.render.snap.SnapGuide
 import com.combo.data.PhotoEntity
 import com.combo.feature.builder.draft.FitPreset
+import com.combo.feature.builder.draft.ItemSnap
 
 /**
  * Контракт редактора: testTag'и для UI-тестов, фазы жеста, режимы, события и состояние.
@@ -112,13 +112,12 @@ internal sealed interface BuilderEvent {
 // ---------- состояние ----------
 
 internal data class BuilderUiState(
-    val revision: Long = 0,
     val comboId: String? = null,
     val name: String = "",
     val canvasW: Float = 1600f,
     val canvasH: Float = 900f,
     val background: BackgroundSpec = BackgroundSpec.Auto(),
-    val items: List<ItemDraft> = emptyList(),
+    val items: List<ItemSnap> = emptyList(),
     val selectedItemId: String? = null,
     val mode: EditMode = EditMode.EDIT,
     val viewport: Viewport = Viewport(),

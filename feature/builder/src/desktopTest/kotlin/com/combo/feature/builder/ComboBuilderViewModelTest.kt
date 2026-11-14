@@ -219,7 +219,7 @@ class ComboBuilderViewModelTest {
         assertEquals("p1", first.photoId)
         assertEquals("p2", vm.state.value.items[1].photoId)
         assertEquals("выделена последняя добавленная рамка", vm.state.value.items[1].id, vm.state.value.selectedItemId)
-        assertNotNull("frameFor() должен вернуть кадр после загрузки битмапа", vm.frameFor(first))
+        assertNotNull("frameFor() должен вернуть кадр после загрузки битмапа", vm.state.value.frameFor(first, vm.bitmaps.value))
 
         // Fit/Fill реально пересчитывают contentScale.
         val border = first.border()
@@ -389,13 +389,19 @@ class ComboBuilderViewModelTest {
     @Test
     fun `gesture with changes still creates undo step`() {
         val vm = builder(photos = listOf(photoEntity("p1")), photosArg = "p1")
-        val itemId = vm.state.value.items.single().id
+        val before = vm.state.value
+        val original = before.items.single()
+        val centerX = original.centerX
 
-        vm.onEvent(BuilderEvent.ItemDrag(itemId, Offset.Zero, GesturePhase.START))
-        vm.onEvent(BuilderEvent.ItemDrag(itemId, Offset(30f, 0f), GesturePhase.CHANGE))
-        vm.onEvent(BuilderEvent.ItemDrag(itemId, Offset.Zero, GesturePhase.END))
+        vm.onEvent(BuilderEvent.ItemDrag(original.id, Offset.Zero, GesturePhase.START))
+        vm.onEvent(BuilderEvent.ItemDrag(original.id, Offset(30f, 0f), GesturePhase.CHANGE))
+        assertEquals(centerX, before.items.single().centerX, 0f)
+        assertTrue(vm.state.value.items.single().centerX > centerX)
+        vm.onEvent(BuilderEvent.ItemDrag(original.id, Offset.Zero, GesturePhase.END))
 
         assertTrue("реальный жест обязан дать undo-шаг", vm.state.value.canUndo)
+        vm.onEvent(BuilderEvent.Undo)
+        assertEquals(before.items, vm.state.value.items)
     }
 
     // ---------- отмена жеста ----------
