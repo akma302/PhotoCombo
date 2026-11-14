@@ -30,8 +30,6 @@ import com.combo.domain.ComboPngExporter
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoRepository
 import com.combo.feature.builder.EDITOR_CANVAS_TAG
-import com.combo.feature.library.LIB_CREATE_COMBO_TAG
-import com.combo.feature.library.LIB_SELECT_TAG
 import com.combo.feature.library.PHOTO_CELL_TAG_PREFIX
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.awaitCancellation
@@ -158,14 +156,14 @@ class AppNavViewModelTest : UiTestBase() {
             onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + "p1").fetchSemanticsNodes().isNotEmpty()
         }
 
-        onNodeWithTag(LIB_SELECT_TAG).performClick()
+        onNodeWithText("Select").performClick()
         waitForIdle()
         onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + "p1")[0].performClick()
         onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + "p2")[0].performClick()
         waitForIdle()
         onNodeWithText("Selected: 2").assertExists()
 
-        onNodeWithTag(LIB_CREATE_COMBO_TAG).performClick()
+        onNodeWithText("Create combo").performClick()
 
         waitUntil(timeoutMillis = 5_000) {
             onAllNodesWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNodes().isNotEmpty()

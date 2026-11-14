@@ -20,7 +20,7 @@ import androidx.sqlite.execSQL
  *   ключи к существующей таблице. Новая таблица создаётся под временным именем, потому что
  *   старая нужна как источник данных.
  */
-val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+private val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(connection: SQLiteConnection) {
         connection.execSQL(
             """
@@ -70,4 +70,4 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
 }
 
 /** Все миграции по порядку; подключаются в `createAppDb` и в тестах. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+internal val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)

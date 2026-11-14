@@ -10,4 +10,4 @@ package com.combo.feature.builder.draft
  * должен зависеть от пакета редактора, иначе пакеты ссылаются друг на друга по кругу
  * (это проверяет `ArchitectureRulesTest`).
  */
-enum class FitPreset { FIT, FILL }
+internal enum class FitPreset { FIT, FILL }
