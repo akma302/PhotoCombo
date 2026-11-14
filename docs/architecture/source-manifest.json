@@ -1,0 +1,3850 @@
+{
+  "sourceCommit": "7351a27b9daa140471cae8295a4aca88441ca572",
+  "date": "2026-11-14",
+  "files": [
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/commonMain/kotlin/com/combo/di/AppModules.kt",
+      "name": "AppModules.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.di",
+      "declarations": [
+        {
+          "line": 26,
+          "text": "val appModule = module {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.IdGenerator",
+        "com.combo.core.platform.WallClock",
+        "com.combo.data.PhotoStorage",
+        "com.combo.data.FileGallerySettingsStorage",
+        "com.combo.data.GallerySettingsStorage",
+        "com.combo.domain.GallerySettingsRepository",
+        "com.combo.domain.GallerySettingsRepositoryImpl",
+        "com.combo.domain.ComboRepository",
+        "com.combo.domain.ComboRepositoryImpl",
+        "com.combo.domain.ComboPngExporter",
+        "com.combo.domain.PhotoImporter",
+        "com.combo.domain.PhotoRepository",
+        "com.combo.domain.PhotoRepositoryImpl"
+      ],
+      "sha256": "36e37a3fe3abf36c414c9b8eecdda1e8e06fefb3f9d3295585ba63b3c5f2fe31"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/commonMain/kotlin/com/combo/di/ViewModelModule.kt",
+      "name": "ViewModelModule.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.di",
+      "declarations": [
+        {
+          "line": 25,
+          "text": "val viewModelModule = module {",
+          "visibility": "public"
+        },
+        {
+          "line": 61,
+          "text": "class EntryArgs(val handle: SavedStateHandle)",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.domain.ComboPngExporter",
+        "com.combo.feature.builder.ComboBuilderViewModel",
+        "com.combo.feature.combo_list.ComboListViewModel",
+        "com.combo.feature.library.LibraryViewModel",
+        "com.combo.feature.viewer.PhotoViewerViewModel"
+      ],
+      "sha256": "15041040bb6fdd95c1e8fbe5c9e30ab5ad8cc607e607fad0c62aa07d04908e82"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/commonMain/kotlin/com/combo/ui/AppNav.kt",
+      "name": "AppNav.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 60,
+          "text": "fun AppNav(backDispatcher: BackDispatcher) {",
+          "visibility": "public"
+        },
+        {
+          "line": 147,
+          "text": "private fun builderHandle(key: ScreenKey.Builder): SavedStateHandle {",
+          "visibility": "private"
+        },
+        {
+          "line": 157,
+          "text": "private fun EntryScope(content: @Composable () -> Unit) {",
+          "visibility": "private"
+        },
+        {
+          "line": 168,
+          "text": "private fun MutableList<NavKey>.switchTab(tab: NavKey) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.components.PcSegmentedControl",
+        "com.combo.ui.common.designsystem.components.PcOption",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcDivider",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.di.EntryArgs",
+        "com.combo.feature.builder.ComboBuilderScreen",
+        "com.combo.feature.builder.ComboBuilderViewModel",
+        "com.combo.feature.combo_list.ComboListScreen",
+        "com.combo.feature.library.LibraryScreen",
+        "com.combo.feature.viewer.PhotoViewerScreen",
+        "com.combo.ui.common.BackDispatcher",
+        "com.combo.ui.common.BackKeyHost",
+        "com.combo.ui.common.LocalBackDispatcher",
+        "com.combo.ui.common.RegisterBackHandler"
+      ],
+      "sha256": "fec4de2956d6c842fac0890f64b61fc0f5bba767379a3622ceab965f94b5d99b"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/commonMain/kotlin/com/combo/ui/ScreenKey.kt",
+      "name": "ScreenKey.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "sealed interface ScreenKey : NavKey {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "d76ed2ace7e38398f08618ee5cc6f4db4de6d7484473ecd0b2ba6da36554208a"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/commonMain/kotlin/com/combo/ui/ViewModelStoreOwners.kt",
+      "name": "ViewModelStoreOwners.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "private class StackViewModelStoreOwner : ViewModelStoreOwner {",
+          "visibility": "private"
+        },
+        {
+          "line": 26,
+          "text": "fun rememberEntryViewModelStoreOwner(): ViewModelStoreOwner {",
+          "visibility": "public"
+        },
+        {
+          "line": 40,
+          "text": "fun rememberRootViewModelStoreOwner(): ViewModelStoreOwner = remember { StackViewModelStoreOwner() }",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "09509a9be48b396c2aedc007cab571458cfe13359c3d381c23826e2158fb8949"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/desktopMain/kotlin/com/combo/di/DesktopModules.kt",
+      "name": "DesktopModules.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.di",
+      "declarations": [
+        {
+          "line": 40,
+          "text": "fun desktopModule(dataDir: Path = defaultAppDataDir().toOkioPath()): Module = module {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.DesktopImagePicker",
+        "com.combo.core.image.DesktopPngOutput",
+        "com.combo.core.image.ImageCodec",
+        "com.combo.core.image.ImagePicker",
+        "com.combo.core.image.PngOutput",
+        "com.combo.core.image.SkiaImageCodec",
+        "com.combo.core.platform.AppDirs",
+        "com.combo.core.platform.DesktopAppDirs",
+        "com.combo.core.platform.DesktopLogger",
+        "com.combo.core.platform.IdGenerator",
+        "com.combo.core.platform.Logger",
+        "com.combo.core.platform.WallClock",
+        "com.combo.core.platform.defaultAppDataDir",
+        "com.combo.data.AppDb",
+        "com.combo.data.ComboDao",
+        "com.combo.data.DB_FILE_NAME",
+        "com.combo.data.PhotoDao",
+        "com.combo.data.createAppDb",
+        "com.combo.domain.BitmapSource",
+        "com.combo.domain.image.LruBitmapSource"
+      ],
+      "sha256": "15e6e3676497b7e2b1dca7f2c35959a7d1d63796046d85970a3c6e316d466bca"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/desktopMain/kotlin/com/combo/main.kt",
+      "name": "main.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo",
+      "declarations": [
+        {
+          "line": 32,
+          "text": "fun main() {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.di.appModule",
+        "com.combo.di.desktopModule",
+        "com.combo.di.viewModelModule",
+        "com.combo.ui.common.PcDesktopTheme",
+        "com.combo.ui.AppNav",
+        "com.combo.ui.common.BackDispatcher"
+      ],
+      "sha256": "27de7ddeccf7d6909c98e71aeaf9ca399e1d52644bab70977e3397322150fef8"
+    },
+    {
+      "module": ":composeApp",
+      "path": "composeApp/src/desktopMain/kotlin/com/combo/ui/GalleryLauncher.kt",
+      "name": "GalleryLauncher.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 18,
+          "text": "fun main() = application {",
+          "visibility": "public"
+        },
+        {
+          "line": 28,
+          "text": "fun sharedGalleryExamples(): List<GalleryExample> = listOf(GalleryExample(\"Gallery grid\") {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.GalleryGrid",
+        "com.combo.ui.common.PcDesktopTheme",
+        "com.combo.ui.gallery.DesignSystemGallery",
+        "com.combo.ui.gallery.GalleryExample"
+      ],
+      "sha256": "663c17c3fd38967c506b43a716ac6e5436dffcd3503d81014a069a9eb0292310"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/Const.kt",
+      "name": "Const.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "object Const {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "e33519a97bf89d27e9e5d4694329a60ae4ad64cee986b6c006c17292d58b692a"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/background/AverageAreaOklabStrategy.kt",
+      "name": "AverageAreaOklabStrategy.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.background",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "object AverageAreaOklabStrategy : BackgroundStrategy {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.color.Oklab"
+      ],
+      "sha256": "919e766e121d923ab8ec1c35d3af7c66f863c15c9ef1bb9cf4d851d54dc42f93"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/background/Background.kt",
+      "name": "Background.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.background",
+      "declarations": [
+        {
+          "line": 15,
+          "text": "sealed interface BackgroundSpec {",
+          "visibility": "public"
+        },
+        {
+          "line": 27,
+          "text": "sealed interface ResolvedBackground {",
+          "visibility": "public"
+        },
+        {
+          "line": 32,
+          "text": "data class FrameInput(",
+          "visibility": "public"
+        },
+        {
+          "line": 41,
+          "text": "data class BackgroundInput(",
+          "visibility": "public"
+        },
+        {
+          "line": 47,
+          "text": "interface BackgroundStrategy {",
+          "visibility": "public"
+        },
+        {
+          "line": 58,
+          "text": "class BackgroundResolver(",
+          "visibility": "public"
+        },
+        {
+          "line": 79,
+          "text": "object BackgroundPresets {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "83d17b94031372a8449259683173686e47737a0281efce7f488dd73313dba094"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/color/Oklab.kt",
+      "name": "Oklab.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.color",
+      "declarations": [
+        {
+          "line": 15,
+          "text": "object Oklab {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "58108e39c0f9488857378ff0e9f3bdd165605266fd245367ce2250b0e6ed6d94"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/image/ExifOrientation.kt",
+      "name": "ExifOrientation.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 8,
+          "text": "enum class ExifOrientation(val exifValue: Int) {",
+          "visibility": "public"
+        },
+        {
+          "line": 25,
+          "text": "fun exifOrientationOf(value: Int): ExifOrientation =",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "9feb072e4b53e5602861d93ab2af66d7c50fa60353a070405d8dda93879ade8a"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/image/ExifTransform.kt",
+      "name": "ExifTransform.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 19,
+          "text": "fun applyExifOrientation(image: ImageBitmap, orientation: ExifOrientation): ImageBitmap {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "3238b48aac064155448119ebadb117f8d3c3ca33422dedb13050ed53aa9b0af3"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/image/ImageCodec.kt",
+      "name": "ImageCodec.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 8,
+          "text": "enum class ImageFormat {",
+          "visibility": "public"
+        },
+        {
+          "line": 18,
+          "text": "interface ImageCodec {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "95e261269c9cbd873658c6a0bd87d5f0d1a617a3cee5615cf67849f79a96252b"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/image/ImagePicker.kt",
+      "name": "ImagePicker.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "interface ImagePicker {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "1763c84aa926931c00a5c0dac4e7200581e957eb6589bbd7311d981f6f508954"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/image/ImageSource.kt",
+      "name": "ImageSource.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 10,
+          "text": "interface ImageSource {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "042fa7d9a689d263d089cadc6b30fd3b3aa88ed0be01a4da277b858fdfa98d41"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/image/PngOutput.kt",
+      "name": "PngOutput.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 6,
+          "text": "data class PngDestination(val path: Path, val replaceExisting: Boolean)",
+          "visibility": "public"
+        },
+        {
+          "line": 8,
+          "text": "interface PngOutput {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "f918e89f5ae0ef4c806625ac45bd51346d4a3030df4f4ca3c269045fa8180d49"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/model/Model.kt",
+      "name": "Model.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.model",
+      "declarations": [
+        {
+          "line": 18,
+          "text": "enum class FramingMode { FREE, FIT }",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "89e9570719ffe89366f0f3be9ed82466a9b704aa94a11315cc9563dc0d5c4ca5"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/platform/AppDirs.kt",
+      "name": "AppDirs.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.platform",
+      "declarations": [
+        {
+          "line": 10,
+          "text": "interface AppDirs {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "6932f8bd59049e6756ebf8108cff9d8619abbf752a093909449879b7c936b6f4"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/platform/Logger.kt",
+      "name": "Logger.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.platform",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "interface Logger {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "ca860a7aaaff25f87670f594ca2f028d8925d3ae6bcde8619e98d0f6c2edee9d"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/platform/Providers.kt",
+      "name": "Providers.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.platform",
+      "declarations": [
+        {
+          "line": 8,
+          "text": "fun interface WallClock {",
+          "visibility": "public"
+        },
+        {
+          "line": 13,
+          "text": "fun interface IdGenerator {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "cb98d6ed19f828471af0da0a882d554785f35ff3c886ae7e618b146fb2747829"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/Aspect.kt",
+      "name": "Aspect.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "data class CanvasFormat(val w: Int, val h: Int) {",
+          "visibility": "public"
+        },
+        {
+          "line": 27,
+          "text": "fun minBorderSize(canvasW: Float, canvasH: Float): Float =",
+          "visibility": "public"
+        },
+        {
+          "line": 35,
+          "text": "object AspectPresets {",
+          "visibility": "public"
+        },
+        {
+          "line": 76,
+          "text": "fun relayout(",
+          "visibility": "public"
+        },
+        {
+          "line": 134,
+          "text": "private fun coverClamp(pan: Float, contentSize: Float, borderSize: Float): Float {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "8fbb074de64bf071a8e85ffcbd68b378995b11ae8638a3b9c365848a2273d4e1"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/BackgroundDraw.kt",
+      "name": "BackgroundDraw.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 16,
+          "text": "fun DrawScope.drawComboBackground(bg: ResolvedBackground, topLeft: Offset, size: Size) {",
+          "visibility": "public"
+        },
+        {
+          "line": 27,
+          "text": "fun frameInputOf(border: Border, photoColors: List<Int>): FrameInput {",
+          "visibility": "public"
+        },
+        {
+          "line": 32,
+          "text": "fun backgroundInputOf(canvasW: Float, canvasH: Float, frames: List<FrameInput>) =",
+          "visibility": "public"
+        },
+        {
+          "line": 39,
+          "text": "fun resolveBackground(spec: BackgroundSpec, input: BackgroundInput): ResolvedBackground =",
+          "visibility": "public"
+        },
+        {
+          "line": 51,
+          "text": "fun comboBackgroundOf(",
+          "visibility": "public"
+        },
+        {
+          "line": 63,
+          "text": "fun comboBackgroundOf(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.background.BackgroundInput",
+        "com.combo.core.background.BackgroundSpec",
+        "com.combo.core.background.FrameInput",
+        "com.combo.core.background.ResolvedBackground"
+      ],
+      "sha256": "a7c57f9165fb2face0cafd94c0a2eb8c25980699a90e189361d9921eae70d1cc"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/Drafts.kt",
+      "name": "Drafts.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "class ItemDraft(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "4258674ced9815857f697bfc2980eb2747bb13bb9e4a6c3202c73c093e5ca28c"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/DrawCombo.kt",
+      "name": "DrawCombo.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 30,
+          "text": "fun DrawScope.drawCombo(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.background.ResolvedBackground"
+      ],
+      "sha256": "b2645f57cf7e662099818b1aaab6dec88a780e823de64fe8bf2badb817b0cdcb"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/DrawItem.kt",
+      "name": "DrawItem.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 14,
+          "text": "data class ContentDrawArgs(",
+          "visibility": "public"
+        },
+        {
+          "line": 22,
+          "text": "data class ItemFrame(",
+          "visibility": "public"
+        },
+        {
+          "line": 29,
+          "text": "fun DrawScope.drawItem(f: ItemFrame) {",
+          "visibility": "public"
+        },
+        {
+          "line": 39,
+          "text": "private fun Rect.toIntOffset() = IntOffset(left.roundToInt(), top.roundToInt())",
+          "visibility": "private"
+        },
+        {
+          "line": 40,
+          "text": "private fun Rect.toIntSize() = IntSize(width.roundToInt(), height.roundToInt())",
+          "visibility": "private"
+        },
+        {
+          "line": 43,
+          "text": "fun visiblePhotoBounds(border: Border, srcW: Int, srcH: Int, framing: Framing): Rect {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.Const"
+      ],
+      "sha256": "175cc9f4e1c255068fdb74bb8da8fd7ed3b63aa150f1e457ade53251e162dad1"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/Framing.kt",
+      "name": "Framing.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "data class Framing(val scale: Float, val panX: Float, val panY: Float)",
+          "visibility": "public"
+        },
+        {
+          "line": 23,
+          "text": "fun effectiveFraming(",
+          "visibility": "public"
+        },
+        {
+          "line": 45,
+          "text": "fun contentArgsOf(",
+          "visibility": "public"
+        },
+        {
+          "line": 69,
+          "text": "private fun fitScaleOf(border: Border, srcW: Int, srcH: Int): Float =",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "b6f3ca088b69851042d2bd3ce09258f7e05da7482fc609e2bed1b49bc850256a"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/Geometry.kt",
+      "name": "Geometry.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "data class Border(val centerX: Float, val centerY: Float, val width: Float, val height: Float) {",
+          "visibility": "public"
+        },
+        {
+          "line": 12,
+          "text": "enum class Edge { LEFT, TOP, RIGHT, BOTTOM }",
+          "visibility": "public"
+        },
+        {
+          "line": 14,
+          "text": "data class Viewport(val zoom: Float = 1f, val pan: Offset = Offset.Zero) {",
+          "visibility": "public"
+        },
+        {
+          "line": 33,
+          "text": "fun viewportZoomPan(",
+          "visibility": "public"
+        },
+        {
+          "line": 51,
+          "text": "data class CanvasTransform(val scale: Float, val origin: Offset) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "8fc60de133ce2ddbb6d847f22d9b8f6f0b30449393bd347efd0099b9efa55005"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/ItemFrames.kt",
+      "name": "ItemFrames.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "class FrameContent(",
+          "visibility": "public"
+        },
+        {
+          "line": 32,
+          "text": "fun buildItemFrame(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "682a611be542ae70bbece44fdf864b2db2d2e653fc2de3cdaf20d644e3db66d4"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/ItemGestures.kt",
+      "name": "ItemGestures.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 6,
+          "text": "object ItemGestures {",
+          "visibility": "public"
+        },
+        {
+          "line": 64,
+          "text": "internal class FrameEdgeResize(frame: Border, edge: Edge, minSize: Float, private val oneSided: Boolean) {",
+          "visibility": "internal"
+        },
+        {
+          "line": 91,
+          "text": "internal fun moveFrame(frame: Border, dx: Float, dy: Float, canvasW: Float, canvasH: Float): Border =",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [],
+      "sha256": "771b9a3913159745ca26b3a35b9e336a7bfbece9f151dbf31e7e9144f5e118dd"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/LayoutPresets.kt",
+      "name": "LayoutPresets.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 8,
+          "text": "object LayoutPresets {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "d6edae2d92b0c47a0f6a5aa62b124ad56871bc2fe0bca95bbb5784512d5eb1af"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/snap/FrameSnap.kt",
+      "name": "FrameSnap.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render.snap",
+      "declarations": [
+        {
+          "line": 10,
+          "text": "enum class SnapAxis { X, Y }",
+          "visibility": "public"
+        },
+        {
+          "line": 12,
+          "text": "data class SnapGuide(",
+          "visibility": "public"
+        },
+        {
+          "line": 19,
+          "text": "data class SnapDistances(val capture: Float, val release: Float)",
+          "visibility": "public"
+        },
+        {
+          "line": 21,
+          "text": "data class SnapStep(val state: FrameSnapState, val placed: Border, val guides: List<SnapGuide>)",
+          "visibility": "public"
+        },
+        {
+          "line": 23,
+          "text": "class FrameSnapState internal constructor(",
+          "visibility": "internal"
+        },
+        {
+          "line": 34,
+          "text": "class FrameSnap private constructor(",
+          "visibility": "private"
+        },
+        {
+          "line": 122,
+          "text": "internal data class Alignment(val position: Float, val coordinate: Float, val target: Border?) {",
+          "visibility": "internal"
+        },
+        {
+          "line": 133,
+          "text": "private fun choose(",
+          "visibility": "private"
+        },
+        {
+          "line": 155,
+          "text": "private fun placeCenter(frame: Border, x: Float?, y: Float?): Border =",
+          "visibility": "private"
+        },
+        {
+          "line": 158,
+          "text": "private fun photoAlignments(axis: SnapAxis, frame: Border, photo: Border): List<Alignment> {",
+          "visibility": "private"
+        },
+        {
+          "line": 164,
+          "text": "private fun alignments(axis: SnapAxis, frame: Border, targets: List<Border>, limit: Float): List<Alignment> {",
+          "visibility": "private"
+        },
+        {
+          "line": 181,
+          "text": "private fun SnapAxis.center(frame: Border): Float = if (this == SnapAxis.X) frame.centerX else frame.centerY",
+          "visibility": "private"
+        },
+        {
+          "line": 182,
+          "text": "private fun SnapAxis.halfSize(frame: Border): Float = if (this == SnapAxis.X) frame.width / 2f else frame.height / 2f",
+          "visibility": "private"
+        },
+        {
+          "line": 183,
+          "text": "private fun SnapAxis.crossStart(frame: Border): Float =",
+          "visibility": "private"
+        },
+        {
+          "line": 185,
+          "text": "private fun SnapAxis.crossEnd(frame: Border): Float =",
+          "visibility": "private"
+        },
+        {
+          "line": 187,
+          "text": "private fun SnapAxis.crossGap(a: Border, b: Border): Float =",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.Border",
+        "com.combo.core.render.Edge",
+        "com.combo.core.render.FrameEdgeResize",
+        "com.combo.core.render.clampPhotoPan",
+        "com.combo.core.render.moveFrame"
+      ],
+      "sha256": "59f39afab84ed2f50ed3be08e8551fc957a7ba396e33383e6c13a20e0570a9b4"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/render/TransformMath.kt",
+      "name": "TransformMath.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.render",
+      "declarations": [
+        {
+          "line": 11,
+          "text": "object TransformMath {",
+          "visibility": "public"
+        },
+        {
+          "line": 39,
+          "text": "internal fun clampPhotoPan(pan: Float, frameSize: Float, photoSize: Float): Float {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [],
+      "sha256": "3b1315c53f053696219e80cd8ea3094d31597f13e8da1d1e156f666d964cfc4b"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/util/AverageColor.kt",
+      "name": "AverageColor.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.util",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "object AverageColor {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "21ed3d63a631a234285f7dfd83a774daf077376826d8a919655decfd0821e39d"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/commonMain/kotlin/com/combo/core/util/UndoStack.kt",
+      "name": "UndoStack.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.core.util",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "class UndoStack<T>(private val maxDepth: Int = 50) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "4517acba0fd25ab3f7697468fd7daa52ce7137fa7980a7612d95b819ff0628b6"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/image/DesktopImagePicker.kt",
+      "name": "DesktopImagePicker.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "private val IMAGE_EXTENSIONS = setOf(\"jpg\", \"jpeg\", \"png\", \"webp\")",
+          "visibility": "private"
+        },
+        {
+          "line": 18,
+          "text": "class DesktopImagePicker(private val files: FileSystem) : ImagePicker {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "153c5a7c90dabc3cc53a2e333b6c38d82e9782bb8d7e3b67c9a0aa2d456ad405"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/image/DesktopPngOutput.kt",
+      "name": "DesktopPngOutput.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "class DesktopPngOutput(",
+          "visibility": "public"
+        },
+        {
+          "line": 63,
+          "text": "private val invalidFilenameChars = Regex(\"\"\"[<>:\"/\\\\|?*\\p{Cntrl}]\"\"\")",
+          "visibility": "private"
+        },
+        {
+          "line": 64,
+          "text": "private val reservedFilename = Regex(\"\"\"CON|PRN|AUX|NUL|COM[0-9¹²³]|LPT[0-9¹²³]\"\"\", RegexOption.IGNORE_CASE)",
+          "visibility": "private"
+        },
+        {
+          "line": 66,
+          "text": "internal fun suggestedPngName(name: String): String {",
+          "visibility": "internal"
+        },
+        {
+          "line": 72,
+          "text": "private fun String.withPngExtension(): String = if (endsWith(\".png\", ignoreCase = true)) this else \"$this.png\"",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.AppDirs"
+      ],
+      "sha256": "e7815cbf769e82b1e26f9936a1aed6335b4c42b792f61572058368a40f49d963"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/image/FileImageSource.kt",
+      "name": "FileImageSource.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 8,
+          "text": "class FileImageSource(",
+          "visibility": "public"
+        },
+        {
+          "line": 24,
+          "text": "fun mimeTypeForName(name: String): String = when {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "709f5ff54c82f7bb3c9038e5f82a559084dfc90b60658878e6a61fd2b350c2b9"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/image/SkiaImageCodec.kt",
+      "name": "SkiaImageCodec.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.image",
+      "declarations": [
+        {
+          "line": 25,
+          "text": "private const val TAG = \"SkiaImageCodec\"",
+          "visibility": "private"
+        },
+        {
+          "line": 28,
+          "text": "private const val PNG_COMPRESSION_LEVEL = 6",
+          "visibility": "private"
+        },
+        {
+          "line": 36,
+          "text": "class SkiaImageCodec(",
+          "visibility": "public"
+        },
+        {
+          "line": 142,
+          "text": "private fun EncodedOrigin.toExifOrientation(): ExifOrientation = when (this) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.Logger"
+      ],
+      "sha256": "bc3e9af584a840618c4c915527f8363381ae44198a1b005da6ed8623557baa21"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/platform/DefaultAppDataDir.kt",
+      "name": "DefaultAppDataDir.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.platform",
+      "declarations": [
+        {
+          "line": 5,
+          "text": "private const val APP_DIR_NAME = \"PhotoCombo\"",
+          "visibility": "private"
+        },
+        {
+          "line": 14,
+          "text": "fun defaultAppDataDir(): File {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "9e0e6c5da43c5354e6d7979e1dd6307940d4287fda7875eb136b5092c606b084"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/platform/DesktopAppDirs.kt",
+      "name": "DesktopAppDirs.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.platform",
+      "declarations": [
+        {
+          "line": 6,
+          "text": "class DesktopAppDirs(override val dataDir: Path) : AppDirs",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "063d1a8a72217b40f3aece02c59253f9a168cf4610f39d2c0f9f3eb052deb027"
+    },
+    {
+      "module": ":core",
+      "path": "core/src/desktopMain/kotlin/com/combo/core/platform/DesktopLogger.kt",
+      "name": "DesktopLogger.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.core.platform",
+      "declarations": [
+        {
+          "line": 4,
+          "text": "class DesktopLogger : Logger {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "274b083dc9db892d13f86761b550433f2b041571d1131197007851fac7cdb10a"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/AppDb.kt",
+      "name": "AppDb.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 25,
+          "text": "abstract class AppDb : RoomDatabase() {",
+          "visibility": "public"
+        },
+        {
+          "line": 35,
+          "text": "expect object AppDbConstructor : RoomDatabaseConstructor<AppDb> {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "147d97fca435d56e47225fb879dbb3cce8faf3fa5f003a7cff001524d3a387e0"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/BackgroundConverters.kt",
+      "name": "BackgroundConverters.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "class BackgroundConverters {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.background.BackgroundSpec"
+      ],
+      "sha256": "70e7e41ee2fd07f1bfedc83f78f17c735675d6e45359d5774a484a20858fc15b"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/Daos.kt",
+      "name": "Daos.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "interface PhotoDao {",
+          "visibility": "public"
+        },
+        {
+          "line": 30,
+          "text": "interface ComboDao {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "3af2701b782796c6c8c5b61636092f2dc7045429c5a78d6e1ec67fcfc3887c4f"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/Entities.kt",
+      "name": "Entities.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "data class PhotoEntity(",
+          "visibility": "public"
+        },
+        {
+          "line": 27,
+          "text": "data class ComboEntity(",
+          "visibility": "public"
+        },
+        {
+          "line": 61,
+          "text": "data class ComboItemEntity(",
+          "visibility": "public"
+        },
+        {
+          "line": 77,
+          "text": "data class ComboWithItems(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.background.BackgroundSpec",
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "a11bf57e69f08aa013861706a2f499609530377a46cb3125ad6288a7c800cf9d"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/EntityExt.kt",
+      "name": "EntityExt.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "fun ComboItemEntity.border(): Border = Border(centerX, centerY, width, height)",
+          "visibility": "public"
+        },
+        {
+          "line": 20,
+          "text": "fun PhotoEntity.srcSize(): Size = Size(width.toFloat(), height.toFloat())",
+          "visibility": "public"
+        },
+        {
+          "line": 29,
+          "text": "fun ComboWithItems.backgroundFrames(photos: Map<String, PhotoEntity>): List<Pair<Border, List<Int>>> =",
+          "visibility": "public"
+        },
+        {
+          "line": 39,
+          "text": "fun ComboItemEntity.frameContent(image: ImageBitmap, photo: PhotoEntity) = FrameContent(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.Border",
+        "com.combo.core.render.FrameContent"
+      ],
+      "sha256": "2009d31b3f31a14b002f65766232c02231074497c149e39553da28590f1ad09e"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/GallerySettingsStorage.kt",
+      "name": "GallerySettingsStorage.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "data class GallerySettings(val photosPercent: Float = 100f, val combosPercent: Float = 100f)",
+          "visibility": "public"
+        },
+        {
+          "line": 11,
+          "text": "fun normalizedGalleryPercent(value: Float): Float =",
+          "visibility": "public"
+        },
+        {
+          "line": 14,
+          "text": "interface GallerySettingsStorage {",
+          "visibility": "public"
+        },
+        {
+          "line": 19,
+          "text": "class FileGallerySettingsStorage(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.AppDirs"
+      ],
+      "sha256": "016b3e74d8beae2f35f381798cffcefc956f71ac82ac5f52a1ec7b44071aa471"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/Migrations.kt",
+      "name": "Migrations.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 23,
+          "text": "val MIGRATION_1_2: Migration = object : Migration(1, 2) {",
+          "visibility": "public"
+        },
+        {
+          "line": 73,
+          "text": "val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "a6fc187a373ff2d7de980a9271483f58ab06643061d19caf798c6e48106fd514"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/commonMain/kotlin/com/combo/data/PhotoStorage.kt",
+      "name": "PhotoStorage.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 14,
+          "text": "class PhotoStorage(private val dirs: AppDirs, private val files: FileSystem) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.AppDirs"
+      ],
+      "sha256": "9aa4db4d1259efaf1bdd891498caffdbc554911e038ab43b17b10a2325978a1c"
+    },
+    {
+      "module": ":data",
+      "path": "data/src/desktopMain/kotlin/com/combo/data/DatabaseFactory.kt",
+      "name": "DatabaseFactory.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.data",
+      "declarations": [
+        {
+          "line": 10,
+          "text": "const val DB_FILE_NAME = \"combo.db\"",
+          "visibility": "public"
+        },
+        {
+          "line": 17,
+          "text": "fun createAppDb(file: File = File(defaultAppDataDir(), DB_FILE_NAME)): AppDb {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.defaultAppDataDir"
+      ],
+      "sha256": "b92adb9a8733c5bb26de016f54418c7ec6f300d740dc434ab8cc7c57954120c4"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/ComboPngExporter.kt",
+      "name": "ComboPngExporter.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain",
+      "declarations": [
+        {
+          "line": 26,
+          "text": "class ComboPngExporter(",
+          "visibility": "public"
+        },
+        {
+          "line": 71,
+          "text": "private fun ComboItemEntity.exportPixels(photo: PhotoEntity): Int {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.image.PngOutput",
+        "com.combo.core.render.CanvasTransform",
+        "com.combo.core.render.buildItemFrame",
+        "com.combo.core.render.comboBackgroundOf",
+        "com.combo.core.render.drawCombo",
+        "com.combo.core.render.effectiveFraming",
+        "com.combo.data.ComboItemEntity",
+        "com.combo.data.PhotoEntity",
+        "com.combo.data.backgroundFrames",
+        "com.combo.data.border",
+        "com.combo.data.frameContent"
+      ],
+      "sha256": "fe179972691fcd9116886bb420b0af07e56c73ee4e1ba64934e62c2b7d3f4809"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/GallerySettingsRepository.kt",
+      "name": "GallerySettingsRepository.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "enum class GalleryKind { Photos, Combos }",
+          "visibility": "public"
+        },
+        {
+          "line": 15,
+          "text": "interface GallerySettingsRepository {",
+          "visibility": "public"
+        },
+        {
+          "line": 21,
+          "text": "class GallerySettingsRepositoryImpl(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.platform.Logger",
+        "com.combo.data.GallerySettings",
+        "com.combo.data.GallerySettingsStorage",
+        "com.combo.data.normalizedGalleryPercent"
+      ],
+      "sha256": "a28b1ced3a20013f64bd916494a7e236a967eb10344c2654e27d2b29ed7d224d"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/image/LruBitmapSource.kt",
+      "name": "LruBitmapSource.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain.image",
+      "declarations": [
+        {
+          "line": 34,
+          "text": "class LruBitmapSource(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.ImageCodec",
+        "com.combo.data.PhotoDao",
+        "com.combo.data.PhotoStorage",
+        "com.combo.domain.BitmapSource"
+      ],
+      "sha256": "eac1efbd141e80817b9565eb80b5673e0f3c3a8e9c6c16d8374e4f09d03d0d74"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/Impls.kt",
+      "name": "Impls.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain",
+      "declarations": [
+        {
+          "line": 22,
+          "text": "class PhotoRepositoryImpl(",
+          "visibility": "public"
+        },
+        {
+          "line": 51,
+          "text": "class ComboRepositoryImpl(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.ImageSource",
+        "com.combo.data.AppDb",
+        "com.combo.data.ComboDao",
+        "com.combo.data.ComboEntity",
+        "com.combo.data.ComboItemEntity",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.PhotoDao",
+        "com.combo.data.PhotoEntity",
+        "com.combo.data.PhotoStorage"
+      ],
+      "sha256": "df50de95af2f40914343e082dfa687cd18b1ca53e8529d52d80e9ecd99f2f8ee"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/PhotoAssets.kt",
+      "name": "PhotoAssets.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain",
+      "declarations": [
+        {
+          "line": 24,
+          "text": "class PhotoAssets(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.data.PhotoEntity"
+      ],
+      "sha256": "978602ae003949c900dff2b4020525f1cb4141da31fe4d0e9f810ed21795e702"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/PhotoImporter.kt",
+      "name": "PhotoImporter.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain",
+      "declarations": [
+        {
+          "line": 23,
+          "text": "private const val TAG = \"PhotoRepository\"",
+          "visibility": "private"
+        },
+        {
+          "line": 35,
+          "text": "class PhotoImporter(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.ExifOrientation",
+        "com.combo.core.image.ImageCodec",
+        "com.combo.core.image.ImageFormat",
+        "com.combo.core.image.ImageSource",
+        "com.combo.core.image.applyExifOrientation",
+        "com.combo.core.platform.Logger",
+        "com.combo.core.util.AverageColor",
+        "com.combo.data.PhotoDao",
+        "com.combo.data.PhotoEntity",
+        "com.combo.data.PhotoStorage"
+      ],
+      "sha256": "594c544825f23bf433996d1267dae8a717f6c138c6c9e1a2ac91faab02d3e4a4"
+    },
+    {
+      "module": ":domain",
+      "path": "domain/src/commonMain/kotlin/com/combo/domain/Repositories.kt",
+      "name": "Repositories.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.domain",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "data class ImportResult(val added: Int, val duplicates: Int, val failed: Int)",
+          "visibility": "public"
+        },
+        {
+          "line": 14,
+          "text": "enum class DeleteResult { DELETED, BLOCKED_IF_USED_IN_COMBO }",
+          "visibility": "public"
+        },
+        {
+          "line": 16,
+          "text": "interface PhotoRepository {",
+          "visibility": "public"
+        },
+        {
+          "line": 31,
+          "text": "interface ComboRepository {",
+          "visibility": "public"
+        },
+        {
+          "line": 43,
+          "text": "interface BitmapSource {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.ImageSource",
+        "com.combo.data.ComboEntity",
+        "com.combo.data.ComboItemEntity",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.PhotoEntity"
+      ],
+      "sha256": "64cb2b696a55abbd7aaca51ced1999699be977c4c8513bd8e64f38d18e5d43ce"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcActionGroup.kt",
+      "name": "PcActionGroup.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 16,
+          "text": "fun PcActionGroup(modifier: Modifier = Modifier, content: @Composable () -> Unit) {",
+          "visibility": "public"
+        },
+        {
+          "line": 29,
+          "text": "private fun PcActionFlow(modifier: Modifier, content: @Composable () -> Unit) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "d0715bd785c86c632c3f448d0fcb24c0707242d81bc174c6ad77e9d569dfd379"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcButton.kt",
+      "name": "PcButton.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 39,
+          "text": "enum class PcButtonVariant { Primary, Secondary, Ghost, Danger, DangerFilled }",
+          "visibility": "public"
+        },
+        {
+          "line": 43,
+          "text": "fun PcButton(",
+          "visibility": "public"
+        },
+        {
+          "line": 120,
+          "text": "internal fun PcBusyIndicator(color: Color) {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcControlLayout",
+        "com.combo.ui.common.designsystem.primitives.PcIcon",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "295bb3711dd03bede6be355db57140aea68f7fd231b06ec12f2718b39d58ccf7"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcCheckbox.kt",
+      "name": "PcCheckbox.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 30,
+          "text": "fun PcCheckbox(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcControlLayout",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "3d62f9be223810638b4633254a124b2e3a8e1cc0ac7c402a87cdabc3bff8c339"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcDialog.kt",
+      "name": "PcDialog.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 42,
+          "text": "fun PcDialog(",
+          "visibility": "public"
+        },
+        {
+          "line": 94,
+          "text": "internal expect fun PcPlatformDialog(onDismissRequest: () -> Unit, dismissOnClickOutside: Boolean, content: @Composable () -> Unit)",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcPopupAppearance",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "c8a9566a7c89d72413eac1e09326f497226e93242d556ecd9d9a99ef385bbe60"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcIconButton.kt",
+      "name": "PcIconButton.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 24,
+          "text": "fun PcIconButton(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcControlLayout",
+        "com.combo.ui.common.designsystem.primitives.PcIcon",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "c385d4ac0318115845a97224f3e4ac9db0b31e0cc74a02d2bc8dbf89b600cfe9"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcOption.kt",
+      "name": "PcOption.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 6,
+          "text": "data class PcOption<T>(val value: T, val label: String, val icon: ImageVector? = null)",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "5ade420af8661a3199dbf53b7d7c55e4fba37b1fdd878789157f5de5bab8a18a"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcSegmentedControl.kt",
+      "name": "PcSegmentedControl.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 45,
+          "text": "fun <T> PcSegmentedControl(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcIcon",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "1a17d39ce3c04fcb4512565d43f3e7363467534d4210bb9fcb62c2131710d374"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcSelect.kt",
+      "name": "PcSelect.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 65,
+          "text": "fun <T> PcSelect(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcControlLayout",
+        "com.combo.ui.common.designsystem.primitives.PcIcon",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.primitives.pcPopupAppearance",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "d96103a2eee537a60d2253d8ad3cc2202a528b8155fad22a109a5c2062883e39"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcSlider.kt",
+      "name": "PcSlider.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 30,
+          "text": "fun PcSlider(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "eef7af394ff4eed3645733ca35b470abde2e9f3e40c73f35d9aa7ee7519948fe"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcTextField.kt",
+      "name": "PcTextField.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 30,
+          "text": "fun PcTextField(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "15c0891b8f08ec98f8087b945d22f8c8c676813f2dd49ea275078806146973d6"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/components/PcTooltip.kt",
+      "name": "PcTooltip.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 38,
+          "text": "fun PcTooltip(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, content: @Composable () -> Unit) {",
+          "visibility": "public"
+        },
+        {
+          "line": 71,
+          "text": "internal class PcAnchorPosition(private val gap: Int, private val above: Boolean = false) : PopupPositionProvider {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.pcPopupAppearance",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "fc7d1d6fa2f4ee77d48905441dcdcc1ff30af77cb088455fd8c9f8c55bc397c0"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/icons/PcIcons.kt",
+      "name": "PcIcons.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.icons",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "object PcIcons {",
+          "visibility": "public"
+        },
+        {
+          "line": 211,
+          "text": "private fun icon(",
+          "visibility": "private"
+        },
+        {
+          "line": 233,
+          "text": "private fun PathBuilder.roundedBox(",
+          "visibility": "private"
+        },
+        {
+          "line": 252,
+          "text": "private fun PathBuilder.circle(x: Float, y: Float, radius: Float) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [],
+      "sha256": "a7a5e3949ab2ebcba1956511f0b3049c5f72a13437c87026185093a78e3f02e9"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/primitives/PcControl.kt",
+      "name": "PcControl.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.primitives",
+      "declarations": [
+        {
+          "line": 40,
+          "text": "fun Modifier.pcControlSurface(",
+          "visibility": "public"
+        },
+        {
+          "line": 105,
+          "text": "fun PcControlLayout(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "cc9ea6dfeb224fd207cdfe57d7f3be73f27a0db238814448f8f4468fe6b1d1e5"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/primitives/PcDivider.kt",
+      "name": "PcDivider.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.primitives",
+      "declarations": [
+        {
+          "line": 15,
+          "text": "fun PcDivider(modifier: Modifier = Modifier, vertical: Boolean = false, color: Color = PcTheme.colors.border) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "08f5146295cc2025651b59c7082ed1cb595a2eaaedd218362ebdbfb73056e48e"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/primitives/PcIcon.kt",
+      "name": "PcIcon.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.primitives",
+      "declarations": [
+        {
+          "line": 16,
+          "text": "fun PcIcon(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "221bc6fa5b3f741f300fcd79ae265a3e8c54a7aab2a8dbf4d860565876af5579"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/primitives/PcPopupAppearance.kt",
+      "name": "PcPopupAppearance.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.primitives",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "fun Modifier.pcPopupAppearance(): Modifier {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "4df1cf459a5a5bcedb6067928d2a0d05e767f5aa0f683bcf88c3f41ffeaf2d07"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/primitives/PcSurface.kt",
+      "name": "PcSurface.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.primitives",
+      "declarations": [
+        {
+          "line": 19,
+          "text": "fun PcSurface(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.LocalPcContentColor",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "1d253356503b8ae3f941259239ded713c98b8f4a80ea9ec0d0ff94276e50b62a"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/primitives/PcText.kt",
+      "name": "PcText.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.primitives",
+      "declarations": [
+        {
+          "line": 14,
+          "text": "fun PcText(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.LocalPcTextStyle",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "cb241affe88d5fca9f1c335aa3a75d301829e09e89f69703a4050aa0cc430f03"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/theme/PcTheme.kt",
+      "name": "PcTheme.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.theme",
+      "declarations": [
+        {
+          "line": 19,
+          "text": "private val LocalPcColors = staticCompositionLocalOf { PcColors.Dark }",
+          "visibility": "private"
+        },
+        {
+          "line": 20,
+          "text": "private val LocalPcTypography = staticCompositionLocalOf { PcTypography() }",
+          "visibility": "private"
+        },
+        {
+          "line": 21,
+          "text": "private val LocalPcSpacing = staticCompositionLocalOf { PcSpacing() }",
+          "visibility": "private"
+        },
+        {
+          "line": 22,
+          "text": "private val LocalPcSizes = staticCompositionLocalOf { PcSizes() }",
+          "visibility": "private"
+        },
+        {
+          "line": 23,
+          "text": "private val LocalPcShapes = staticCompositionLocalOf { PcShapes() }",
+          "visibility": "private"
+        },
+        {
+          "line": 24,
+          "text": "private val LocalPcStrokes = staticCompositionLocalOf { PcStrokes() }",
+          "visibility": "private"
+        },
+        {
+          "line": 25,
+          "text": "private val LocalPcOpacity = staticCompositionLocalOf { PcOpacity() }",
+          "visibility": "private"
+        },
+        {
+          "line": 26,
+          "text": "private val LocalPcMotion = staticCompositionLocalOf { PcMotion() }",
+          "visibility": "private"
+        },
+        {
+          "line": 27,
+          "text": "private val LocalPcDensity = staticCompositionLocalOf { PcDensity.Mouse }",
+          "visibility": "private"
+        },
+        {
+          "line": 28,
+          "text": "private val LocalPcFocus = staticCompositionLocalOf { PcFocus() }",
+          "visibility": "private"
+        },
+        {
+          "line": 30,
+          "text": "val LocalPcContentColor = staticCompositionLocalOf { PcColors.Dark.text }",
+          "visibility": "public"
+        },
+        {
+          "line": 31,
+          "text": "val LocalPcTextStyle = staticCompositionLocalOf<TextStyle> { PcTypography().body }",
+          "visibility": "public"
+        },
+        {
+          "line": 33,
+          "text": "object PcTheme {",
+          "visibility": "public"
+        },
+        {
+          "line": 50,
+          "text": "fun PcTheme(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.tokens.PcColors",
+        "com.combo.ui.common.designsystem.tokens.PcDensity",
+        "com.combo.ui.common.designsystem.tokens.PcFocus",
+        "com.combo.ui.common.designsystem.tokens.PcMotion",
+        "com.combo.ui.common.designsystem.tokens.PcOpacity",
+        "com.combo.ui.common.designsystem.tokens.PcShapes",
+        "com.combo.ui.common.designsystem.tokens.PcSizes",
+        "com.combo.ui.common.designsystem.tokens.PcSpacing",
+        "com.combo.ui.common.designsystem.tokens.PcStrokes",
+        "com.combo.ui.common.designsystem.tokens.PcTypography"
+      ],
+      "sha256": "61497d4fe4935624d2cc3dd29e6e37a6ce210399f6109f57943f1701d2efbf1e"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/tokens/PcColors.kt",
+      "name": "PcColors.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.tokens",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "data class PcColors(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "24895a47d23a5a1471ef491c5b96116b137e7c36b952c53c66004f13ec2e2338"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/tokens/PcFocus.kt",
+      "name": "PcFocus.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.tokens",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "data class PcFocus(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "18e23075744e8a269534989302a3adfa6874174ab97f95f8e0714e407d322d7a"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/tokens/PcGeometry.kt",
+      "name": "PcGeometry.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.tokens",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "data class PcSpacing(",
+          "visibility": "public"
+        },
+        {
+          "line": 19,
+          "text": "data class PcSizes(",
+          "visibility": "public"
+        },
+        {
+          "line": 31,
+          "text": "data class PcShapes(",
+          "visibility": "public"
+        },
+        {
+          "line": 39,
+          "text": "data class PcStrokes(",
+          "visibility": "public"
+        },
+        {
+          "line": 46,
+          "text": "data class PcOpacity(val disabled: Float = 0.36f)",
+          "visibility": "public"
+        },
+        {
+          "line": 48,
+          "text": "enum class PcDensity(val minimumTarget: Dp) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "3238203288afca33a234acc1b342a360273e9f0797f6cc38da209f94ed4006a8"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/tokens/PcMotion.kt",
+      "name": "PcMotion.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.tokens",
+      "declarations": [
+        {
+          "line": 6,
+          "text": "data class PcMotion(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "81d9751604969a667a7c930bb389b31baca075a500653a68c26409ba5c065aa0"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/commonMain/kotlin/com/combo/ui/common/designsystem/tokens/PcTypography.kt",
+      "name": "PcTypography.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common.designsystem.tokens",
+      "declarations": [
+        {
+          "line": 9,
+          "text": "class PcTypography(fontFamily: FontFamily = FontFamily.SansSerif) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "bc516c05e71d208ae8e661d878edea9d5281a003ebfce519dcf5f40fb715e2e8"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/desktopMain/kotlin/com/combo/ui/common/designsystem/components/PcPlatformDialog.desktop.kt",
+      "name": "PcPlatformDialog.desktop.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui.common.designsystem.components",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "internal actual fun PcPlatformDialog(onDismissRequest: () -> Unit, dismissOnClickOutside: Boolean, content: @Composable () -> Unit) {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "7448c1c8ab56d96c1e57ce7db0c0f54c30fdf8c63492b83ef4bf199f62dc0409"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/desktopMain/kotlin/com/combo/ui/common/PcDesktopTheme.kt",
+      "name": "PcDesktopTheme.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "object PcDesktopFonts {",
+          "visibility": "public"
+        },
+        {
+          "line": 30,
+          "text": "fun PcDesktopTheme(density: PcDensity = PcDensity.Mouse, motion: PcMotion = PcMotion(), content: @Composable () -> Unit) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.ui.common.designsystem.tokens.PcDensity",
+        "com.combo.ui.common.designsystem.tokens.PcMotion",
+        "com.combo.ui.common.designsystem.tokens.PcTypography"
+      ],
+      "sha256": "7298dd1fc75620be50a945367f3757c8f218fec0e2ec8ff1636cbaec3ce46d34"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/desktopMain/kotlin/com/combo/ui/gallery/ComponentExamples.kt",
+      "name": "ComponentExamples.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui.gallery",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "internal fun ComponentExample(name: String) {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.components.*",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.*",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "4dd861741861ec1aa906fb82a6d12f618000cf6163ceeee106fb1ac31a4443eb"
+    },
+    {
+      "module": ":design-system",
+      "path": "design-system/src/desktopMain/kotlin/com/combo/ui/gallery/DesignSystemGallery.kt",
+      "name": "DesignSystemGallery.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui.gallery",
+      "declarations": [
+        {
+          "line": 30,
+          "text": "data class GalleryExample(val name: String, val content: @Composable () -> Unit)",
+          "visibility": "public"
+        },
+        {
+          "line": 32,
+          "text": "private val componentNames = listOf(\"Button\", \"Icon button\", \"Checkbox\", \"Text field\", \"Slider\",",
+          "visibility": "private"
+        },
+        {
+          "line": 36,
+          "text": "fun DesignSystemGallery(extraExamples: List<GalleryExample> = emptyList()) {",
+          "visibility": "public"
+        },
+        {
+          "line": 61,
+          "text": "private fun OverviewGallery() {",
+          "visibility": "private"
+        },
+        {
+          "line": 148,
+          "text": "private fun galleryIcons(): List<Pair<String, ImageVector>> = listOf(",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.PcDesktopFonts",
+        "com.combo.ui.common.designsystem.components.*",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.*",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "b2f24c671b5ea021e75285300760db2244dd65c0d0ca9d112f5402120d8bf6f0"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/BackDispatcher.kt",
+      "name": "BackDispatcher.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 18,
+          "text": "class BackDispatcher {",
+          "visibility": "public"
+        },
+        {
+          "line": 41,
+          "text": "val LocalBackDispatcher = staticCompositionLocalOf<BackDispatcher> {",
+          "visibility": "public"
+        },
+        {
+          "line": 53,
+          "text": "fun RegisterBackHandler(enabled: Boolean = true, onBack: () -> Unit) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "7c9be0c15367528b8441dc5a163f70a866949bb0daf48ad42fccb389d22a55da"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/BackKeyHost.kt",
+      "name": "BackKeyHost.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 24,
+          "text": "const val BACK_HOST_TAG = \"back_host\"",
+          "visibility": "public"
+        },
+        {
+          "line": 38,
+          "text": "fun BackKeyHost(dispatcher: BackDispatcher, content: @Composable () -> Unit) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "656879ee222aa829c54465d24584d26dd867a9bcaa2c0a6f30242d62a1e0e411"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/BackNavIcon.kt",
+      "name": "BackNavIcon.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 25,
+          "text": "fun BackNavIcon(onClick: () -> Unit) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "a9b6d5e8810cb6113c51eafcb8e82f62e74d1b1c44ab39965baa0a0f9d5f7d54"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/CollectMessages.kt",
+      "name": "CollectMessages.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 20,
+          "text": "fun CollectMessages(messages: Flow<String>, snackbarHostState: SnackbarHostState) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "67c2d3125e08c06934b37bb69e38152e34bfa5a8e41c907f8105d79daed85366"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/GalleryGrid.kt",
+      "name": "GalleryGrid.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 14,
+          "text": "fun galleryColumnCount(availableWidth: Int, referenceWidth: Int, gap: Int): Int {",
+          "visibility": "public"
+        },
+        {
+          "line": 20,
+          "text": "data class GalleryCellGeometry(val width: Dp, val previewHeight: Dp)",
+          "visibility": "public"
+        },
+        {
+          "line": 24,
+          "text": "fun <T> GalleryGrid(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "85c1e63497af9a8e8eefe5f85d8a489955a110e76a2ca9c03c551f9208afd6c8"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/GalleryScaleState.kt",
+      "name": "GalleryScaleState.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "data class GalleryScaleUiState(",
+          "visibility": "public"
+        },
+        {
+          "line": 19,
+          "text": "class GalleryScaleState(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.data.normalizedGalleryPercent",
+        "com.combo.domain.GalleryKind",
+        "com.combo.domain.GallerySettingsRepository"
+      ],
+      "sha256": "5bea90f28cc4c55339c97d60a8f9591ce2fa6b68228948e317f08b0a8416d2b1"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/GallerySizeControl.kt",
+      "name": "GallerySizeControl.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 16,
+          "text": "fun GallerySizeControl(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.components.*",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "2f3c4e715025b02c7e981a4caa8fe0fb749f671e70bea5ed13c5fd3be6061702"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/KeyInputHost.kt",
+      "name": "KeyInputHost.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 27,
+          "text": "fun KeyInputHost(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "2643c8d9b875fc02d90d041bcfdffce59bc8bb25c7075d4f1fe4ef1d18495eb8"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/PhotoGrid.kt",
+      "name": "PhotoGrid.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 36,
+          "text": "fun PhotoGrid(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcIcon",
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.data.PhotoEntity"
+      ],
+      "sha256": "e4006153c551451727f48d1b0218dc28da5d1ae9553f59b4be47074ddcb22680"
+    },
+    {
+      "module": ":ui-common",
+      "path": "ui-common/src/commonMain/kotlin/com/combo/ui/common/ThumbImage.kt",
+      "name": "ThumbImage.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.ui.common",
+      "declarations": [
+        {
+          "line": 36,
+          "text": "fun ThumbImage(photoId: String, modifier: Modifier = Modifier, placeholderColor: Color = PcTheme.colors.workspace) {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.core.image.ImageCodec",
+        "com.combo.domain.PhotoRepository"
+      ],
+      "sha256": "3f7c3ea072d4d61d9fda073c98bd5c9838904db8454b80128e0ec925b4d762c8"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderContract.kt",
+      "name": "BuilderContract.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 25,
+          "text": "const val EDITOR_CANVAS_TAG = \"builder_editor_canvas\"",
+          "visibility": "public"
+        },
+        {
+          "line": 28,
+          "text": "const val TOOL_TAG_DEL = \"builder_tool_del\"",
+          "visibility": "public"
+        },
+        {
+          "line": 29,
+          "text": "const val TOOL_TAG_REPLACE_PHOTO = \"builder_tool_replace_photo\"",
+          "visibility": "public"
+        },
+        {
+          "line": 30,
+          "text": "const val TOOL_TAG_ADD_ITEM = \"builder_tool_add_item\"",
+          "visibility": "public"
+        },
+        {
+          "line": 31,
+          "text": "const val TOOL_TAG_AUTOFIT = \"builder_tool_autofit\"",
+          "visibility": "public"
+        },
+        {
+          "line": 32,
+          "text": "const val TOOL_TAG_ASPECT = \"builder_tool_aspect\"",
+          "visibility": "public"
+        },
+        {
+          "line": 33,
+          "text": "const val TOOL_TAG_FIT_VIEW = \"builder_tool_fit_view\"",
+          "visibility": "public"
+        },
+        {
+          "line": 34,
+          "text": "const val TOOL_TAG_SAVE = \"builder_tool_save\"",
+          "visibility": "public"
+        },
+        {
+          "line": 35,
+          "text": "const val TOOL_TAG_NAME = \"builder_combo_name\"",
+          "visibility": "public"
+        },
+        {
+          "line": 36,
+          "text": "const val TOOL_TAG_BACKGROUND = \"builder_tool_background\"",
+          "visibility": "public"
+        },
+        {
+          "line": 37,
+          "text": "const val TOOL_TAG_MODE_FRAME = \"builder_mode_frame\"",
+          "visibility": "public"
+        },
+        {
+          "line": 38,
+          "text": "const val TOOL_TAG_MODE_PHOTO = \"builder_mode_photo\"",
+          "visibility": "public"
+        },
+        {
+          "line": 39,
+          "text": "const val TOOL_TAG_FIT = \"builder_tool_fit\"",
+          "visibility": "public"
+        },
+        {
+          "line": 40,
+          "text": "const val TOOL_TAG_FILL = \"builder_tool_fill\"",
+          "visibility": "public"
+        },
+        {
+          "line": 41,
+          "text": "const val TOOL_TAG_ZOOM_IN = \"builder_zoom_in\"",
+          "visibility": "public"
+        },
+        {
+          "line": 42,
+          "text": "const val TOOL_TAG_ZOOM_OUT = \"builder_zoom_out\"",
+          "visibility": "public"
+        },
+        {
+          "line": 43,
+          "text": "const val BUILDER_ZOOM_TAG = \"builder_zoom_value\"",
+          "visibility": "public"
+        },
+        {
+          "line": 44,
+          "text": "const val BUILDER_INSPECTOR_TAG = \"builder_inspector\"",
+          "visibility": "public"
+        },
+        {
+          "line": 47,
+          "text": "const val DIALOG_TAG_SAVE = \"builder_exit_save\"",
+          "visibility": "public"
+        },
+        {
+          "line": 48,
+          "text": "const val DIALOG_TAG_DISCARD = \"builder_exit_discard\"",
+          "visibility": "public"
+        },
+        {
+          "line": 49,
+          "text": "const val DIALOG_TAG_KEEP = \"builder_exit_keep\"",
+          "visibility": "public"
+        },
+        {
+          "line": 52,
+          "text": "const val DIALOG_TAG_PICK_CONFIRM = \"builder_pick_confirm\"",
+          "visibility": "public"
+        },
+        {
+          "line": 54,
+          "text": "fun addPhotoCellTag(photoId: String) = \"builder_add_photo_$photoId\"",
+          "visibility": "public"
+        },
+        {
+          "line": 58,
+          "text": "enum class GesturePhase { START, CHANGE, END, CANCEL }",
+          "visibility": "public"
+        },
+        {
+          "line": 60,
+          "text": "enum class EditMode { EDIT, BORDER }",
+          "visibility": "public"
+        },
+        {
+          "line": 62,
+          "text": "sealed interface SnapDragKind {",
+          "visibility": "public"
+        },
+        {
+          "line": 69,
+          "text": "const val MSG_NOTHING_TO_SAVE = \"Add at least one photo\"",
+          "visibility": "public"
+        },
+        {
+          "line": 73,
+          "text": "sealed interface BuilderEvent {",
+          "visibility": "public"
+        },
+        {
+          "line": 114,
+          "text": "data class BuilderUiState(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.background.BackgroundSpec",
+        "com.combo.core.model.FramingMode",
+        "com.combo.core.render.Edge",
+        "com.combo.core.render.ItemDraft",
+        "com.combo.core.render.Viewport",
+        "com.combo.core.render.snap.SnapDistances",
+        "com.combo.core.render.snap.SnapGuide",
+        "com.combo.data.PhotoEntity",
+        "com.combo.feature.builder.draft.FitPreset"
+      ],
+      "sha256": "1da16e337eaf16e5ea7ad7945a1322affc3ba3356ea2ffdf2f1ff39819351eaf"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderControls.kt",
+      "name": "BuilderControls.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 10,
+          "text": "internal fun BuilderIconButton(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.components.PcIconButton"
+      ],
+      "sha256": "3842a728b7e97a9be905d304cb0ac77c15c6bf9445367eb95e069ce2bd821658"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderInspector.kt",
+      "name": "BuilderInspector.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 37,
+          "text": "internal fun BuilderInspector(",
+          "visibility": "internal"
+        },
+        {
+          "line": 141,
+          "text": "private fun InspectorLabel(label: String) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.core.model.FramingMode",
+        "com.combo.feature.builder.draft.FitPreset",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcCheckbox",
+        "com.combo.ui.common.designsystem.components.PcOption",
+        "com.combo.ui.common.designsystem.components.PcSegmentedControl",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.primitives.PcDivider",
+        "com.combo.ui.common.designsystem.theme.LocalPcContentColor",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "1e65efc4752adbcc44289b87b72848f41561c43ad09de4d1bda3c79ed4abfefc"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderToolbar.kt",
+      "name": "BuilderToolbar.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 26,
+          "text": "internal fun BuilderCanvasToolbar(state: BuilderUiState, onEvent: (BuilderEvent) -> Unit, onAdd: () -> Unit) {",
+          "visibility": "internal"
+        },
+        {
+          "line": 65,
+          "text": "private fun BuilderSettingsLayout(modifier: Modifier, content: @Composable () -> Unit) {",
+          "visibility": "private"
+        },
+        {
+          "line": 93,
+          "text": "internal enum class BuilderPickMode { NONE, ADD, REPLACE }",
+          "visibility": "internal"
+        },
+        {
+          "line": 96,
+          "text": "internal fun BuilderPhotoPicker(mode: BuilderPickMode, state: BuilderUiState, onEvent: (BuilderEvent) -> Unit, onDismiss: () -> Unit) {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.background.BackgroundPresets",
+        "com.combo.core.render.AspectPresets",
+        "com.combo.core.render.CanvasFormat",
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcOption",
+        "com.combo.ui.common.designsystem.components.PcSelect",
+        "com.combo.ui.common.designsystem.icons.PcIcons"
+      ],
+      "sha256": "b37e3dc69e8eda9b3f433f6a3a85e8b05422468f64c0185e05da78d825027fcf"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderTopBar.kt",
+      "name": "BuilderTopBar.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 29,
+          "text": "internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> Unit, onEvent: (BuilderEvent) -> Unit) {",
+          "visibility": "internal"
+        },
+        {
+          "line": 70,
+          "text": "private fun BuilderUiState.hasMarginsToTrim(): Boolean {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.feature.builder.draft.ComboSnap",
+        "com.combo.feature.builder.draft.toSnap",
+        "com.combo.feature.builder.draft.trimmedToPhotos",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.components.PcTextField",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "bc9d47fb4b24a65f7b5d1aee7f5eb874893ae4816b85e726e0f16d85edffd194"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderViewControls.kt",
+      "name": "BuilderViewControls.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 29,
+          "text": "internal fun BuilderViewControls(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.render.Viewport",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "e46062d5da6e84a4e7d96f089209c744681c25cb1e2c5295d1c107f809e33ab4"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderWorkspace.kt",
+      "name": "BuilderWorkspace.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 17,
+          "text": "internal val BUILDER_WIDE_MIN = 760.dp",
+          "visibility": "internal"
+        },
+        {
+          "line": 24,
+          "text": "internal fun BuilderWorkspace(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.ui.common.designsystem.primitives.PcSurface"
+      ],
+      "sha256": "112fca7864229326059b01c3fd181323e2c1192e737c064d847bc058f8586e2b"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/CanvasSizeDialog.kt",
+      "name": "CanvasSizeDialog.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 28,
+          "text": "internal fun CanvasSizeDialog(",
+          "visibility": "internal"
+        },
+        {
+          "line": 90,
+          "text": "private fun quickResolutions(ratio: CanvasFormat): List<CanvasFormat> {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.render.CanvasFormat",
+        "com.combo.ui.common.RegisterBackHandler",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.components.PcDialog",
+        "com.combo.ui.common.designsystem.components.PcTextField",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "9841c2454252b87ae392f40539dd5504c0e0676a9fee5b5bd9337eccc7869f61"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/ComboBuilderScreen.kt",
+      "name": "ComboBuilderScreen.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 54,
+          "text": "fun ComboBuilderScreen(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcDivider",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.components.PcIconButton",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.core.render.CanvasFormat",
+        "com.combo.ui.common.CollectMessages",
+        "com.combo.ui.common.RegisterBackHandler"
+      ],
+      "sha256": "cf026817267e2c99141465cf6bbe654da557d486893a847bbd3d034f35021246"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/ComboBuilderViewModel.kt",
+      "name": "ComboBuilderViewModel.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 70,
+          "text": "class ComboBuilderViewModel(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.model.FramingMode",
+        "com.combo.core.platform.IdGenerator",
+        "com.combo.core.platform.WallClock",
+        "com.combo.core.render.ItemDraft",
+        "com.combo.core.render.Border",
+        "com.combo.core.render.ItemFrame",
+        "com.combo.core.render.ItemGestures",
+        "com.combo.core.render.Viewport",
+        "com.combo.core.render.TransformMath",
+        "com.combo.core.render.buildItemFrame",
+        "com.combo.core.render.minBorderSize",
+        "com.combo.core.render.relayout",
+        "com.combo.core.render.snap.FrameSnap",
+        "com.combo.core.render.snap.FrameSnapState",
+        "com.combo.core.render.snap.SnapStep",
+        "com.combo.data.ComboEntity",
+        "com.combo.data.PhotoEntity",
+        "com.combo.data.srcSize",
+        "com.combo.domain.BitmapSource",
+        "com.combo.domain.ComboRepository",
+        "com.combo.domain.PhotoAssets",
+        "com.combo.domain.PhotoRepository",
+        "com.combo.feature.builder.draft.ComboSnap",
+        "com.combo.feature.builder.draft.DraftEditor",
+        "com.combo.feature.builder.draft.FitPreset",
+        "com.combo.feature.builder.draft.frameContent",
+        "com.combo.feature.builder.draft.toDraft",
+        "com.combo.feature.builder.draft.toDrafts",
+        "com.combo.feature.builder.draft.toEntities",
+        "com.combo.feature.builder.draft.toSnap",
+        "com.combo.feature.builder.draft.trimmedToPhotos",
+        "com.combo.feature.builder.history.DraftHistory"
+      ],
+      "sha256": "3db450c5a96817a981ff176349ebe8f684639b24fd754b12c2c0dfb5b67df6fb"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/draft/ComboDraftMapper.kt",
+      "name": "ComboDraftMapper.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder.draft",
+      "declarations": [
+        {
+          "line": 24,
+          "text": "internal fun ComboWithItems.toDrafts(): List<ItemDraft> =",
+          "visibility": "internal"
+        },
+        {
+          "line": 50,
+          "text": "internal fun List<ItemDraft>.toEntities(comboId: String): List<ComboItemEntity> =",
+          "visibility": "internal"
+        },
+        {
+          "line": 68,
+          "text": "internal fun ItemDraft.toSnap(): ItemSnap = ItemSnap(",
+          "visibility": "internal"
+        },
+        {
+          "line": 79,
+          "text": "internal fun ItemSnap.toDraft(): ItemDraft = ItemDraft(",
+          "visibility": "internal"
+        },
+        {
+          "line": 96,
+          "text": "internal fun ItemDraft.frameContent(image: ImageBitmap, photo: PhotoEntity) =",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.FrameContent",
+        "com.combo.core.render.ItemDraft",
+        "com.combo.data.ComboItemEntity",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.PhotoEntity"
+      ],
+      "sha256": "32faf35f3bafda6681dc5d759609fcb12abf8bc02d077a67c779edd8a33f82bc"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/draft/ComboSnap.kt",
+      "name": "ComboSnap.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder.draft",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "internal data class ItemSnap(",
+          "visibility": "internal"
+        },
+        {
+          "line": 43,
+          "text": "internal data class ComboSnap(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.background.BackgroundSpec",
+        "com.combo.core.model.FramingMode"
+      ],
+      "sha256": "81bdd9f03f68fbd1d6d8e54eb12590cea77b7880720a65d68a72794b6eb782ae"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/draft/DraftEditor.kt",
+      "name": "DraftEditor.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder.draft",
+      "declarations": [
+        {
+          "line": 20,
+          "text": "internal data class NewComboDrafts(",
+          "visibility": "internal"
+        },
+        {
+          "line": 30,
+          "text": "internal data class NewItems(",
+          "visibility": "internal"
+        },
+        {
+          "line": 64,
+          "text": "internal object DraftEditor {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.model.FramingMode",
+        "com.combo.core.render.ItemDraft",
+        "com.combo.core.render.LayoutPresets",
+        "com.combo.core.render.effectiveFraming",
+        "com.combo.data.PhotoEntity",
+        "com.combo.data.srcSize"
+      ],
+      "sha256": "adf2badbf4c2fbb697f3e6ff735c6cc299e839162ffa1ce5b170b376e406a248"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/draft/FinalizeCanvas.kt",
+      "name": "FinalizeCanvas.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder.draft",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "internal fun ComboSnap.trimmedToPhotos(photos: Map<String, PhotoEntity>): ComboSnap {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.Border",
+        "com.combo.core.render.effectiveFraming",
+        "com.combo.core.render.visiblePhotoBounds",
+        "com.combo.data.PhotoEntity"
+      ],
+      "sha256": "7c9d6ec89035c4966e3390017108c84f34308964dca35590597e6d261ca24fb2"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/draft/FitPreset.kt",
+      "name": "FitPreset.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder.draft",
+      "declarations": [
+        {
+          "line": 13,
+          "text": "enum class FitPreset { FIT, FILL }",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "7cc7b36ce80c5e5e0740475afbc95421cdc712c57d5ae6ab203357ce609a0267"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/EditorCanvas.kt",
+      "name": "EditorCanvas.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 44,
+          "text": "internal fun EditorViewport(",
+          "visibility": "internal"
+        },
+        {
+          "line": 98,
+          "text": "private fun EditorCanvas(",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.core.render.CanvasTransform",
+        "com.combo.core.render.comboBackgroundOf",
+        "com.combo.core.render.drawCombo",
+        "com.combo.core.render.snap.SnapDistances"
+      ],
+      "sha256": "761a954f30072d830deee6ddecf0c76549950c90fd17996e09b8ace663ad4a87"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/EditorGestures.kt",
+      "name": "EditorGestures.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 24,
+          "text": "internal enum class GestureKind { NONE, DRAG_ITEM, PAN_CONTENT, RESIZE, PAN_VIEWPORT }",
+          "visibility": "internal"
+        },
+        {
+          "line": 40,
+          "text": "internal fun classifyGesture(",
+          "visibility": "internal"
+        },
+        {
+          "line": 60,
+          "text": "internal fun nearEdge(p: Offset, border: Rect, tolerance: Float): Edge? {",
+          "visibility": "internal"
+        },
+        {
+          "line": 95,
+          "text": "internal fun Modifier.editorGestures(",
+          "visibility": "internal"
+        },
+        {
+          "line": 276,
+          "text": "private fun centroidOf(pointers: List<PointerInputChange>): Offset {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.CanvasTransform",
+        "com.combo.core.render.Edge",
+        "com.combo.core.render.snap.SnapDistances"
+      ],
+      "sha256": "65adbf3d058fbcf531d1e57fa79de7fbd6fd87d3bf516e6dd980496ce4342665"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/EditorWheel.kt",
+      "name": "EditorWheel.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 16,
+          "text": "private const val WHEEL_ZOOM_STEP = 1.1f",
+          "visibility": "private"
+        },
+        {
+          "line": 17,
+          "text": "private const val FINE_WHEEL_ZOOM_STEP = 1.02f",
+          "visibility": "private"
+        },
+        {
+          "line": 24,
+          "text": "private const val WHEEL_IDLE_END_MS = 250L",
+          "visibility": "private"
+        },
+        {
+          "line": 37,
+          "text": "internal fun Modifier.editorWheelZoom(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.CanvasTransform"
+      ],
+      "sha256": "ae4300c2b9fc4e68a07d0c80964facf21b162c9078ddd8a6c3bf6b8d32ea0eba"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/ExitDialog.kt",
+      "name": "ExitDialog.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 29,
+          "text": "internal fun ExitDialog(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.RegisterBackHandler",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.components.PcDialog",
+        "com.combo.ui.common.designsystem.primitives.PcText"
+      ],
+      "sha256": "b4700700f14567a3d5adbeefe883e543d7e1ff26eb6079865aec87ed78560bd2"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/history/DraftHistory.kt",
+      "name": "DraftHistory.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder.history",
+      "declarations": [
+        {
+          "line": 27,
+          "text": "internal class DraftHistory(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.util.UndoStack",
+        "com.combo.feature.builder.draft.ComboSnap"
+      ],
+      "sha256": "81d6823cef23fa09fcbd2fe6a7e83ead148b9e23a4ef0e0179cd95f155f08356"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/PhotoSize.kt",
+      "name": "PhotoSize.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "data class PhotoSize(",
+          "visibility": "public"
+        },
+        {
+          "line": 17,
+          "text": "internal fun BuilderUiState.selectedPhotoSize(): PhotoSize? {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.effectiveFraming"
+      ],
+      "sha256": "f3beeda9976818af23e0f54c38b8da1934d8dfb24cc3e7c31f73f1007f649ce9"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/PhotoSizeInfo.kt",
+      "name": "PhotoSizeInfo.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "internal fun PhotoSizeInfo(size: PhotoSize, modifier: Modifier = Modifier) {",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "a49086d87c49dcf76eb482d8ccc76844dcd2eec1d353819f87c839c5b668c7b3"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/PickPhotosDialog.kt",
+      "name": "PickPhotosDialog.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 58,
+          "text": "internal fun PickPhotosDialog(",
+          "visibility": "internal"
+        },
+        {
+          "line": 110,
+          "text": "private fun PickPhotoCell(photo: PhotoEntity, selected: Boolean, multi: Boolean, onClick: () -> Unit) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.data.PhotoEntity",
+        "com.combo.ui.common.ThumbImage",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.components.PcDialog",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcIcon",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.pcControlSurface",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "e1a0f12d0c9249ffa323f1b0a26b14c967c61b1ae359a729a5d418bd78fcaefc"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/SelectionOverlay.kt",
+      "name": "SelectionOverlay.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 33,
+          "text": "internal fun DrawScope.drawSelectionOverlay(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.CanvasTransform"
+      ],
+      "sha256": "50916c747fd8589278f157e1e0864b10c3597fe9fa8b9bc4fd3ddc8070658352"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/SnapGuideOverlay.kt",
+      "name": "SnapGuideOverlay.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 12,
+          "text": "internal fun DrawScope.drawSnapGuideOverlay(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.core.render.CanvasTransform",
+        "com.combo.core.render.snap.SnapAxis"
+      ],
+      "sha256": "d696811d7277fa4bffd1cb8c7c91a8bd72f9b1bd901fffd352525f217b0aa728"
+    },
+    {
+      "module": ":feature:builder",
+      "path": "feature/builder/src/commonMain/kotlin/com/combo/feature/builder/ViewportController.kt",
+      "name": "ViewportController.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.builder",
+      "declarations": [
+        {
+          "line": 32,
+          "text": "internal fun Viewport.zoomedAround(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.Const",
+        "com.combo.core.render.Viewport",
+        "com.combo.core.render.viewportZoomPan"
+      ],
+      "sha256": "b2203d2aac5bf09ae771a37e6b0d2fe8fedc5a35186bc7cef51094b7b5bb8daa"
+    },
+    {
+      "module": ":feature:library",
+      "path": "feature/library/src/commonMain/kotlin/com/combo/feature/library/LibraryScreen.kt",
+      "name": "LibraryScreen.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.library",
+      "declarations": [
+        {
+          "line": 46,
+          "text": "const val PHOTO_CELL_TAG_PREFIX = \"library_photo_\"",
+          "visibility": "public"
+        },
+        {
+          "line": 47,
+          "text": "const val LIB_SELECT_TAG = \"library_action_select\"",
+          "visibility": "public"
+        },
+        {
+          "line": 48,
+          "text": "const val LIB_CANCEL_TAG = \"library_action_cancel\"",
+          "visibility": "public"
+        },
+        {
+          "line": 49,
+          "text": "const val LIB_DELETE_TAG = \"library_action_delete\"",
+          "visibility": "public"
+        },
+        {
+          "line": 50,
+          "text": "const val LIB_CREATE_COMBO_TAG = \"library_action_create_combo\"",
+          "visibility": "public"
+        },
+        {
+          "line": 51,
+          "text": "const val LIB_IMPORT_TAG = \"library_action_import\"",
+          "visibility": "public"
+        },
+        {
+          "line": 54,
+          "text": "fun LibraryScreen(",
+          "visibility": "public"
+        },
+        {
+          "line": 98,
+          "text": "internal fun LibraryScreenContent(",
+          "visibility": "internal"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.GallerySizeControl",
+        "com.combo.ui.common.GalleryScaleUiState",
+        "com.combo.data.PhotoEntity",
+        "com.combo.ui.common.CollectMessages",
+        "com.combo.ui.common.PhotoGrid",
+        "com.combo.ui.common.RegisterBackHandler",
+        "com.combo.ui.common.ThumbImage",
+        "com.combo.ui.common.designsystem.components.PcActionGroup",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.components.PcIconButton",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcDivider",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "50c05c5fcfeffc0a841e38b3c03e285f64a5c65f4f6aa11b0a2d91c9feb9288f"
+    },
+    {
+      "module": ":feature:library",
+      "path": "feature/library/src/commonMain/kotlin/com/combo/feature/library/LibraryViewModel.kt",
+      "name": "LibraryViewModel.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.library",
+      "declarations": [
+        {
+          "line": 24,
+          "text": "class LibraryViewModel(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.domain.GallerySettingsRepository",
+        "com.combo.domain.GalleryKind",
+        "com.combo.ui.common.GalleryScaleState",
+        "com.combo.Const",
+        "com.combo.core.image.ImagePicker",
+        "com.combo.data.PhotoEntity",
+        "com.combo.domain.DeleteResult",
+        "com.combo.domain.ImportResult",
+        "com.combo.domain.PhotoRepository"
+      ],
+      "sha256": "764e8443226247f68cb6768ce20506b45e68dd414000c19d87cf59eaef09433d"
+    },
+    {
+      "module": ":feature:combo-list",
+      "path": "feature/combo-list/src/commonMain/kotlin/com/combo/feature/combo_list/ComboListScreen.kt",
+      "name": "ComboListScreen.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.combo_list",
+      "declarations": [
+        {
+          "line": 37,
+          "text": "const val NEW_COMBO_TAG = \"combo_list_new_combo\"",
+          "visibility": "public"
+        },
+        {
+          "line": 40,
+          "text": "fun ComboListScreen(",
+          "visibility": "public"
+        },
+        {
+          "line": 58,
+          "text": "internal fun ComboListContent(",
+          "visibility": "internal"
+        },
+        {
+          "line": 139,
+          "text": "private fun ComboDetails(",
+          "visibility": "private"
+        },
+        {
+          "line": 170,
+          "text": "private fun StaticPreview(vm: ComboListViewModel, combo: ComboWithItems, modifier: Modifier) {",
+          "visibility": "private"
+        },
+        {
+          "line": 200,
+          "text": "private fun rememberFrames(",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.GalleryGrid",
+        "com.combo.ui.common.GallerySizeControl",
+        "com.combo.ui.common.GalleryScaleUiState",
+        "com.combo.core.render.CanvasTransform",
+        "com.combo.core.render.ItemFrame",
+        "com.combo.core.render.comboBackgroundOf",
+        "com.combo.core.render.drawCombo",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.backgroundFrames",
+        "com.combo.ui.common.designsystem.components.PcButton",
+        "com.combo.ui.common.designsystem.components.PcButtonVariant",
+        "com.combo.ui.common.designsystem.components.PcIconButton",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcDivider",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme"
+      ],
+      "sha256": "13ee70d63b2db06de53162244cf34eb08cc9bddccf085feef9701e8591f51065"
+    },
+    {
+      "module": ":feature:combo-list",
+      "path": "feature/combo-list/src/commonMain/kotlin/com/combo/feature/combo_list/ComboListViewModel.kt",
+      "name": "ComboListViewModel.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.combo_list",
+      "declarations": [
+        {
+          "line": 31,
+          "text": "private const val PREVIEW_PX = 800",
+          "visibility": "private"
+        },
+        {
+          "line": 33,
+          "text": "class ComboListViewModel(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.domain.GallerySettingsRepository",
+        "com.combo.domain.GalleryKind",
+        "com.combo.ui.common.GalleryScaleState",
+        "com.combo.core.render.ItemFrame",
+        "com.combo.core.render.buildItemFrame",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.PhotoEntity",
+        "com.combo.data.border",
+        "com.combo.data.frameContent",
+        "com.combo.domain.BitmapSource",
+        "com.combo.domain.ComboRepository",
+        "com.combo.domain.PhotoAssets",
+        "com.combo.domain.PhotoRepository"
+      ],
+      "sha256": "74965b8e9a91aaad83c3c635fd95ae08096413804389a7118093000e0e0450b4"
+    },
+    {
+      "module": ":feature:viewer",
+      "path": "feature/viewer/src/commonMain/kotlin/com/combo/feature/viewer/PhotoViewerScreen.kt",
+      "name": "PhotoViewerScreen.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.viewer",
+      "declarations": [
+        {
+          "line": 43,
+          "text": "fun PhotoViewerScreen(",
+          "visibility": "public"
+        },
+        {
+          "line": 54,
+          "text": "internal fun PhotoViewerContent(",
+          "visibility": "internal"
+        },
+        {
+          "line": 139,
+          "text": "private fun ViewerChrome(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {",
+          "visibility": "private"
+        }
+      ],
+      "imports": [
+        "com.combo.ui.common.designsystem.components.PcIconButton",
+        "com.combo.ui.common.designsystem.icons.PcIcons",
+        "com.combo.ui.common.designsystem.primitives.PcDivider",
+        "com.combo.ui.common.designsystem.primitives.PcSurface",
+        "com.combo.ui.common.designsystem.primitives.PcText",
+        "com.combo.ui.common.designsystem.theme.PcTheme",
+        "com.combo.ui.common.KeyInputHost"
+      ],
+      "sha256": "28d5f5f76c2efd9ed73df5d099a8820c9b08622b5a672fe7b5b07a4b4e6ecf0d"
+    },
+    {
+      "module": ":feature:viewer",
+      "path": "feature/viewer/src/commonMain/kotlin/com/combo/feature/viewer/PhotoViewerViewModel.kt",
+      "name": "PhotoViewerViewModel.kt",
+      "sourceSet": "commonMain",
+      "package": "com.combo.feature.viewer",
+      "declarations": [
+        {
+          "line": 21,
+          "text": "private const val VIEWER_PX = 2048",
+          "visibility": "private"
+        },
+        {
+          "line": 23,
+          "text": "class PhotoViewerViewModel(",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.data.PhotoEntity",
+        "com.combo.domain.BitmapSource",
+        "com.combo.domain.PhotoAssets",
+        "com.combo.domain.PhotoRepository"
+      ],
+      "sha256": "5d71441f61e7bcd3ef5caeeb07292a2522e6f559dc219470dd95ef4114304e58"
+    },
+    {
+      "module": ":test-support",
+      "path": "test-support/src/desktopMain/kotlin/com/combo/ImageFixtures.kt",
+      "name": "ImageFixtures.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo",
+      "declarations": [
+        {
+          "line": 19,
+          "text": "object ImageFixtures {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [],
+      "sha256": "73508e2bf8cd714f286790e45b20265a91eadfd43e0295059617dcd3638b8b28"
+    },
+    {
+      "module": ":test-support",
+      "path": "test-support/src/desktopMain/kotlin/com/combo/TestDoubles.kt",
+      "name": "TestDoubles.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo",
+      "declarations": [
+        {
+          "line": 20,
+          "text": "class FakePhotoDao : PhotoDao {",
+          "visibility": "public"
+        },
+        {
+          "line": 48,
+          "text": "class FakeComboDao : ComboDao {",
+          "visibility": "public"
+        },
+        {
+          "line": 67,
+          "text": "class FakeLogger : Logger {",
+          "visibility": "public"
+        },
+        {
+          "line": 76,
+          "text": "class CountingCodec : ImageCodec {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.ExifOrientation",
+        "com.combo.core.image.ImageCodec",
+        "com.combo.core.image.ImageFormat",
+        "com.combo.core.platform.Logger",
+        "com.combo.data.ComboDao",
+        "com.combo.data.ComboEntity",
+        "com.combo.data.ComboItemEntity",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.PhotoDao",
+        "com.combo.data.PhotoEntity"
+      ],
+      "sha256": "0a8cbf0a867ac1fe9af0e12f7dae0c5ab6432d6bdbf00df983ac5bcd20cc0d5b"
+    },
+    {
+      "module": ":test-support",
+      "path": "test-support/src/desktopMain/kotlin/com/combo/ui/FakeGallerySettingsRepository.kt",
+      "name": "FakeGallerySettingsRepository.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 7,
+          "text": "class FakeGallerySettingsRepository : GallerySettingsRepository {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.data.GallerySettings",
+        "com.combo.domain.GalleryKind",
+        "com.combo.domain.GallerySettingsRepository"
+      ],
+      "sha256": "707e1b71378f1d9c5d0e93efa7460b728dd6a7278a38b539eb18f4ddad22840c"
+    },
+    {
+      "module": ":test-support",
+      "path": "test-support/src/desktopMain/kotlin/com/combo/ui/TestBackHost.kt",
+      "name": "TestBackHost.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 30,
+          "text": "fun uiTestKoin(photoRepo: PhotoRepository): KoinApplication = koinApplication {",
+          "visibility": "public"
+        },
+        {
+          "line": 46,
+          "text": "fun TestScreen(",
+          "visibility": "public"
+        },
+        {
+          "line": 67,
+          "text": "fun ComposeUiTest.pressEsc() {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.core.image.ImageCodec",
+        "com.combo.domain.PhotoRepository",
+        "com.combo.ui.common.BACK_HOST_TAG",
+        "com.combo.ui.common.BackDispatcher",
+        "com.combo.ui.common.BackKeyHost",
+        "com.combo.ui.common.LocalBackDispatcher"
+      ],
+      "sha256": "d71b31deedc5813060f5896a213ab80c183902ccf59bb84ca9fd5ac0481c11e5"
+    },
+    {
+      "module": ":test-support",
+      "path": "test-support/src/desktopMain/kotlin/com/combo/ui/TestDoubles.kt",
+      "name": "TestDoubles.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 25,
+          "text": "fun photoEntity(id: String, originalName: String = \"$id.jpg\") = PhotoEntity(",
+          "visibility": "public"
+        },
+        {
+          "line": 38,
+          "text": "fun comboEntity(",
+          "visibility": "public"
+        },
+        {
+          "line": 53,
+          "text": "fun comboItemEntity(",
+          "visibility": "public"
+        },
+        {
+          "line": 75,
+          "text": "class FakePhotoRepository(initial: List<PhotoEntity> = emptyList()) : PhotoRepository {",
+          "visibility": "public"
+        },
+        {
+          "line": 98,
+          "text": "class FakeComboRepository(initial: List<ComboWithItems> = emptyList()) : ComboRepository {",
+          "visibility": "public"
+        },
+        {
+          "line": 134,
+          "text": "class StubBitmapSource : BitmapSource {",
+          "visibility": "public"
+        },
+        {
+          "line": 140,
+          "text": "class FakeImagePicker : ImagePicker {",
+          "visibility": "public"
+        },
+        {
+          "line": 145,
+          "text": "class StubImageCodec : ImageCodec {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.ImageFixtures",
+        "com.combo.core.background.BackgroundSpec",
+        "com.combo.core.image.ExifOrientation",
+        "com.combo.core.image.ImageCodec",
+        "com.combo.core.image.ImageFormat",
+        "com.combo.core.image.ImagePicker",
+        "com.combo.core.image.ImageSource",
+        "com.combo.data.ComboEntity",
+        "com.combo.data.ComboItemEntity",
+        "com.combo.data.ComboWithItems",
+        "com.combo.data.PhotoEntity",
+        "com.combo.domain.BitmapSource",
+        "com.combo.domain.ComboRepository",
+        "com.combo.domain.DeleteResult",
+        "com.combo.domain.ImportResult",
+        "com.combo.domain.PhotoRepository"
+      ],
+      "sha256": "79f74cee41e1cce3c178dd9fe97a95e6da593340e06eef51df707b5d73ef65ae"
+    },
+    {
+      "module": ":test-support",
+      "path": "test-support/src/desktopMain/kotlin/com/combo/ui/UiTestBase.kt",
+      "name": "UiTestBase.kt",
+      "sourceSet": "desktopMain",
+      "package": "com.combo.ui",
+      "declarations": [
+        {
+          "line": 26,
+          "text": "abstract class UiTestBase {",
+          "visibility": "public"
+        }
+      ],
+      "imports": [
+        "com.combo.domain.PhotoRepository",
+        "com.combo.ui.common.BackDispatcher"
+      ],
+      "sha256": "c2c19c2579fe49b98ffd5f8b052101889b1a9a37c888426a9755e54ffcaf54d7"
+    }
+  ],
+  "tests": [
+    "composeApp/src/desktopTest/kotlin/com/combo/AppModulesTest.kt",
+    "composeApp/src/desktopTest/kotlin/com/combo/ArchitectureRulesTest.kt",
+    "composeApp/src/desktopTest/kotlin/com/combo/ItemFrameParityTest.kt",
+    "composeApp/src/desktopTest/kotlin/com/combo/SourceHygieneTest.kt",
+    "composeApp/src/desktopTest/kotlin/com/combo/ui/AppNavViewModelTest.kt",
+    "composeApp/src/desktopTest/kotlin/com/combo/ui/LibraryOpensTappedPhotoTest.kt",
+    "composeApp/src/desktopTest/kotlin/com/combo/ui/SharedGalleryTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/AverageColorTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/BackgroundStrategyTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/CanvasTransformTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/DesktopPngOutputTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/DrawComboBackgroundTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/DrawComboClipTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/ExifOrientationTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/FrameSnapTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/ItemGesturesTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/SkiaImageCodecTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/TransformMathTest.kt",
+    "core/src/desktopTest/kotlin/com/combo/UndoStackTest.kt",
+    "data/src/desktopTest/kotlin/com/combo/AppDbTest.kt",
+    "data/src/desktopTest/kotlin/com/combo/BackgroundConvertersTest.kt",
+    "data/src/desktopTest/kotlin/com/combo/EntityExtTest.kt",
+    "data/src/desktopTest/kotlin/com/combo/GallerySettingsStorageTest.kt",
+    "data/src/desktopTest/kotlin/com/combo/MigrationTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/ComboPngExporterTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/ComboRepositoryTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/GallerySettingsRepositoryTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/LruBitmapSourceTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/PhotoImporterTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/PhotoRepositoryTest.kt",
+    "domain/src/desktopTest/kotlin/com/combo/RealPhotoImportTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/ComponentGalleryTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcActionGroupBoundsTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcButtonTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcCheckboxTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcDialogTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcIconButtonTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcSegmentedControlTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcSegmentedFocusOutlineTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcSegmentedTrackTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcSelectTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcSliderTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcTextFieldTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/components/PcTooltipTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/icons/PcIconsTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/PcFocusRenderingTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/PcPrimitivesTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/theme/PcThemeTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/common/designsystem/tokens/PcTokensTest.kt",
+    "design-system/src/desktopTest/kotlin/com/combo/ui/gallery/FocusedGalleryTest.kt",
+    "ui-common/src/desktopTest/kotlin/com/combo/ui/common/BackDispatcherTest.kt",
+    "ui-common/src/desktopTest/kotlin/com/combo/ui/common/BackKeyHostTest.kt",
+    "ui-common/src/desktopTest/kotlin/com/combo/ui/common/GalleryGridTest.kt",
+    "ui-common/src/desktopTest/kotlin/com/combo/ui/common/GalleryScaleStateTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/AspectRelayoutTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/AutoFitTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/BuilderAdaptiveLayoutTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/BuilderExitDialogTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/BuilderInspectorCompositionTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/ComboBuilderBackgroundTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/ComboBuilderFinalizationTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/ComboBuilderGesturesTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/ComboBuilderToolbarTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/ComboBuilderViewModelTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/DraftEditorTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/DraftHistoryTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/DraftMapperTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/EditorWheelTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/GestureClassifierTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/NearEdgeTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/feature/builder/ViewportControllerTest.kt",
+    "feature/builder/src/desktopTest/kotlin/com/combo/ViewportTest.kt",
+    "feature/library/src/desktopTest/kotlin/com/combo/ui/LibraryDesignSystemTest.kt",
+    "feature/library/src/desktopTest/kotlin/com/combo/ui/LibraryImportAndMessageTest.kt",
+    "feature/library/src/desktopTest/kotlin/com/combo/ui/LibraryMultiselectTest.kt",
+    "feature/combo-list/src/desktopTest/kotlin/com/combo/ui/ComboListDesignSystemTest.kt",
+    "feature/combo-list/src/desktopTest/kotlin/com/combo/ui/ComboListOpensBuilderTest.kt",
+    "feature/viewer/src/desktopTest/kotlin/com/combo/feature/viewer/PhotoViewerDesignSystemTest.kt"
+  ]
+}

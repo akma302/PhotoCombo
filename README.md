@@ -11,5 +11,6 @@ a combo stores a configuration of frames and source photos that can be reopened 
 - [Project map](AGENTS.md): where to find features, data, rendering, UI, and tests.
 - [Development](docs/DEVELOPMENT.md): environment, verification commands, and Git conventions.
 - [Design system](docs/DESIGN_SYSTEM.md): visual requirements and component entry points.
+- [Architecture atlas](docs/architecture/README.md): detailed SVG diagrams, source index, and Russian onboarding guide.
 
 Tool and dependency versions are defined by Gradle configuration and `gradle/libs.versions.toml`.
