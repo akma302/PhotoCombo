@@ -21,14 +21,17 @@ import com.combo.ui.comboItemEntity
 import com.combo.ui.photoEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -76,6 +79,8 @@ class ComboBuilderFinalizationTest {
         val vm = builder(repo)
         val draftsBefore = vm.state.value.items
 
+        assertFalse(vm.state.value.isDirty)
+        assertTrue(vm.state.value.canSave)
         vm.onEvent(BuilderEvent.Save)
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -138,7 +143,9 @@ class ComboBuilderFinalizationTest {
         val (firstCombo, firstItems) = repo.savedCombos.single()
         val reopenedRepo = FakeComboRepository(listOf(ComboWithItems(firstCombo, firstItems)))
 
-        builder(reopenedRepo).onEvent(BuilderEvent.Save)
+        val reopened = builder(reopenedRepo)
+        assertFalse(reopened.state.value.canSave)
+        reopened.onEvent(BuilderEvent.Save)
         dispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(firstCombo, reopenedRepo.savedCombos.single().first)
@@ -146,8 +153,8 @@ class ComboBuilderFinalizationTest {
     }
 
     @Test
-    fun `failed save leaves the editable canvas and undo history intact`() {
-        val repo = FakeComboRepository(listOf(original)).apply { failWith = IllegalStateException("disk full") }
+    fun `failed save leaves the editable canvas and undo history intact`() = runBlocking {
+        val repo = FakeComboRepository(listOf(original)).apply { failWith = IllegalStateException() }
         val vm = builder(repo)
         vm.onEvent(BuilderEvent.SetName("Edited"))
         val before = vm.state.value.copy()
@@ -160,5 +167,6 @@ class ComboBuilderFinalizationTest {
         assertEquals(before, vm.state.value)
         assertEquals(draftsBefore, vm.state.value.items)
         assertEquals(emptyList<Any>(), repo.savedCombos)
+        assertEquals("Failed to save combo", withTimeout(1_000) { vm.messages.first() })
     }
 }

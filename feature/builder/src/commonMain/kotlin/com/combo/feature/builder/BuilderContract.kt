@@ -9,8 +9,10 @@ import com.combo.core.render.Viewport
 import com.combo.core.render.snap.SnapDistances
 import com.combo.core.render.snap.SnapGuide
 import com.combo.data.PhotoEntity
+import com.combo.feature.builder.draft.ComboSnap
 import com.combo.feature.builder.draft.FitPreset
 import com.combo.feature.builder.draft.ItemSnap
+import com.combo.feature.builder.draft.cropBounds
 
 /**
  * Контракт редактора: testTag'и для UI-тестов, фазы жеста, режимы, события и состояние.
@@ -134,4 +136,13 @@ internal data class BuilderUiState(
 ) {
     internal val canvasSize: Size get() = Size(canvasW, canvasH)
     internal val viewportSize: Size get() = Size(screenW.coerceAtLeast(1f), screenH.coerceAtLeast(1f))
+    internal val canSave: Boolean
+        get() {
+            if (!loaded || saving) return false
+            if (isDirty) return true
+            val bounds = canvasSnapshot().cropBounds(photos)
+            return bounds.width != canvasW || bounds.height != canvasH
+        }
+
+    internal fun canvasSnapshot(): ComboSnap = ComboSnap(canvasW, canvasH, background, items)
 }
