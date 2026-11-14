@@ -47,7 +47,7 @@ internal fun ComboWithItems.toDrafts(): List<ItemDraft> =
  *
  * Enum'ы пишутся через `.name`: соответствующие колонки в `ComboItemEntity` строковые.
  */
-internal fun List<ItemDraft>.toEntities(comboId: String): List<ComboItemEntity> =
+internal fun List<ItemSnap>.toEntities(comboId: String): List<ComboItemEntity> =
     mapIndexed { i, d ->
         ComboItemEntity(
             id = d.id, comboId = comboId, zIndex = i,
@@ -62,8 +62,7 @@ internal fun List<ItemDraft>.toEntities(comboId: String): List<ComboItemEntity> 
     }
 
 /**
- * Снапшот драфта для undo. Копирование по полям обязательно: драфт мутируется на месте
- * жеста, и снапшот должен остаться тем, чем был на START.
+ * Published copy for the UI, history, and persistence. Gesture updates mutate the draft in place.
  */
 internal fun ItemDraft.toSnap(): ItemSnap = ItemSnap(
     id = id, zIndex = zIndex,
