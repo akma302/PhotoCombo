@@ -18,6 +18,7 @@ import com.combo.feature.builder.ComboBuilderViewModel
 import com.combo.feature.builder.frameFor
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -149,6 +150,7 @@ class ItemFrameParityTest {
             comboRepo = repo,
             photoRepo = FakePhotoRepository(photos),
             bitmapSource = StubBitmapSource(),
+            thumbnailSource = EmptyThumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = Dispatchers.IO,

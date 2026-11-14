@@ -15,15 +15,12 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import okio.FileSystem
-import okio.Path
 
 /** Репозиторий фото: владеет сущностями, конвейер импорта делегирует [PhotoImporter]. */
 class PhotoRepositoryImpl(
     private val photoDao: PhotoDao,
     private val comboDao: ComboDao,
     private val storage: PhotoStorage,
-    private val files: FileSystem,
     private val importer: PhotoImporter,
     private val ioDispatcher: CoroutineDispatcher,
 ) : PhotoRepository {
@@ -40,9 +37,6 @@ class PhotoRepositoryImpl(
         storage.deletePhotoFiles(photo.fileName, id)
         DeleteResult.DELETED
     }
-
-    override fun thumbPath(photoId: String): Path? =
-        storage.thumbPath(photoId).takeIf { files.exists(it) }
 
     override suspend fun importPhotos(sources: List<ImageSource>): ImportResult =
         importer.importPhotos(sources)

@@ -29,13 +29,12 @@ class ComboListOpensBuilderTest : UiTestBase() {
     fun combosSectionHasWorkingEntryPointToBuilder() = runComposeUiTest {
         val comboRepo = FakeComboRepository()
         val vm = ComboListViewModel(comboRepo, FakePhotoRepository(), StubBitmapSource(), FakeGallerySettingsRepository(), exportPng = { null })
-        val koin = trackKoin(FakePhotoRepository())
 
         var createRequested = 0
         var opened: String? = null
 
         setContent {
-            TestScreen(koin, backDispatcher) {
+            TestScreen(backDispatcher) {
                 ComboListScreen(
                     onOpenBuilder = { opened = it },
                     onCreateCombo = { createRequested++ },

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import com.combo.ui.common.GallerySizeControl
 import com.combo.ui.common.GalleryScaleUiState
 import androidx.compose.material3.SnackbarDuration
@@ -28,6 +30,7 @@ import com.combo.data.PhotoEntity
 import com.combo.ui.common.CollectMessages
 import com.combo.ui.common.PhotoGrid
 import com.combo.ui.common.RegisterBackHandler
+import com.combo.ui.common.ReportVisiblePhotos
 import com.combo.ui.common.ThumbImage
 import com.combo.ui.common.designsystem.components.PcActionGroup
 import com.combo.ui.common.designsystem.components.PcButton
@@ -60,6 +63,9 @@ fun LibraryScreen(
     val photos by vm.photos.collectAsState()
     val selected by vm.selected.collectAsState()
     val selectionMode by vm.selectionMode.collectAsState()
+    val thumbnails by vm.thumbnails.images.collectAsState()
+    val gridState = rememberLazyGridState()
+    ReportVisiblePhotos(gridState, vm.thumbnails::setVisiblePhotos)
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     CollectMessages(vm.messages, snackbar)
@@ -88,12 +94,14 @@ fun LibraryScreen(
         onDelete = vm::deleteSelected,
         onCreateCombo = { scope.launch { onCreateCombo(vm.photosForNewCombo()) } },
         onImport = vm::import,
+        gridState = gridState,
+        thumbnail = { photo, modifier -> ThumbImage(thumbnails[photo.id], modifier) },
         message = message?.visuals?.message,
         onDismissMessage = { message?.dismiss() },
     )
 }
 
-/** Чистая композиция экрана: фикстуры могут подменять только загрузку миниатюр. */
+/** Library layout with a thumbnail slot for the screen and visual tests. */
 @Composable
 internal fun LibraryScreenContent(
     photos: List<PhotoEntity>,
@@ -113,9 +121,8 @@ internal fun LibraryScreenContent(
     onScaleReset: () -> Unit = {},
     message: String? = null,
     onDismissMessage: () -> Unit = {},
-    thumbnail: @Composable (PhotoEntity, Modifier) -> Unit = { photo, imageModifier ->
-        ThumbImage(photo.id, imageModifier, placeholderColor = PcTheme.colors.workspace)
-    },
+    gridState: LazyGridState = rememberLazyGridState(),
+    thumbnail: @Composable (PhotoEntity, Modifier) -> Unit,
 ) {
     PcSurface(modifier.fillMaxSize().testTag("library_screen"), color = PcTheme.colors.app) {
         Column(Modifier.fillMaxSize()) {
@@ -149,6 +156,7 @@ internal fun LibraryScreenContent(
                     onCellClick = { if (selectionMode) onToggle(it.id) else onOpenViewer(it.id) },
                     cellTag = { PHOTO_CELL_TAG_PREFIX + it.id },
                     modifier = Modifier.fillMaxSize(),
+                    state = gridState,
                     referenceItemWidth = (240f * galleryScale.percent / 100f).dp,
                     verticalGap = 2.dp,
                     horizontalGap = 2.dp,

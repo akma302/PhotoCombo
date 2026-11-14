@@ -27,6 +27,7 @@ import com.combo.domain.BitmapSource
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoAssets
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
 import com.combo.feature.builder.draft.ComboSnap
 import com.combo.feature.builder.draft.DraftEditor
 import com.combo.feature.builder.draft.FitPreset
@@ -37,6 +38,7 @@ import com.combo.feature.builder.draft.toDrafts
 import com.combo.feature.builder.draft.toEntities
 import com.combo.feature.builder.draft.toSnap
 import com.combo.feature.builder.history.DraftHistory
+import com.combo.ui.common.ThumbnailState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -69,6 +71,7 @@ class ComboBuilderViewModel(
     private val comboRepo: ComboRepository,
     private val photoRepo: PhotoRepository,
     private val bitmapSource: BitmapSource,
+    thumbnailSource: ThumbnailSource,
     private val ids: IdGenerator,
     private val clock: WallClock,
     private val ioDispatcher: CoroutineDispatcher,
@@ -83,6 +86,7 @@ class ComboBuilderViewModel(
 
     /** Метаданные и битмапы живут в общем кэше; размеры и debounce — политика этого экрана. */
     private val assets = PhotoAssets(photoRepo, bitmapSource)
+    internal val pickerThumbnails = ThumbnailState(viewModelScope, thumbnailSource)
 
     internal val bitmaps: StateFlow<Map<String, ImageBitmap>> = assets.bitmaps
 

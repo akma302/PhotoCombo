@@ -23,7 +23,9 @@ import org.koin.dsl.module
  * handle создаётся пустым прямо здесь, чтобы не плодить особый случай у вызова.
  */
 val viewModelModule = module {
-    viewModel { LibraryViewModel(photoRepo = get(), picker = get(), settingsRepository = get()) }
+    viewModel {
+        LibraryViewModel(photoRepo = get(), picker = get(), settingsRepository = get(), thumbnailSource = get())
+    }
 
     viewModel {
         ComboListViewModel(
@@ -43,6 +45,7 @@ val viewModelModule = module {
             comboRepo = get(),
             photoRepo = get(),
             bitmapSource = get(),
+            thumbnailSource = get(),
             ids = get(),
             clock = get(),
             ioDispatcher = get(),

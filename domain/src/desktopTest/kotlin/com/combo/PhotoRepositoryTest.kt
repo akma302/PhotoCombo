@@ -24,7 +24,7 @@ import java.nio.file.Files
 
 /**
  * Репозиторий фото: удаление строки вместе с файлами, блокировка удаления занятого
- * фото, путь миниатюры. Файловая система настоящая, во временном каталоге.
+ * фото. Файловая система настоящая, во временном каталоге.
  */
 class PhotoRepositoryTest {
 
@@ -46,7 +46,6 @@ class PhotoRepositoryTest {
             photoDao = dao,
             comboDao = comboDao,
             storage = storage,
-            files = files,
             importer = PhotoImporter(
                 photoDao = dao,
                 storage = storage,
@@ -96,17 +95,6 @@ class PhotoRepositoryTest {
     @Test
     fun `deleting an unknown photo reports deleted`() = runBlocking {
         assertEquals(DeleteResult.DELETED, repo.delete("ghost"))
-    }
-
-    @Test
-    fun `thumbPath returns the path only when the thumbnail exists`() {
-        val photo = photo("p1")
-        dao.rows["p1"] = photo
-
-        assertNull(repo.thumbPath("p1"))
-
-        createFiles(photo)
-        assertEquals(storage.thumbPath("p1"), repo.thumbPath("p1"))
     }
 
     @Test

@@ -8,7 +8,6 @@ kotlin {
     jvm("desktop")
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":core"))
             api(project(":data"))
             implementation(project(":domain"))
             api(project(":design-system"))
@@ -19,8 +18,6 @@ kotlin {
             implementation(libs.compose.material.ripple)
             implementation(libs.compose.material.icons.extended)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
         }
         val desktopTest by getting {
             dependencies {

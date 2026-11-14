@@ -16,7 +16,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
-import com.combo.core.image.ImageCodec
 import com.combo.core.image.ImagePicker
 import com.combo.core.image.PngDestination
 import com.combo.core.image.PngOutput
@@ -29,6 +28,7 @@ import com.combo.domain.BitmapSource
 import com.combo.domain.ComboPngExporter
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
 import com.combo.feature.builder.EDITOR_CANVAS_TAG
 import com.combo.feature.library.PHOTO_CELL_TAG_PREFIX
 import kotlinx.coroutines.CoroutineDispatcher
@@ -79,7 +79,7 @@ class AppNavViewModelTest : UiTestBase() {
                         ComboPngExporter(comboRepo, photoRepo, bitmapSource, output, ioDispatcher)
                     }
                     single<ImagePicker> { FakeImagePicker() }
-                    single<ImageCodec> { StubImageCodec() }
+                    single<ThumbnailSource> { EmptyThumbnailSource }
                     single<IdGenerator> { IdGenerator { "gen-1" } }
                     single<WallClock> { WallClock { 1_000L } }
                     single<CoroutineDispatcher> { ioDispatcher }

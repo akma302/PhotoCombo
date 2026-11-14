@@ -11,10 +11,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import com.combo.Const
+import com.combo.ImageFixtures
+import com.combo.domain.image.ThumbnailSource
 import com.combo.feature.library.LIB_CANCEL_TAG
 import com.combo.feature.library.LIB_CREATE_COMBO_TAG
 import com.combo.feature.library.LIB_DELETE_TAG
@@ -41,13 +45,13 @@ class LibraryMultiselectTest : UiTestBase() {
     private fun ComposeUiTest.setLibraryContent(
         ids: List<String>,
         repo: FakePhotoRepository = FakePhotoRepository(ids.map { photoEntity(it) }),
+        thumbnailSource: ThumbnailSource = EmptyThumbnailSource,
     ): LibraryViewModel {
-        val vm = LibraryViewModel(repo, FakeImagePicker(), settingsRepository = com.combo.ui.FakeGallerySettingsRepository())
-        val koin = trackKoin(repo)
+        val vm = LibraryViewModel(repo, FakeImagePicker(), FakeGallerySettingsRepository(), thumbnailSource)
         openedPhotoId = null
         comboRequest = null
         setContent {
-            TestScreen(koin, backDispatcher) {
+            TestScreen(backDispatcher) {
                 LibraryScreen(
                     onOpenViewer = { id -> openedPhotoId = id },
                     onCreateCombo = { selected -> comboRequest = selected },
@@ -62,6 +66,21 @@ class LibraryMultiselectTest : UiTestBase() {
     }
 
     private fun ComposeUiTest.cell(id: String) = onAllNodesWithTag(PHOTO_CELL_TAG_PREFIX + id)[0]
+
+    @Test
+    fun thumbnailReferencesFollowTheVisibleLibraryGrid() = runSkikoComposeUiTest(Size(520f, 620f)) {
+        val ids = List(60) { "p$it" }
+        val image = ImageFixtures.patternBitmap()
+        val vm = setLibraryContent(ids, thumbnailSource = ThumbnailSource { image })
+        waitUntil(timeoutMillis = 5_000) { ids.first() in vm.thumbnails.images.value }
+        assertTrue(ids[40] !in vm.thumbnails.images.value)
+
+        onNode(hasScrollToIndexAction()).performScrollToIndex(40)
+        waitUntil(timeoutMillis = 5_000) {
+            val visible = vm.thumbnails.images.value
+            ids[40] in visible && ids.first() !in visible
+        }
+    }
 
     /** Долгое нажатие в desktop-жестах — правый клик. */
     private fun ComposeUiTest.rightClickCell(id: String) {
