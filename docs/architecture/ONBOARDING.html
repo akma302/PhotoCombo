@@ -1,0 +1,512 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PhotoCombo — Onboarding разработчика</title>
+<style>
+:root{color-scheme:dark;font:17px/1.75 "Segoe UI",Arial,sans-serif;background:#0b1526;color:#d9e4f2;scroll-behavior:smooth}*{box-sizing:border-box}body{margin:0}a{color:#84c5ff;text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:#bce3ff}header{border-bottom:1px solid #30445d;padding:18px max(24px,calc((100vw - 1540px)/2));display:flex;gap:28px;align-items:center;background:#122239}header strong{color:#fff;letter-spacing:1px}main{max-width:1540px;margin:auto;display:grid;grid-template-columns:260px minmax(0,1fr);gap:64px;padding:42px 28px 100px}nav{position:sticky;top:24px;align-self:start;font-size:14px;max-height:94vh;overflow:auto}nav a{display:block;padding:8px 10px;margin:4px 0;border-left:2px solid #354c68;text-decoration:none;color:#a4b4cc}nav a:hover{background:#152a43;border-color:#57ddc4;color:#fff}article{min-width:0;overflow-wrap:anywhere}h1{font-size:42px;line-height:1.18;color:#fff;letter-spacing:-1.3px;margin-top:0}h2{font-size:29px;color:#fff;margin:70px 0 20px;padding-top:20px;border-top:1px solid #30445d;scroll-margin-top:20px}h3{font-size:22px;color:#57ddc4;margin-top:38px}p{margin:18px 0}strong{color:#fff}code{font: .9em/1.5 Consolas,monospace;background:#162b43;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}pre{padding:23px;background:#111f34;border:1px solid #30445d;border-radius:12px;overflow:auto}pre code{background:transparent;padding:0;overflow-wrap:normal}.table-wrap{overflow:auto;border:1px solid #30445d;border-radius:12px;margin:25px 0}table{border-collapse:collapse;font-size:15px;width:100%;min-width:620px}th,td{text-align:left;vertical-align:top;padding:14px;border-bottom:1px solid #29405b}th{background:#192f48;color:#fff}tr:nth-child(even){background:#112137}td:first-child{color:#eef3fb}li{margin:10px 0}footer{margin-top:65px;border-top:1px solid #30445d;padding-top:24px;color:#a4b4cc}a:focus-visible{outline:2px solid #57ddc4;outline-offset:4px}@media(max-width:1000px){main{grid-template-columns:minmax(0,1fr);gap:20px}nav{position:static;max-height:none;display:flex;overflow:auto;gap:10px}nav a{min-width:190px}h1{font-size:34px}header{flex-wrap:wrap}}@media(prefers-reduced-motion:reduce){:root{scroll-behavior:auto}}@media print{nav,header{display:none}main{display:block;padding:0}body,:root{background:white;color:black}h1,h2,h3,strong,td:first-child{color:black}pre,code,th,tr:nth-child(even){background:#eee;color:black}a{color:#234}h2{break-after:avoid}table{min-width:0}}
+</style><header><strong>PHOTOCOMBO / DEVELOPER GUIDE</strong><a href="open-atlas.html">Архитектурный атлас ↗</a><a href="ONBOARDING.md" download>Markdown ↓</a></header><main><nav aria-label="Оглавление"><a href="#section-1">1. Что делает приложение</a><a href="#section-2">2. Как устроены модули на самом деле</a><a href="#section-3">3. Запуск, внедрение зависимостей и подмена реализаций</a><a href="#section-4">4. Навигация и состояние экранов</a><a href="#section-5">5. Builder: где менять поведение</a><a href="#section-6">6. Изображения: не один общий кэш</a><a href="#section-7">7. Импорт и совместимость данных</a><a href="#section-8">8. Рендер и PNG</a><a href="#section-9">9. Общий UI и переиспользуемость</a><a href="#section-10">10. Как безопасно войти в разработку</a><a href="#section-11">11. Достоверность и обновление атласа</a></nav><article><h1>PhotoCombo: архитектура для нового разработчика</h1>
+<p>Разбор текущей реализации на <strong>14 ноября 2026</strong>, commit <strong><code>7351a27b9daa140471cae8295a4aca88441ca572</code></strong>. Это описание исходников, а не проект будущего рефакторинга. Поведение, которое видно только при запуске, не считается доказанным одним чтением кода.</p>
+<p>Начните с <a href="open-atlas.html">просмотрщика атласа</a>: выбор глав, масштаб, поиск и выключатель анимации работают локально. <a href="PhotoCombo-Architecture.svg">Единый SVG</a> содержит все 15 листов, включая каталог 135 Main-файлов. Главы также доступны отдельными SVG. <a href="SOURCE_INDEX.md">SOURCE_INDEX.md</a> перечисляет каждый Main-файл, top-level объявления, их модификаторы, внутренние импорты и все 78 файлов тестов. <code>test-support</code> включён в Main-каталог, но не в production-приложение.</p>
+<h2 id="section-1">1. Что делает приложение</h2>
+<p>PhotoCombo — локальная библиотека фотографий и редактор коллажей для desktop. Пользователь импортирует фотографии, выбирает их для нового combo, редактирует рамки и положение фото, сохраняет конфигурацию и экспортирует сохранённый combo в PNG.</p>
+<p>Полезно сразу различать пять объектов:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Объект</th>
+<th>Что содержит</th>
+<th>Где живёт</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Исходный выбранный файл</td>
+<td>Байты фотографии вне библиотеки</td>
+<td>У пользователя; импорт читает его, не перезаписывает</td>
+</tr>
+<tr>
+<td>Библиотечная копия</td>
+<td>Фото, при необходимости нормализованное по EXIF</td>
+<td><code>photos/&lt;fileName&gt;</code></td>
+</tr>
+<tr>
+<td>Сохранённый combo</td>
+<td>Размер холста, фон, геометрия рамок, ссылки на фото</td>
+<td><code>combos</code> + <code>combo_items</code> в Room</td>
+</tr>
+<tr>
+<td>Рабочий draft</td>
+<td>Изменяемые рамки текущего редактора</td>
+<td><code>BuilderUiState.items</code>, память ViewModel</td>
+</tr>
+<tr>
+<td>Экспортированный PNG</td>
+<td>Пиксели сохранённого combo</td>
+<td>Отдельный выбранный пользователем файл</td>
+</tr>
+</tbody></table></div>
+<p>Сохранение combo не запекает рамки в одну картинку. Конфигурацию можно открыть снова. PNG — отдельная операция, которая читает сохранённую конфигурацию. Редактирование не изменяет библиотечные фото; однако <strong>при импорте библиотечная копия может быть перекодирована для нормализации EXIF</strong>. «Неразрушающее редактирование» не означает побайтовую идентичность всех копий исходнику. См. <a href="../../domain/src/commonMain/kotlin/com/combo/domain/PhotoImporter.kt">PhotoImporter</a>, <a href="../../data/src/commonMain/kotlin/com/combo/data/Entities.kt">Entities</a>, <a href="../../domain/src/commonMain/kotlin/com/combo/domain/ComboPngExporter.kt">ComboPngExporter</a>.</p>
+<h2 id="section-2">2. Как устроены модули на самом деле</h2>
+<p>Откройте <a href="01-modules.svg">схему модулей</a>. Матрица справа перечисляет все прямые project-зависимости, включая <code>api</code> и <code>implementation</code>; лестница слева намеренно показывает только основной маршрут.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Модуль</th>
+<th>Ответственность</th>
+<th>Зависимости production</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>:composeApp</code></td>
+<td>Desktop entry point, DI, навигация, владельцы ViewModel</td>
+<td>Все девять остальных production-модулей через <code>implementation</code></td>
+</tr>
+<tr>
+<td>Четыре <code>:feature:*</code></td>
+<td>Экран, ViewModel, правила своей фичи</td>
+<td><code>api(core, data, domain)</code>; <code>implementation(design-system, ui-common)</code></td>
+</tr>
+<tr>
+<td><code>:ui-common</code></td>
+<td>Предметные галереи, back/input, общие UI-помощники</td>
+<td><code>api(data, design-system)</code>; <code>implementation(core, domain)</code></td>
+</tr>
+<tr>
+<td><code>:domain</code></td>
+<td>Репозитории, импорт, кэши изображений, экспорт</td>
+<td><code>api(core, data)</code></td>
+</tr>
+<tr>
+<td><code>:data</code></td>
+<td>Room, сущности, мапперы, файловая раскладка, настройки</td>
+<td><code>api(core)</code></td>
+</tr>
+<tr>
+<td><code>:core</code></td>
+<td>Модель, геометрия, рендер, фон, платформенные порты и desktop-адаптеры</td>
+<td>Нет project-зависимостей</td>
+</tr>
+<tr>
+<td><code>:design-system</code></td>
+<td>Токены, тема, примитивы, компоненты</td>
+<td>Нет project-зависимостей</td>
+</tr>
+<tr>
+<td><code>:test-support</code></td>
+<td>Фейки, изображения для тестов, UI-хост</td>
+<td><code>api(core, data, domain, design-system, ui-common)</code>; потребители подключают его только в тестах</td>
+</tr>
+</tbody></table></div>
+<p>Здесь нет изолированного domain-слоя, который полностью скрывает storage-модель. <code>PhotoRepository</code> возвращает <code>PhotoEntity</code>, а <code>ComboRepository</code> — <code>ComboWithItems</code>, <code>ComboEntity</code> и <code>ComboItemEntity</code> из <code>:data</code>. Поэтому изменение Room-сущностей потенциально затрагивает фичи. Отдельных production use-case классов для каждого действия нет: ViewModel вызывают репозитории и конкретные сервисы напрямую.</p>
+<p><code>api</code> раскрывает зависимость потребителю модуля. <code>implementation</code> скрывает её из публикуемого compile API, но не меняет видимость Kotlin-классов на <code>private</code>. Это разные механизмы. Реальные границы держатся на сочетании Gradle, модификаторов Kotlin и проверок импортов.</p>
+<p>Все зарегистрированные модули сейчас имеют цель <strong><code>jvm(&quot;desktop&quot;)</code></strong>. Общий код расположен в <code>commonMain</code>, адаптеры AWT/Skia/JVM — в <code>desktopMain</code>. Это создаёт швы для переноса, но Android-, iOS- и web-цели здесь не настроены. <code>core</code> использует Compose-графику; слово «core» не означает отсутствие зависимости от UI-библиотек.</p>
+<p>Точный граф закреплён в <a href="../../build.gradle.kts">root build.gradle.kts</a> и сверяется задачей <code>verifyModuleGraph</code>. <a href="../../composeApp/src/desktopTest/kotlin/com/combo/ArchitectureRulesTest.kt">ArchitectureRulesTest</a> проверяет расположение пакетов, запрещённые импорты, циклы между пакетами, независимость feature-модулей, внутреннее направление дизайн-системы и отсутствие прямых импортов JVM/Android/Skia в <code>commonMain</code>. Это проверка исходных импортов, не универсальный анализ всех способов обращения к платформенным API.</p>
+<h2 id="section-3">3. Запуск, внедрение зависимостей и подмена реализаций</h2>
+<p><a href="../../composeApp/src/desktopMain/kotlin/com/combo/main.kt">main()</a> вызывает <code>startKoin</code>, подключает <code>appModule</code>, <code>desktopModule()</code> и <code>viewModelModule</code>, затем создаёт Compose Window. Обёртки темы приводят к <code>AppNav</code>. Один <code>BackDispatcher</code> создаётся через <code>remember</code> рядом с окном.</p>
+<p><a href="02-contracts.svg">Схема контрактов</a> отделяет интерфейсы от конкретных реализаций. Стрелка реализации направлена <strong>к интерфейсу</strong>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Контракт / объект</th>
+<th>Реализация или способ создания</th>
+<th>Регистрация / владелец</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PhotoRepository</code></td>
+<td><code>PhotoRepositoryImpl</code></td>
+<td><code>single</code> в appModule</td>
+</tr>
+<tr>
+<td><code>ComboRepository</code></td>
+<td><code>ComboRepositoryImpl</code></td>
+<td><code>single</code> в appModule</td>
+</tr>
+<tr>
+<td><code>GallerySettingsRepository</code></td>
+<td><code>GallerySettingsRepositoryImpl</code></td>
+<td><code>single</code> в appModule</td>
+</tr>
+<tr>
+<td><code>GallerySettingsStorage</code></td>
+<td><code>FileGallerySettingsStorage</code></td>
+<td><code>single</code> в appModule</td>
+</tr>
+<tr>
+<td><code>PhotoStorage</code>, <code>PhotoImporter</code>, <code>ComboPngExporter</code></td>
+<td>Конкретные классы без отдельного интерфейса сервиса</td>
+<td><code>single</code> в appModule</td>
+</tr>
+<tr>
+<td><code>BitmapSource</code></td>
+<td><code>LruBitmapSource</code></td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>ImageCodec</code></td>
+<td><code>SkiaImageCodec</code></td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>ImagePicker</code></td>
+<td><code>DesktopImagePicker</code></td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>ImageSource</code></td>
+<td><code>FileImageSource</code></td>
+<td>По объекту на выбранный файл; не <code>single</code></td>
+</tr>
+<tr>
+<td><code>PngOutput</code></td>
+<td><code>DesktopPngOutput</code></td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>AppDirs</code>, <code>Logger</code></td>
+<td><code>DesktopAppDirs</code>, <code>DesktopLogger</code></td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>WallClock</code>, <code>IdGenerator</code></td>
+<td>SAM-лямбды системного времени и UUID</td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>FileSystem</code>, <code>CoroutineDispatcher</code></td>
+<td><code>FileSystem.SYSTEM</code>, <code>Dispatchers.IO</code></td>
+<td><code>single</code> в desktopModule</td>
+</tr>
+<tr>
+<td><code>AppDb</code></td>
+<td>Room database через <code>createAppDb()</code></td>
+<td><code>single</code>; <code>onClose { close() }</code></td>
+</tr>
+<tr>
+<td><code>PhotoDao</code>, <code>ComboDao</code></td>
+<td>Сгенерированные Room реализации из AppDb</td>
+<td><code>single</code>-ссылки на DAO</td>
+</tr>
+<tr>
+<td>Четыре ViewModel</td>
+<td>Koin <code>viewModel { … }</code></td>
+<td>Экземпляр хранится в предоставленном ViewModelStore</td>
+</tr>
+<tr>
+<td><code>PhotoAssets</code></td>
+<td>Обычный конструктор внутри трёх VM</td>
+<td>Один экземпляр на VM</td>
+</tr>
+<tr>
+<td><code>BackgroundResolver.Default</code></td>
+<td><code>companion val</code></td>
+<td>Не Koin; удерживается классом</td>
+</tr>
+<tr>
+<td><code>AverageAreaOklabStrategy</code></td>
+<td>Kotlin <code>object : BackgroundStrategy</code></td>
+<td>Не Koin; singleton языка</td>
+</tr>
+</tbody></table></div>
+<p>В <a href="../../composeApp/src/desktopMain/kotlin/com/combo/di/DesktopModules.kt">DesktopModules</a> <code>dataDir</code> передаётся параметром. Тест может создать временную библиотеку, а затем построить реальные DAO, файловые адаптеры и сервисы без доступа к личным данным. <code>WallClock</code> и <code>IdGenerator</code> — отдельные <code>fun interface</code>, чтобы два значения типа <code>() -&gt; …</code> не смешивались при разрешении зависимостей по типу. <code>PhotoImporter</code> получает уже извлечённые ссылки <code>clock::nowMillis</code> и <code>ids::newId</code>.</p>
+<p><code>AppDbConstructor</code> — <code>expect object</code>, а actual-конструктор и реализации Room генерирует KSP. Не ищите рукописный <code>PhotoDaoImpl</code> среди исходных Main-файлов. В дизайн-системе другой случай expect/actual: <code>internal PcPlatformDialog</code> имеет рукописный desktop actual.</p>
+<h2 id="section-4">4. Навигация и состояние экранов</h2>
+<p><a href="../../composeApp/src/commonMain/kotlin/com/combo/ui/AppNav.kt">AppNav</a> содержит один <code>mutableStateListOf&lt;NavKey&gt;</code> и один <code>NavDisplay</code>. <code>ScreenKey</code> — sealed interface с ключами <code>Library</code>, <code>Combos</code>, <code>Viewer(photoId)</code>, <code>Builder(comboId?, photos)</code>. Переходы собираются в composition root; один feature не вызывает экран другого feature напрямую.</p>
+<ul>
+<li><code>LibraryScreen</code> сообщает <code>onOpenViewer(id)</code> или <code>onCreateCombo(ids)</code>.</li>
+<li><code>ComboListScreen</code> сообщает <code>onOpenBuilder(id)</code> или создание пустого combo.</li>
+<li><code>Viewer</code> получает <code>photoId</code> как параметр composable. Его <code>SavedStateHandle</code> создаётся пустым и не используется для выбора страницы.</li>
+<li><code>Builder</code> получает параметры через <code>EntryArgs(builderHandle(key))</code>. Обёртка нужна текущей Koin-интеграции: <code>SavedStateHandle</code> имеет особый путь разрешения, а desktop-вызову нужны явно построенные аргументы.</li>
+</ul>
+<p>Хотя <code>ScreenKey.Builder.photos</code> — список, <code>builderHandle</code> записывает его в handle как строку через запятую, а Builder VM разбирает её обратно. Сейчас идентификаторы генерируются UUID-адаптером. Если изменить формат ID, эту промежуточную сериализацию нужно проверить.</p>
+<h3>Два владельца ViewModel</h3>
+<p><strong>Root owner</strong> создаётся в AppNav и передаётся Library и ComboList. Поэтому экземпляры этих VM сохраняются при переходах в Viewer/Builder и переключении вкладок. Выбранные фотографии и <code>GalleryScaleState</code> относятся к VM; состояние локальных Compose-виджетов следует отдельно анализировать по месту их <code>remember</code>, а не автоматически приписывать root owner.</p>
+<p><strong>Entry owner</strong> создаётся в <code>private EntryScope</code> через <code>rememberEntryViewModelStoreOwner()</code>. <code>DisposableEffect</code> вызывает <code>viewModelStore.clear()</code> при уничтожении соответствующей композиции. Для нынешних переходов это даёт отдельные Viewer/Builder VM. Строго по коду граница очистки — <strong>onDispose композиции EntryScope</strong>, а не отдельный реестр владельцев, привязанный к каждому ключу всего back stack. Если расширять вложенную навигацию, покрытие/возвращение записей стоит проверить отдельно.</p>
+<p>В <a href="../../composeApp/src/commonMain/kotlin/com/combo/ui/ViewModelStoreOwners.kt">ViewModelStoreOwners</a> корневой вариант возвращает только <code>remember { StackViewModelStoreOwner() }</code>: симметричного <code>onDispose { clear() }</code> нет. Поэтому формулировка «root гарантированно clear при закрытии AppNav» не подтверждается реализацией. Аналогично <code>AppDb.onClose</code> зарегистрирован в Koin, но <a href="../../composeApp/src/desktopMain/kotlin/com/combo/main.kt">main</a> не вызывает <code>stopKoin()</code> явно. Это границы текущей очистки, а не результаты обнаружения утечки профилировщиком.</p>
+<h3>Потоки состояния и одноразовые события</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Наблюдаемое состояние</th>
+<th>Что локально и чем отличается</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Library</td>
+<td><code>photos</code>, <code>selected</code>, <code>selectionMode</code>; <code>GalleryScaleState</code></td>
+<td>Порядок выбора значим. <code>photos</code> использует <code>stateIn(WhileSubscribed(5000))</code>. Сообщения через buffered Channel</td>
+</tr>
+<tr>
+<td>ComboList</td>
+<td><code>State(combos, photos, images, exportingComboId, exportMessage)</code></td>
+<td>VM-local assets, блокировка второго параллельного экспорта. Ошибка экспорта — поле состояния</td>
+</tr>
+<tr>
+<td>Viewer</td>
+<td><code>State(photos, images)</code></td>
+<td>Pager, zoom 1…8 и offset находятся в composable; смена страницы сбрасывает transform</td>
+</tr>
+<tr>
+<td>Builder</td>
+<td><code>BuilderUiState</code>, <code>bitmaps</code>, <code>selectedPhotoSize</code></td>
+<td>Draft/history в VM; диалоги, раскрытие inspector и состояние клавиш — в композиции. <code>saved</code>/<code>messages</code> через Channel</td>
+</tr>
+</tbody></table></div>
+<p><code>StateFlow</code> позволяет наблюдать последнее значение, а <code>Channel.receiveAsFlow()</code> используется для событий вроде «сохранено, выйти». Не заменяйте один вид другим без проверки повторной подписки и жизненного цикла экрана. Здесь нет единого универсального <code>UiEffect</code>-контракта на все фичи.</p>
+<p>Back-обработка — LIFO в <code>BackDispatcher</code>. Последний handler получает событие. <code>RegisterBackHandler</code> регистрируется через <code>DisposableEffect</code>, хранит актуальную лямбду через <code>rememberUpdatedState</code> и снимается при dispose. Esc из Window, клавиатура/боковая кнопка мыши через BackKeyHost и кнопки экранов сходятся к этой логике или явному <code>onBack</code>. В Builder выход сначала проверяет <code>isDirty</code>, а сохранённый результат приходит через <code>vm.saved</code>.</p>
+<h2 id="section-5">5. Builder: где менять поведение</h2>
+<p>Читайте <a href="04-builder.svg">схему редактора</a> вместе с <a href="../../feature/builder/src/commonMain/kotlin/com/combo/feature/builder/ComboBuilderViewModel.kt">ComboBuilderViewModel</a> и <a href="../../feature/builder/src/commonMain/kotlin/com/combo/feature/builder/BuilderContract.kt">BuilderContract</a>. ViewModel диспетчеризует события и владеет политикой состояния, но правила разнесены по небольшим компонентам.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Компонент</th>
+<th>Доступ</th>
+<th>Ответственность</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ComboBuilderScreen</code>, <code>ComboBuilderViewModel</code></td>
+<td>public</td>
+<td>Вход фичи и её координатор</td>
+</tr>
+<tr>
+<td><code>BuilderEvent</code>, <code>BuilderUiState</code>, <code>GesturePhase</code>, <code>EditMode</code>, <code>SnapDragKind</code></td>
+<td>public</td>
+<td>Контракт событий и наблюдаемого состояния</td>
+</tr>
+<tr>
+<td><code>BuilderTopBar</code>, <code>BuilderWorkspace</code>, <code>BuilderInspector</code>, <code>BuilderCanvasToolbar</code>, <code>BuilderViewControls</code></td>
+<td>internal</td>
+<td>Разметка и генерация событий</td>
+</tr>
+<tr>
+<td><code>CanvasSizeDialog</code>, <code>ExitDialog</code>, <code>PickPhotosDialog</code>, <code>BuilderPhotoPicker</code></td>
+<td>internal</td>
+<td>Локальные сценарии выбора/подтверждения</td>
+</tr>
+<tr>
+<td><code>EditorViewport</code></td>
+<td>internal</td>
+<td>Размер экрана, CanvasTransform, захват актуального состояния</td>
+</tr>
+<tr>
+<td><code>EditorCanvas</code></td>
+<td>private top-level</td>
+<td>Draw и подключение pointer/wheel modifiers внутри своего файла</td>
+</tr>
+<tr>
+<td><code>editorGestures</code>, <code>classifyGesture</code>, <code>nearEdge</code>, <code>editorWheelZoom</code></td>
+<td>internal</td>
+<td>Перевод ввода в команды редактора</td>
+</tr>
+<tr>
+<td><code>DraftEditor</code></td>
+<td>internal object</td>
+<td>Перестановка/добавление/удаление/замена фото, пресеты и начальная раскладка</td>
+</tr>
+<tr>
+<td><code>DraftHistory</code></td>
+<td>internal class</td>
+<td>Фазы жеста, сравнение снимков, Undo/Redo</td>
+</tr>
+<tr>
+<td><code>ComboSnap</code>, <code>ItemSnap</code>, mapper extensions, <code>trimmedToPhotos</code></td>
+<td>internal</td>
+<td>Снимки, адаптация и финализация сохраняемой копии</td>
+</tr>
+<tr>
+<td><code>FitPreset</code></td>
+<td>public enum</td>
+<td>Разовая операция FIT/FILL</td>
+</tr>
+<tr>
+<td><code>ItemDraft</code></td>
+<td>public class в core</td>
+<td>Изменяемая модель рамки; <code>id</code> val, прочие редактируемые поля var</td>
+</tr>
+<tr>
+<td><code>FrameSnap</code> / <code>FrameSnapState</code></td>
+<td>public types</td>
+<td>У FrameSnap private constructor, у FrameSnapState internal constructor</td>
+</tr>
+<tr>
+<td><code>SnapSession</code></td>
+<td>private nested class VM</td>
+<td>Состояние одной snap-операции</td>
+</tr>
+</tbody></table></div>
+<p><code>internal</code> ограничивает <strong>модуль</strong>, а не Kotlin-пакет. Поэтому <code>draft</code> и <code>history</code> видимы другим пакетам feature:builder. Запрет зависеть обратно от родительского пакета Builder обеспечивается отдельным architecture-тестом. <code>private</code> top-level ограничивает файл; private член — содержащий класс. <code>val StateFlow</code> не делает вложенные объекты неизменяемыми.</p>
+<h3>Один жест — один шаг Undo</h3>
+<p>При <code>ItemPressed</code> снимается снимок до изменения и, при необходимости, рамка поднимается вперёд. В процессе жеста <code>ItemGestures</code>, <code>DraftEditor</code> и snap-логика изменяют <code>ItemDraft</code> на месте. VM повышает <code>revision</code>, чтобы наблюдатели получили изменение даже при прежних ссылках на драфты.</p>
+<p><code>DraftHistory.begin()</code> хранит <code>pendingGestureSnap</code>. <code>end()</code> сравнивает текущий снимок с исходным и добавляет checkpoint только при изменении. <code>cancel()</code> восстанавливает исходный снимок без добавления шага. <code>UndoStack&lt;ComboSnap&gt;</code> по умолчанию держит 50 шагов; новое завершённое действие очищает redo.</p>
+<p>Снимок включает размеры холста, фон и все поля рамок. В него <strong>не входят имя combo, viewport и выделение</strong>. Поэтому переименование помечает состояние dirty, но не становится обычным undo-шагом холста. <code>isDirty</code> — отдельная политика VM; это не вычисление равенства draft последней сохранённой версии.</p>
+<p>Если добавить поле в <code>ItemDraft</code>, проследите весь путь: <code>ItemSnap</code>, <code>toSnap</code>, <code>toDraft</code>, <code>toEntities</code>, <code>toDrafts</code>, а при сохранении нового значения — и схему Room. <code>DraftMapperTest</code> проверяет соответствие полей draft и snapshot. Вставить новое поле только в UI state недостаточно.</p>
+<h3>Не смешивайте масштабы</h3>
+<ol>
+<li><strong>Размер холста</strong> — canvasW/H в координатах изображения; сохранённые целочисленные размеры определяют PNG.</li>
+<li><strong>contentScale</strong> — размер фото относительно его исходных пикселей внутри рамки. Pan также описывает контент в координатах холста.</li>
+<li><strong>viewport.zoom</strong> — увеличение рабочего вида. Базовый <code>Viewport.scale()</code> вписывает весь холст без автоматического увеличения выше 1:1; пользовательский zoom умножает этот масштаб. Это не изменение PNG.</li>
+</ol>
+<p><code>Viewport.zoomedAround()</code> рассчитывает новый pan из реально применённого коэффициента после clamp. <code>CanvasTransform.toCanvas/toScreen</code> переводит координаты. Размеры ручек и snap-допуски приходят из dp в экранные px, затем учитывается масштаб вида. Не передавайте экранную дельту прямо в поля draft без соответствующего преобразования.</p>
+<p><code>FitPreset.FIT/FILL</code> — команда, которая один раз меняет размещение. <code>FramingMode.FIT</code> — режим: эффективный scale пересчитывается при рендере, pan становится нулевым. В режиме FREE берутся сохранённые scale/pan. При выходе из FIT правила переводят видимый результат в сохранённые значения. Смешение этих понятий даёт скачки картинки при resize или повторном открытии.</p>
+<h3>Сохранение не редактирует рабочий draft</h3>
+<p><code>save()</code> проверяет <code>loaded</code>, <code>saving</code> и наличие рамок. До перехода на IO создаётся <code>snapshot().trimmedToPhotos(photos)</code>. Это важно: <code>ItemDraft</code> изменяем, и чтение его позже в фоновой корутине не даёт стабильного снимка.</p>
+<p>Финализация берёт видимые границы фото, пересекает их с холстом, объединяет, округляет наружу через floor/ceil и сдвигает центры рамок в новых координатах. При недостаточных метаданных используется площадь рамки; при пустом наборе видимых областей возвращается исходный snapshot. <strong>Сохранённый размер холста может стать меньше выбранного в редакторе</strong>, потому что края обрезаются вокруг видимых фото. Рабочий draft и Undo не должны измениться даже при ошибке записи.</p>
+<p>Далее строятся <code>ComboEntity</code> и <code>ComboItemEntity</code>, zIndex перенумеровывается по порядку списка. <code>ComboRepository.saveCombo()</code> выполняет одну Room writer-транзакцию: upsert combo → delete old items → insert new items. Успех отправляет событие <code>saved</code>, которое экран превращает в <code>onBack()</code>. Ошибка сбрасывает <code>saving</code> и отправляет сообщение; CancellationException пробрасывается.</p>
+<h2 id="section-6">6. Изображения: не один общий кэш</h2>
+<p><a href="05-images.svg">Схема изображений</a> разделяет три маршрута.</p>
+<p><strong>Миниатюры библиотеки.</strong> <code>PhotoGrid</code> использует <code>ThumbImage</code>. Composable получает <code>PhotoRepository</code>, <code>ImageCodec</code> и IO dispatcher непосредственно через <code>koinInject</code>. <code>repo.thumbPath()</code> возвращает файл <code>thumbs/&lt;id&gt;.jpg</code>. Decode происходит в <code>LaunchedEffect</code> на IO, результат хранится в <code>remember(photoId)</code> конкретной композиции. Этот маршрут не идёт через <code>BitmapSource</code>.</p>
+<p><strong>Assets экрана.</strong> Каждый Viewer/ComboList/Builder создаёт свой <a href="../../domain/src/commonMain/kotlin/com/combo/domain/PhotoAssets.kt">PhotoAssets</a>. Метаданные и bitmap публикуются двумя StateFlow; <code>loadedReqPx</code> отдельно запоминает уже запрошенное качество. <code>ensureBitmap</code> пропускает загрузку, если существующий bitmap был получен для достаточного requiredPx. Это учёт запроса, не универсальная проверка реального разрешения файла.</p>
+<p><strong>Общий decode/cache.</strong> <a href="../../domain/src/commonMain/kotlin/com/combo/domain/image/LruBitmapSource.kt">LruBitmapSource</a> — Koin single. Он запрашивает PhotoDao, выбирает sampleSize, использует ключ <code>photoId:sample</code> и хранит bitmap в LinkedHashMap с ручным порядком доступа. <code>inFlight</code> сводит запросы одинакового ключа к одному Deferred. Mutex защищает общие таблицы; разные ключи могут декодироваться параллельно.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Потребитель</th>
+<th>Политика качества</th>
+<th>Удержание</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ThumbImage</td>
+<td>Готовая JPEG-миниатюра; при импорте длинная сторона sample не больше 512</td>
+<td>Compose <code>remember</code></td>
+</tr>
+<tr>
+<td>ComboList</td>
+<td><code>PREVIEW_PX = 800</code></td>
+<td>PhotoAssets root VM; вызова eviction нет</td>
+</tr>
+<tr>
+<td>Viewer</td>
+<td><code>VIEWER_PX = 2048</code>, текущая страница ± один сосед</td>
+<td>PhotoAssets entry VM; <code>evictExcept(keepIds)</code> перед новой загрузкой</td>
+</tr>
+<tr>
+<td>Builder</td>
+<td><code>maxBorder × viewport.zoom × 2</code>, clamp 128…4096; delay 300 ms для отложенных обновлений</td>
+<td>PhotoAssets entry VM; предыдущее bitmapJob отменяется, eviction не вызывается</td>
+</tr>
+<tr>
+<td>PNG export</td>
+<td>Для каждого photoId — максимальная потребность его рамок по эффективному scale, не выше размера оригинала</td>
+<td>Прямой BitmapSource + локальная map операции</td>
+</tr>
+</tbody></table></div>
+<p>Лимит LRU равен примерно четверти максимальной JVM heap в килобайтах; вес записи оценивается как <code>width × height × 4 / 1024</code>, минимум 1 KB. Это <strong>не предел всей памяти изображений</strong>. PhotoAssets, UI, in-flight decode, source bytes и экспортный framebuffer держат дополнительные ссылки/выделения. Вытесненный из LRU bitmap может продолжать жить в карте VM.</p>
+<p><code>SkiaImageCodec</code> пробует декодирование с уменьшением; если кодек не поддерживает такой размер, используется full decode + scaleDown. Поэтому маленький requiredPx не гарантирует маленький пик временной памяти.</p>
+<h3>Где текущие гарантии заканчиваются</h3>
+<ul>
+<li><code>PhotoAssets.evictExcept</code> очищает bitmap и loadedReqPx, но не карту метаданных.</li>
+<li>Viewer при каждом <code>ensureLoaded()</code> создаёт новый <code>viewModelScope.launch</code>; предыдущая загрузка окна отдельно не отменяется и не проверяет актуальность keepIds перед публикацией. Старый результат потенциально может вернуться после eviction.</li>
+<li><code>PhotoAssets.ensureBitmap()</code> использует <code>runCatching</code>, который охватывает и CancellationException. <code>PhotoImporter</code> также содержит широкие catch(Exception). Для новых сценариев отмены это требует проверки.</li>
+<li>LRU создаёт собственный <code>SupervisorJob + Dispatchers.Default</code>; это намеренно не дочерний scope первой VM, запросившей общий decode. Но у класса нет явного close/cancel для этого scope.</li>
+</ul>
+<p>Это наблюдения о структуре кода и гипотезы для сценарных тестов/профилирования. В рамках подготовки документа не измерялись утечки, пики памяти и гонки при реальном листании.</p>
+<h2 id="section-7">7. Импорт и совместимость данных</h2>
+<p>Путь импорта: Library VM → ImagePicker → PhotoRepository → <a href="../../domain/src/commonMain/kotlin/com/combo/domain/PhotoImporter.kt">PhotoImporter</a>. Для каждого ImageSource вычисляется SHA-256 <strong>исходных байтов</strong>, проверяется дубликат, создаётся ID и библиотечная копия, читаются bounds/EXIF, при необходимости нормализуется ориентация, затем одним sample-decode вычисляются avgColor и миниатюра. PhotoEntity записывается после успешного создания файлов. На отдельном сбое увеличивается failed и выполняется best-effort уборка. Возвращается <code>ImportResult(added, duplicates, failed)</code>.</p>
+<p><code>PhotoStorage</code> централизует директории и имена. В БД хранится fileName, а не абсолютный путь. Windows dataDir — <code>%APPDATA%/PhotoCombo</code>; <code>defaultAppDataDir()</code> содержит и ветки для других desktop ОС. <code>createAppDb</code> использует BundledSQLiteDriver, schema version 2 и query context IO.</p>
+<p>Связи Room:</p>
+<ul>
+<li><code>ComboEntity 1 ← N ComboItemEntity</code>: удаление combo каскадно удаляет рамки.</li>
+<li><code>PhotoEntity 1 ← N ComboItemEntity</code>: удаление используемого фото ограничено RESTRICT.</li>
+<li><code>photos.sha256</code> имеет уникальный индекс; <code>comboId</code> и <code>photoId</code> — индексы combo_items.</li>
+<li><code>ComboWithItems</code> объединяет combo и relation items. Сортировку items гарантирует репозиторий, не <code>@Relation</code>.</li>
+</ul>
+<p>PhotoRepository предварительно проверяет <code>isPhotoUsed</code>, затем удаляет строку и файлы. Файловое удаление best-effort. <strong>Общей транзакции SQLite + filesystem здесь нет.</strong> Транзакционность <code>saveCombo</code> относится к конфигурации в БД.</p>
+<p>Миграция <code>MIGRATION_1_2</code> удаляет старую таблицу нескольких фото рамки, переносит фото в combo_items, оставляет первое по orderIndex/id и удаляет пустые старые рамки. Сохранённые <code>FramingMode.name</code> и JSON имена BackgroundSpec — часть формата. Простое переименование enum или serial name нарушает чтение старых данных; требуется стратегия совместимости и тест миграции.</p>
+<p>GallerySettings хранится отдельным JSON. <code>GallerySettingsRepositoryImpl</code> сериализует доступ Mutex, кеширует current и нормализует проценты к 50…200. File storage пишет temporary → atomicMove. При IOException новое значение остаётся в памяти, а saveScale возвращает false. <code>GalleryScaleState.change</code> обновляет UI во время движения; <code>commit</code> сохраняет завершённый выбор.</p>
+<h2 id="section-8">8. Рендер и PNG</h2>
+<p><a href="07-render-export.svg">Схема рендера</a> показывает общий маршрут:</p>
+<pre><code class="language-text">ItemDraft / ComboItemEntity
+  → соответствующий frameContent adapter
+  → FrameContent + Border + FramingMode
+  → buildItemFrame → contentArgsOf → effectiveFraming
+  → ItemFrame
+  → drawCombo → drawItem
+</code></pre>
+<p><code>core.render</code> не знает Room-сущностей: <code>data/EntityExt.kt</code> адаптирует сохранённые данные, <code>builder/draft/ComboDraftMapper.kt</code> — рабочие драфты. При этом сам <code>ItemDraft</code> физически находится в core.render; комментарий «core не знает про драфты» нельзя понимать как отсутствие этого типа в core.</p>
+<p><code>drawCombo</code> применяет origin/scale, обрезает по холсту, рисует фон и последовательно рамки. <code>drawItem</code> обрезает по рамке, рисует полупрозрачную заливку avgColor, затем изображение. Последний элемент рисуется сверху. Editor добавляет selection/snap overlay вне общего renderer, в экранных координатах.</p>
+<p>Поле rotation присутствует в draft/entity/snapshot, но текущая цепочка Border → ItemFrame → drawItem не применяет поворот. Наличие поля хранения не подтверждает работающую rotation-функцию UI. Это важное различие между моделью и поддержанным поведением.</p>
+<p>Фон хранится как рецепт <code>BackgroundSpec.Auto(strategy)</code> или <code>Solid(argb)</code>. <code>BackgroundResolver</code> ищет стратегию по id, неизвестный id заменяет default. <code>AverageAreaOklabStrategy</code> смешивает avgColor в OKLab с весом площади пересечения <strong>рамки</strong> с холстом. Перекрытия рамок не вычитаются; это не анализ видимых сверху пикселей окончательного кадра. <code>ResolvedBackground</code> сейчас имеет вариант Solid. <code>BackgroundPresets</code> задаёт цикл кнопки, <code>Oklab</code> — преобразования цвета, <code>AverageColor</code> — расчёт по bitmap при импорте.</p>
+<p><code>ComboPngExporter.export(id)</code> читает сохранённый combo, проверяет положительный размер, лимит 32 MP и наличие рамок, спрашивает место назначения, собирает metadata/images, формирует ItemFrame и рисует на ImageBitmap точного размера с масштабом 1. Затем PngOutput записывает результат. Отмена диалога возвращает null; ComboList VM показывает результат или ошибку и сбрасывает флаг экспорта в finally.</p>
+<p><code>DesktopPngOutput.chooseDestination</code> работает на Swing dispatcher. <code>write</code> запрещает целевую директорию внутри библиотеки PhotoCombo, пишет временный файл рядом с целью, проверяет отмену, переносит в конечный путь и очищает temporary в finally. Разрешение замены существующего файла определяется результатом native dialog и тем, совпало ли итоговое PNG-имя с выбранным именем. Это часть адаптера, не ответственность renderer.</p>
+<h2 id="section-9">9. Общий UI и переиспользуемость</h2>
+<p><a href="08-reuse.svg">Схема reuse</a> отделяет две библиотеки UI.</p>
+<p><strong>design-system</strong> имеет направление <code>components → primitives → theme → tokens</code>; icons независимы от предметной модели. PcColors, PcTypography, PcSpacing/Sizes/Shapes/Strokes/Opacity, PcMotion, PcFocus и PcDensity задают визуальный язык. PcTheme предоставляет их через CompositionLocal. PcSurface/Text/Icon/Divider/Control/PopupAppearance служат строительными блоками, PcButton/Select/Slider/Dialog и другие компоненты строятся поверх них. Production project-зависимостей нет, но Compose и coroutines остаются внешними зависимостями.</p>
+<p><strong>ui-common</strong> знает data/domain: PhotoGrid принимает PhotoEntity, ThumbImage получает репозиторий/кодек из DI, GalleryScaleState сохраняет настройки через repository. Его легче использовать между фичами PhotoCombo, чем переносить целиком в постороннее приложение. GalleryGrid<T> внутри этого модуля более общий: он занимается колонками и геометрией ячеек.</p>
+<p>Экран Builder не импортирует Library ради выбора фото: оба используют PhotoGrid. Viewer/ComboList/Builder разделяют класс PhotoAssets, но каждый имеет собственный экземпляр. Builder/ComboList/export разделяют renderer, но передают разные transforms и источники конфигурации. Это три разных смысла reuse: общий composable, общий алгоритм/класс и общий runtime-service.</p>
+<p><code>DesignSystemGallery</code> и <code>GalleryLauncher</code> — отдельный путь запуска примеров. Он полезен для знакомства с компонентами и UI-проверок без открытия базы личной библиотеки.</p>
+<h2 id="section-10">10. Как безопасно войти в разработку</h2>
+<p>Рекомендуемый маршрут чтения:</p>
+<ol>
+<li><code>settings.gradle.kts</code>, module build files и <code>verifyModuleGraph</code>: понять разрешённые зависимости.</li>
+<li><code>main.kt</code>, три DI-модуля, <code>AppNav</code>, <code>ViewModelStoreOwners</code>: увидеть создание и владение объектами.</li>
+<li><code>LibraryViewModel</code> и <code>Repositories.kt</code>: пройти простой сценарий от пользователя к данным.</li>
+<li><code>PhotoImporter</code>, <code>PhotoStorage</code>, <code>Entities</code>, <code>Daos</code>: связать байты, файлы и метаданные.</li>
+<li><code>BuilderContract</code> → <code>ComboBuilderViewModel</code> → <code>DraftEditor</code>/<code>DraftHistory</code> → мапперы: пройти редактирование.</li>
+<li><code>Framing</code> → <code>ItemFrames</code> → <code>DrawCombo</code>/<code>DrawItem</code> → <code>ComboPngExporter</code>: проследить получение пикселя.</li>
+<li><code>PhotoAssets</code> и <code>LruBitmapSource</code>: разобраться с качеством загрузки и удержанием памяти.</li>
+<li>Тесты выбранного сценария из <a href="SOURCE_INDEX.md">полного индекса</a>, затем UI или gallery.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Задача</th>
+<th>Основное место изменения</th>
+<th>Что проверить рядом</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Новый toolbar action</td>
+<td>BuilderContract + VM + соответствующая панель</td>
+<td>History checkpoint, empty action, dirty/revision</td>
+</tr>
+<tr>
+<td>Новое поле рамки</td>
+<td>ItemDraft + ItemSnap + mapper + Entity</td>
+<td>Поле не теряется в Undo, save/load; migration при смене схемы</td>
+</tr>
+<tr>
+<td>Новая логика вписывания</td>
+<td>core.render / Framing / TransformMath</td>
+<td>Editor/preview/export parity; FIT ↔ FREE</td>
+</tr>
+<tr>
+<td>Новый фон</td>
+<td>BackgroundSpec/Resolver/Strategy + render/UI</td>
+<td>JSON compatibility, snapshot/Undo, fallback неизвестного id</td>
+</tr>
+<tr>
+<td>Изменение загрузки изображений</td>
+<td>Политика конкретной VM, PhotoAssets или LRU согласно обязанности</td>
+<td>Cancellation, качество, stale results, удержание ссылок</td>
+</tr>
+<tr>
+<td>Новый способ хранения/выбора файлов</td>
+<td>Порт и desktop-адаптер + DI</td>
+<td>Отмена dialog, файловые ошибки, временная библиотека в тестах</td>
+</tr>
+<tr>
+<td>Новый UI-компонент</td>
+<td>design-system или ui-common по степени предметной зависимости</td>
+<td>Направление imports, keyboard/focus, gallery и размеры</td>
+</tr>
+<tr>
+<td>Новый экран</td>
+<td>Новый feature, ScreenKey/AppNav, DI</td>
+<td>Отдельный owner, back handling, параметры и scope</td>
+</tr>
+</tbody></table></div>
+<p>Команды из корня репозитория; доступность offline-сборки зависит от заполненного Gradle cache:</p>
+<pre><code class="language-powershell">.\gradlew.bat :composeApp:runDesignSystemGallery
+.\gradlew.bat verifyModuleGraph --offline --console=plain
+.\gradlew.bat :feature:builder:desktopTest --tests &#39;*DraftHistoryTest&#39; --offline --console=plain
+.\gradlew.bat :domain:desktopTest --tests &#39;*LruBitmapSourceTest&#39; --offline --console=plain
+.\gradlew.bat check --offline --console=plain
+</code></pre>
+<p>Обычный <code>:composeApp:run</code> открывает реальные пользовательские данные. Для интеграционных тестов используйте временные директории через dataDir. <code>RealPhotoImportTest</code> требует явно заданной папки <code>-Prealphotos=...</code>; без неё этот сценарий пропускается. Подробности процесса — <a href="../DEVELOPMENT.md">DEVELOPMENT.md</a>.</p>
+<p>Тесты, которые особенно полезны как объяснение контрактов: AppModulesTest, AppNavViewModelTest, ItemFrameParityTest, DraftMapperTest, DraftHistoryTest, ComboBuilderFinalizationTest, PhotoImporterTest, LruBitmapSourceTest, ComboPngExporterTest, MigrationTest. Их названия — маршрут к примерам, а не заявление, что вся возможная функциональность покрыта.</p>
+<h2 id="section-11">11. Достоверность и обновление атласа</h2>
+<p>Диаграммы вручную интерпретируют конкретный код, а модульная матрица, полный индекс и manifest извлекаются из файлов. Это не автоматически вычисленный полный call graph. Короткие подписи на картах группируют связанные функции; точные типы, overloads и тела находятся в связанных исходниках. Каталог покрывает все 135 Main-файлов зарегистрированных модулей, а тестовый список — 78 файлов desktopTest на указанном снимке. Сгенерированный Room-код и внешние библиотеки показаны как зависимости, не как рукописные компоненты проекта.</p>
+<p><code>source-manifest.json</code> хранит commit, пути, SHA-256 файлов, объявления и импорты. Он позволяет обнаружить дрейф после изменения кода. <code>build_atlas.py</code> воспроизводит SVG, просмотрщик и индекс, но <strong>не переосмысляет вручную написанные архитектурные объяснения</strong>. Перед пересборкой на другом commit обновите смысловые карточки и этот текст, иначе новая дата/хеш сами по себе не доказывают актуальность схемы.</p>
+<pre><code class="language-powershell">python docs\architecture\build_atlas.py
+</code></pre>
+<p>Анимация пунктирных потоков декоративна и показывает направление, а не фактическую активность приложения. SVG полностью читается без JavaScript; <code>prefers-reduced-motion</code> останавливает движение. В локальном просмотрщике есть отдельный переключатель. Точные артефактные проверки и ограничения записаны в <a href="VALIDATION.md">VALIDATION.md</a>.</p>
+<footer>Подготовлено по коду PhotoCombo. Схемы, индекс и границы проверки находятся в этой же папке.</footer></article></main></html>
