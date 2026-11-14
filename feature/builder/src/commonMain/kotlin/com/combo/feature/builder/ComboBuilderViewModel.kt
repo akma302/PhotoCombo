@@ -467,6 +467,7 @@ class ComboBuilderViewModel(
             )
         }
         markDirtyAndEmit()
+        refreshBitmaps(immediate = true)
     }
 
     /** Undo/Redo: откат, затем флаги и публикация. */
@@ -474,6 +475,7 @@ class ComboBuilderViewModel(
         apply()
         publishUndoFlags()
         markDirtyAndEmit()
+        refreshBitmaps()
     }
 
     /** Checkpoint перед дискретной мутацией, сама мутация, затем публикация. */
@@ -557,6 +559,7 @@ class ComboBuilderViewModel(
 
     fun refreshBitmaps(immediate: Boolean = false) {
         bitmapJob?.cancel()
+        assets.evictExcept(_state.value.items.map { it.photoId }.toSet())
         bitmapJob = viewModelScope.launch {
             // Задержка перед загрузкой: во время жеста зум/пан меняется десятками кадров,
             // а декод крупного сэмпла на каждом шаге — это лишняя работа впустую.

@@ -2,6 +2,9 @@ package com.combo.domain
 
 import androidx.compose.ui.graphics.ImageBitmap
 import com.combo.data.PhotoEntity
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +54,7 @@ class PhotoAssets(
         for (id in ids) {
             if (_photos.value.containsKey(id)) continue
             val photo = photoRepo.get(id) ?: continue
+            currentCoroutineContext().ensureActive()
             _photos.update { it + (id to photo) }
         }
     }
@@ -63,10 +67,19 @@ class PhotoAssets(
      * `false` — либо уже актуален, либо декод упал.
      */
     suspend fun ensureBitmap(id: String, requiredPx: Int): Boolean {
+        val context = currentCoroutineContext()
+        context.ensureActive()
         if (_bitmaps.value.containsKey(id) && (loadedReqPx[id] ?: -1) >= requiredPx) return false
-        // Сбой декода глотаем: битый/удалённый файл не должен ронять экран, из которого
-        // он открыт.
-        val bitmap = runCatching { bitmapSource.get(id, requiredPx) }.getOrNull() ?: return false
+        val bitmap = try {
+            bitmapSource.get(id, requiredPx)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            return false
+        }
+        // A decode shared by several screens can finish after this screen stops waiting.
+        context.ensureActive()
+        if ((loadedReqPx[id] ?: -1) >= requiredPx) return false
         loadedReqPx[id] = requiredPx
         // Именно update, а не присваивание `value = value + …`: пересборка карты под
         // двумя конкурентными загрузками иначе теряла бы чужую запись.
@@ -85,5 +98,9 @@ class PhotoAssets(
     fun evictExcept(keep: Set<String>) {
         loadedReqPx.keys.retainAll(keep)
         _bitmaps.update { it.filterKeys { id -> id in keep } }
+    }
+
+    fun evictMetadataExcept(keep: Set<String>) {
+        _photos.update { it.filterKeys { id -> id in keep } }
     }
 }

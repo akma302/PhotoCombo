@@ -2,6 +2,8 @@ package com.combo.feature.combo_list
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import com.combo.ui.common.GalleryGrid
 import com.combo.ui.common.GallerySizeControl
 import com.combo.ui.common.GalleryScaleUiState
@@ -18,7 +20,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.combo.core.render.CanvasTransform
-import com.combo.core.render.ItemFrame
 import com.combo.core.render.comboBackgroundOf
 import com.combo.core.render.drawCombo
 import com.combo.data.ComboWithItems
@@ -44,12 +45,21 @@ fun ComboListScreen(
 ) {
     val state by vm.state.collectAsState()
     val galleryScale by vm.galleryScale.state.collectAsState()
+    val gridState = rememberLazyGridState()
+    LaunchedEffect(vm, gridState) {
+        snapshotFlow { gridState.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }.toSet() }
+            .collect(vm::setVisibleCombos)
+    }
+    DisposableEffect(vm) {
+        onDispose { vm.setVisibleCombos(emptySet()) }
+    }
     ComboListContent(
         state.combos, onOpenBuilder, onCreateCombo, vm::delete, vm::export,
         galleryScale, vm.galleryScale::change, vm.galleryScale::commit, vm.galleryScale::reset,
         state.exportingComboId, state.exportMessage,
+        gridState,
     ) { combo, modifier ->
-        StaticPreview(vm, combo, modifier)
+        StaticPreview(state, combo, modifier)
     }
 }
 
@@ -67,6 +77,7 @@ internal fun ComboListContent(
     onScaleReset: () -> Unit = {},
     exportingComboId: String? = null,
     exportMessage: String? = null,
+    gridState: LazyGridState = rememberLazyGridState(),
     preview: @Composable (ComboWithItems, Modifier) -> Unit,
 ) {
     PcSurface(Modifier.fillMaxSize().testTag("combo_list"), color = PcTheme.colors.app) {
@@ -110,6 +121,7 @@ internal fun ComboListContent(
                             referenceItemWidth = (240f * galleryScale.percent / 100f).dp,
                             previewAspectRatio = { it.combo.canvasWidth.toFloat() / it.combo.canvasHeight },
                             modifier = Modifier.fillMaxSize().testTag("combo_grid"),
+                            state = gridState,
                             contentPadding = PaddingValues(inset),
                             horizontalGap = gap,
                             verticalGap = PcTheme.spacing.xl,
@@ -167,19 +179,11 @@ private fun ComboDetails(
 }
 
 @Composable
-private fun StaticPreview(vm: ComboListViewModel, combo: ComboWithItems, modifier: Modifier) {
-    val state by vm.state.collectAsState()
-    LaunchedEffect(combo.combo.id, combo.combo.updatedAt) {
-        vm.ensureAssetsFor(combo)
-    }
-    val frames = rememberFrames(vm, combo, state.images.size + state.photos.size)
+private fun StaticPreview(state: ComboListViewModel.State, combo: ComboWithItems, modifier: Modifier) {
+    val frames = remember(combo.items, state.images, state.photos) { state.framesFor(combo) }
     val canvasW = combo.combo.canvasWidth.toFloat()
     val canvasH = combo.combo.canvasHeight.toFloat()
-    // Фон такой же, как в билдере. Ключи remember должны покрывать всё, от чего
-    // зависит результат: у Auto-фона это ещё и положение с размером рамок, поэтому
-    // одних `photos.size` и спецификации мало, и в ключ добавлен `updatedAt` (он
-    // меняется при любой правке комбо).
-    val bg = remember(combo.combo.updatedAt, combo.combo.background, state.photos.size) {
+    val bg = remember(combo, state.photos) {
         comboBackgroundOf(
             combo.combo.canvasWidth,
             combo.combo.canvasHeight,
@@ -194,13 +198,4 @@ private fun StaticPreview(vm: ComboListViewModel, combo: ComboWithItems, modifie
         // remember выше — их ключи не трогаем.
         drawCombo(t, canvasW, canvasH, bg, frames)
     }
-}
-
-@Composable
-private fun rememberFrames(
-    vm: ComboListViewModel,
-    combo: ComboWithItems,
-    key: Int,
-): List<ItemFrame> = remember(combo.combo.id, combo.combo.updatedAt, key) {
-    vm.framesFor(combo)
 }
