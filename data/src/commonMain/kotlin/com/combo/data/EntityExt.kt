@@ -4,6 +4,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
 import com.combo.core.render.Border
 import com.combo.core.render.FrameContent
+import com.combo.core.render.ItemFrame
+import com.combo.core.render.buildItemFrame
 
 /**
  * Раскладка полей Room-сущностей в термины ядра отрисовки.
@@ -36,12 +38,17 @@ fun ComboWithItems.backgroundFrames(photos: Map<String, PhotoEntity>): List<Pair
  * Метаданные фото передаются отдельно, а не достаются из DAO: вызывающий уже держит
  * `photos[id]` в памяти, и повторный запрос здесь был бы лишним.
  */
-fun ComboItemEntity.frameContent(image: ImageBitmap, photo: PhotoEntity) = FrameContent(
-    image = image,
-    srcW = photo.width,
-    srcH = photo.height,
-    avgColor = photo.avgColor,
-    storedScale = contentScale,
-    storedPanX = panX,
-    storedPanY = panY,
-)
+fun ComboItemEntity.toItemFrame(image: ImageBitmap, photo: PhotoEntity): ItemFrame =
+    buildItemFrame(
+        border = border(),
+        mode = framingModeEnum,
+        content = FrameContent(
+            image = image,
+            srcW = photo.width,
+            srcH = photo.height,
+            avgColor = photo.avgColor,
+            storedScale = contentScale,
+            storedPanX = panX,
+            storedPanY = panY,
+        ),
+    )
