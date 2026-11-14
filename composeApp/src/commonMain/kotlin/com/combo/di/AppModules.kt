@@ -13,6 +13,8 @@ import com.combo.domain.ComboPngExporter
 import com.combo.domain.PhotoImporter
 import com.combo.domain.PhotoRepository
 import com.combo.domain.PhotoRepositoryImpl
+import com.combo.domain.image.FileThumbnailSource
+import com.combo.domain.image.ThumbnailSource
 import org.koin.dsl.module
 
 /**
@@ -27,6 +29,7 @@ val appModule = module {
     single<GallerySettingsStorage> { FileGallerySettingsStorage(get(), get()) }
     single<GallerySettingsRepository> { GallerySettingsRepositoryImpl(get(), get(), get()) }
     single { PhotoStorage(dirs = get(), files = get()) }
+    single<ThumbnailSource> { FileThumbnailSource(storage = get(), codec = get(), ioDispatcher = get()) }
 
     single {
         val clock = get<WallClock>()
@@ -48,7 +51,6 @@ val appModule = module {
             photoDao = get(),
             comboDao = get(),
             storage = get(),
-            files = get(),
             importer = get(),
             ioDispatcher = get(),
         )

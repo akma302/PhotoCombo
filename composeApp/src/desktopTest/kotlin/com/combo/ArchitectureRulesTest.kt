@@ -47,7 +47,7 @@ class ArchitectureRulesTest {
         listOf("commonMain", "desktopMain").map { File(projectRoot, "$module/src/$it/kotlin") }
     }.filter { it.isDirectory }
 
-    /** Один проверенный файл: его пакет и списки импортов (все и только `com.combo.*`). */
+    /** Source file and imports used by the package and Compose boundary checks. */
     private data class Source(
         val label: String,
         val pkg: String,
@@ -55,6 +55,7 @@ class ArchitectureRulesTest {
         val sourceSet: String = "",
         val allImports: List<String> = emptyList(),
         val module: String = "",
+        val hasComposable: Boolean = false,
     )
 
     private fun sources(): List<Source> =
@@ -79,6 +80,10 @@ class ArchitectureRulesTest {
                     module = root.parentFile.parentFile.parentFile.relativeTo(projectRoot).invariantSeparatorsPath,
                     allImports = lines.mapNotNull { line ->
                         Regex("^import\\s+([\\w.]+)").find(line)?.groupValues?.get(1)
+                    },
+                    hasComposable = lines.any {
+                        it.startsWith("import androidx.compose.runtime.Composable") ||
+                            Regex("@(?:androidx\\.compose\\.runtime\\.)?Composable\\b").containsMatchIn(it)
                     },
                 )
             }
@@ -191,6 +196,27 @@ class ArchitectureRulesTest {
                 for (imp in s.allImports) {
                     if (platformPrefixes.any { imp == it.trimEnd('.') || imp.startsWith(it) }) {
                         problems += "${s.label}: [commonMain без платформенных импортов] import $imp"
+                    }
+                }
+            }
+            if (s.hasComposable) {
+                // Keep file access, dispatchers, and service injection out of composable source files.
+                val serviceImports = setOf(
+                    "com.combo.data.AppDb",
+                    "com.combo.data.PhotoStorage",
+                    "com.combo.domain.BitmapSource",
+                    "com.combo.domain.image.ThumbnailSource",
+                    "kotlinx.coroutines.CoroutineDispatcher",
+                    "kotlinx.coroutines.Dispatchers",
+                    "kotlinx.coroutines.withContext",
+                    "org.koin.compose.koinInject",
+                )
+                val ioPrefixes = listOf("com.combo.core.image.", "okio.", "java.io.", "java.nio.file.")
+                for (imp in s.allImports) {
+                    val repository = imp.startsWith("com.combo.") &&
+                        imp.split('.').any { it.endsWith("Repository") || it.endsWith("RepositoryImpl") || it.endsWith("Dao") }
+                    if (repository || imp in serviceImports || ioPrefixes.any { imp.startsWith(it) }) {
+                        problems += "${s.label}: [Compose sources use UI state and events] import $imp"
                     }
                 }
             }
@@ -414,6 +440,26 @@ class ArchitectureRulesTest {
             )))
         }
         assertTrue(violationsIn(listOf(Source("nested", "$ds.components", listOf("com.combo.feature.viewer.Viewer")))).isNotEmpty())
+    }
+
+    @Test
+    fun `composable files cannot inject data services or dispatch IO`() {
+        val screen = Source(
+            "Screen.kt", "com.combo.feature.library", emptyList(), hasComposable = true,
+            allImports = listOf(
+                "com.combo.domain.PhotoRepository",
+                "com.combo.core.image.ImageCodec",
+                "kotlinx.coroutines.CoroutineDispatcher",
+                "kotlinx.coroutines.withContext",
+                "org.koin.compose.koinInject",
+                "org.koin.compose.viewmodel.koinViewModel",
+                "kotlinx.coroutines.launch",
+            ),
+        )
+        val problems = violationsIn(listOf(screen))
+        assertEquals(5, problems.size)
+        screen.allImports.take(5).forEach { imp -> assertTrue(problems.any { it.endsWith("import $imp") }) }
+        assertTrue(sources().any { it.label.endsWith("/ThumbImage.kt") && it.hasComposable })
     }
 
     /** Ребро идёт в самый длинный известный пакет, а не в «псевдопакет» из имени функции. */

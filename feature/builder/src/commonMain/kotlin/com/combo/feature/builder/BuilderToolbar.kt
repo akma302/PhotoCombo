@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -93,7 +94,14 @@ private fun BuilderSettingsLayout(modifier: Modifier, content: @Composable () ->
 internal enum class BuilderPickMode { NONE, ADD, REPLACE }
 
 @Composable
-internal fun BuilderPhotoPicker(mode: BuilderPickMode, state: BuilderUiState, onEvent: (BuilderEvent) -> Unit, onDismiss: () -> Unit) {
+internal fun BuilderPhotoPicker(
+    mode: BuilderPickMode,
+    state: BuilderUiState,
+    thumbnails: Map<String, ImageBitmap>,
+    onVisiblePhotos: (Set<String>) -> Unit,
+    onEvent: (BuilderEvent) -> Unit,
+    onDismiss: () -> Unit,
+) {
     val selected = state.items.firstOrNull { it.id == state.selectedItemId }
     when (mode) {
         BuilderPickMode.NONE -> Unit
@@ -102,6 +110,8 @@ internal fun BuilderPhotoPicker(mode: BuilderPickMode, state: BuilderUiState, on
             candidates = state.libraryPhotos,
             multi = true,
             maxPick = (Const.MAX_ITEMS - state.items.size).coerceAtLeast(1),
+            thumbnails = thumbnails,
+            onVisiblePhotos = onVisiblePhotos,
             onConfirm = { photos -> onEvent(BuilderEvent.AddItems(photos.map { it.id })); onDismiss() },
             onDismiss = onDismiss,
         )
@@ -111,6 +121,8 @@ internal fun BuilderPhotoPicker(mode: BuilderPickMode, state: BuilderUiState, on
                 candidates = state.libraryPhotos.filter { it.id != selected.photoId },
                 multi = false,
                 maxPick = 1,
+                thumbnails = thumbnails,
+                onVisiblePhotos = onVisiblePhotos,
                 onConfirm = { photos -> onEvent(BuilderEvent.ReplacePhoto(selected.id, photos.first().id)); onDismiss() },
                 onDismiss = onDismiss,
             )

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,12 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.combo.data.PhotoEntity
+import com.combo.ui.common.ReportVisiblePhotos
 import com.combo.ui.common.ThumbImage
 import com.combo.ui.common.designsystem.components.PcButton
 import com.combo.ui.common.designsystem.components.PcButtonVariant
@@ -60,10 +63,14 @@ internal fun PickPhotosDialog(
     candidates: List<PhotoEntity>,
     multi: Boolean,
     maxPick: Int,
+    thumbnails: Map<String, ImageBitmap>,
+    onVisiblePhotos: (Set<String>) -> Unit,
     onConfirm: (List<PhotoEntity>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var picked by remember { mutableStateOf(emptyList<String>()) }
+    val gridState = rememberLazyGridState()
+    ReportVisiblePhotos(gridState, onVisiblePhotos)
 
     PcDialog(
         onDismissRequest = onDismiss,
@@ -87,13 +94,14 @@ internal fun PickPhotosDialog(
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
+            state = gridState,
             modifier = Modifier.fillMaxWidth().height(320.dp),
             horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm),
             verticalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm),
         ) {
             items(candidates, key = { it.id }) { photo ->
                 val selected = photo.id in picked
-                PickPhotoCell(photo, selected, multi) {
+                PickPhotoCell(photo, thumbnails[photo.id], selected, multi) {
                     when {
                         !multi -> onConfirm(listOf(photo))
                         selected -> picked = picked - photo.id
@@ -107,7 +115,13 @@ internal fun PickPhotosDialog(
 
 /** Миниатюра целиком доступна с клавиатуры; отметка не создаёт второго действия. */
 @Composable
-private fun PickPhotoCell(photo: PhotoEntity, selected: Boolean, multi: Boolean, onClick: () -> Unit) {
+private fun PickPhotoCell(
+    photo: PhotoEntity,
+    thumbnail: ImageBitmap?,
+    selected: Boolean,
+    multi: Boolean,
+    onClick: () -> Unit,
+) {
     val source = remember { MutableInteractionSource() }
     val gesture = if (multi) {
         Modifier.toggleable(selected, source, indication = null, role = Role.Checkbox) { onClick() }
@@ -121,7 +135,7 @@ private fun PickPhotoCell(photo: PhotoEntity, selected: Boolean, multi: Boolean,
             .semantics { contentDescription = photo.originalName ?: photo.fileName }
             .testTag(addPhotoCellTag(photo.id)),
     ) {
-        ThumbImage(photo.id, Modifier.matchParentSize(), placeholderColor = PcTheme.colors.workspace)
+        ThumbImage(thumbnail, Modifier.matchParentSize())
         if (selected) {
             Box(Modifier.matchParentSize().border(PcTheme.strokes.selection, PcTheme.colors.accent))
             PcSurface(

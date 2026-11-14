@@ -42,6 +42,7 @@ import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
@@ -93,17 +94,17 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         comboRepo = FakeComboRepository(), photoRepo = repo, bitmapSource = object : BitmapSource {
             override suspend fun get(photoId: String, requiredPx: Int): ImageBitmap = ImageFixtures.halvesBitmap()
         },
+        thumbnailSource = EmptyThumbnailSource,
         ids = IdGenerator { "frame-${nextId++}" }, clock = WallClock { 1_000L }, ioDispatcher = ioDispatcher,
     )
 
     private fun ComposeUiTest.show(vm: ComboBuilderViewModel) {
-        val koin = trackKoin(repo)
         setContent {
             MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
                 CompositionLocalProvider(LocalDensity provides sceneDensity) {
                     Surface(Modifier.width(width).height(height).testTag("adaptive_builder_root")) {
                         PcDesktopTheme(motion = PcMotion(reducedMotion = true)) {
-                            TestScreen(koin, backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
+                            TestScreen(backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
                         }
                     }
                 }

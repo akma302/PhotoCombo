@@ -16,6 +16,7 @@ import com.combo.feature.builder.BuilderEvent
 import com.combo.feature.builder.ComboBuilderViewModel
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.comboEntity
 import com.combo.ui.comboItemEntity
@@ -281,6 +282,7 @@ class AspectRelayoutTest {
             comboRepo = comboRepo,
             photoRepo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2"))),
             bitmapSource = StubBitmapSource(),
+            thumbnailSource = EmptyThumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = Dispatchers.IO,

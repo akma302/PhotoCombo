@@ -27,6 +27,7 @@ import com.combo.data.ComboWithItems
 import com.combo.domain.BitmapSource
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
@@ -69,6 +70,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
             comboRepo = comboRepo,
             photoRepo = repo,
             bitmapSource = bitmapSource,
+            thumbnailSource = EmptyThumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = ioDispatcher,
@@ -76,12 +78,10 @@ class ComboBuilderGesturesTest : UiTestBase() {
 
     private fun ComposeUiTest.setBuilderContent(
         vm: ComboBuilderViewModel,
-        repo: FakePhotoRepository,
         visible: () -> Boolean = { true },
     ) {
-        val koin = trackKoin(repo)
         setContent {
-            TestScreen(koin, backDispatcher) {
+            TestScreen(backDispatcher) {
                 if (visible()) ComboBuilderScreen(onBack = {}, vm = vm)
             }
         }
@@ -171,7 +171,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
                 ImageFixtures.solidBitmap(32, 22, if (photoId == "p1") 0xFF604C79.toInt() else 0xFF315B70.toInt())
         }
         val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo", source)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         waitUntil { vm.bitmaps.value.keys.containsAll(listOf("p1", "p2")) }
         assertFalse(vm.state.value.isDirty)
 
@@ -231,7 +231,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
         )
         val combo = ComboWithItems(comboEntity("combo"), listOf(moving))
         val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo")
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         selectPhotoMode(vm, moving.id)
         val st = vm.state.value
         val scale = st.viewport.scale(Size(st.canvasW, st.canvasH), Size(st.screenW, st.screenH))
@@ -276,7 +276,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
             ),
         ))
         val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo")
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         selectPhotoMode(vm, "moving")
         val st = vm.state.value
         val scale = st.viewport.scale(Size(st.canvasW, st.canvasH), Size(st.screenW, st.screenH))
@@ -334,7 +334,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
         val allowSave = CompletableDeferred<Unit>()
         comboRepo.saveGate = { allowSave.await() }
         val vm = builder(emptyList(), repo, comboRepo, comboId = "combo")
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val initial = vm.state.value.items.map { it.id }
         val exposed = local(vm.state.value, 400f, 450f)
         val overlap = local(vm.state.value, 600f, 450f)
@@ -381,7 +381,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun pressAndDragMovesTheRaisedFrameWithOneUndoStep() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val st = vm.state.value
         val initial = st.items.associate { it.id to it.border() }
         val first = st.items.first().id
@@ -420,7 +420,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
         val visible = mutableStateOf(true)
-        setBuilderContent(vm, repo) { visible.value }
+        setBuilderContent(vm) { visible.value }
         val st = vm.state.value
         val initial = st.items.associate { it.id to it.border() }
         val center = centerOf(st, 0)
@@ -442,7 +442,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun doubleClickRaisesTheFrameAndTogglesModeWithOneLayerUndoStep() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val st = vm.state.value
         val initial = st.items.map { it.id }
         val at = centerOf(st, 0)
@@ -460,7 +460,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun clickAfterWheelKeepsSeparateUndoStepsForTheResizeAndLayerOrder() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val st = vm.state.value
         val initial = st.items.map { it.id }
         val width = st.items.first().border().width
@@ -503,7 +503,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun draggingUnselectedFrameMovesThatFrameNotTheSelectedOne() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         assertEquals(2, vm.state.value.items.size)
 
         val firstId = vm.state.value.items[0].id
@@ -550,7 +550,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun resizingBorderKeepsWorkingOnRepeatedDrags() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         vm.onEvent(BuilderEvent.ToggleMode)
         waitForIdle()
@@ -585,7 +585,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun tapWithTinyJitterStillSelectsFrame() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val firstId = vm.state.value.items[0].id
         val secondId = vm.state.value.items[1].id
         assertEquals("New combo выделяет первую рамку", firstId, vm.state.value.selectedItemId)
@@ -608,7 +608,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun dragBeyondSlopCancelsTap() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val firstId = vm.state.value.items[0].id
         assertEquals("New combo выделяет первую рамку", firstId, vm.state.value.selectedItemId)
 
@@ -638,7 +638,7 @@ class ComboBuilderGesturesTest : UiTestBase() {
     fun tapAfterViewportPanHitsFrameAtNewPosition() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         // Тянем по пустому месту (полоса letterbox) — это PAN_VIEWPORT.
         // Центр рамки после сдвига остаётся в доступной области независимо от панелей.

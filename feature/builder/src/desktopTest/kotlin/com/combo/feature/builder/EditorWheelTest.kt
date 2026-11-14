@@ -27,6 +27,7 @@ import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
@@ -59,15 +60,15 @@ class EditorWheelTest : UiTestBase() {
             comboRepo = FakeComboRepository(),
             photoRepo = repo,
             bitmapSource = StubBitmapSource(),
+            thumbnailSource = EmptyThumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = ioDispatcher,
         )
 
-    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel, repo: FakePhotoRepository) {
-        val koin = trackKoin(repo)
+    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel) {
         setContent {
-            TestScreen(koin, backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
+            TestScreen(backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
         }
         waitUntil(timeoutMillis = 5_000) {
             vm.state.value.loaded && vm.state.value.screenW > 0f
@@ -130,7 +131,7 @@ class EditorWheelTest : UiTestBase() {
     fun ctrlChangesFrameZoomStepWithinOneUndoSeries() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val before = vm.state.value.items.single().border()
 
         scrollUp(local(vm.state.value, before.centerX, before.centerY), true, false, true)
@@ -151,7 +152,7 @@ class EditorWheelTest : UiTestBase() {
     fun ctrlInPhotoModeFineZoomsOnlyThePhotoInTheFrame() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         vm.onEvent(BuilderEvent.ToggleMode)
         waitForIdle()
         val frame = vm.state.value.items.single()
@@ -170,7 +171,7 @@ class EditorWheelTest : UiTestBase() {
     fun photoWheelAppliesTheSameScaleStepAtDifferentViewZooms() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1").copy(width = 564, height = 902)))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val photo = vm.state.value.items.single()
         val frame = photo.border()
         val startScale = photo.contentScale
@@ -194,7 +195,7 @@ class EditorWheelTest : UiTestBase() {
     fun ctrlOnEmptySpaceFineZoomsTheViewAroundThePointer() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val before = vm.state.value
         val at = emptySpotLocal(before)
         val canvas = Size(before.canvasW, before.canvasH)
@@ -216,7 +217,7 @@ class EditorWheelTest : UiTestBase() {
     fun spaceForcesViewportZoomOverAFrameUntilReleased() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val before = vm.state.value.items.single().border()
         val canvas = onNodeWithTag(EDITOR_CANVAS_TAG)
         canvas.performKeyInput { keyDown(Key.Spacebar) }
@@ -240,7 +241,7 @@ class EditorWheelTest : UiTestBase() {
     fun spaceTypesInTheNameAndZoomsTheViewAfterClickingTheCanvas() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val name = vm.state.value.name
         val field = onNodeWithTag(TOOL_TAG_NAME).requestFocus()
         field.performTextInputSelection(TextRange(name.length))
@@ -279,7 +280,7 @@ class EditorWheelTest : UiTestBase() {
     fun wheelSeriesOnFrameZoomsItAsASingleUndoStep() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val before = vm.state.value.items.single().border()
         assertFalse("предусловие: undo-пусто", vm.state.value.canUndo)
 
@@ -318,7 +319,7 @@ class EditorWheelTest : UiTestBase() {
     fun wheelOverUnselectedFrameSelectsAndZoomsThatFrame() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val firstId = vm.state.value.items[0].id
         val secondId = vm.state.value.items[1].id
         assertEquals("New combo выделяет первую рамку", firstId, vm.state.value.selectedItemId)
@@ -353,7 +354,7 @@ class EditorWheelTest : UiTestBase() {
     fun wheelOnEmptySpaceZoomsViewportAndLeavesNoUndoStep() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val before = vm.state.value.items.single().border()
         // Одна рамка на весь холст, значит над ней (полоса letterbox) — пустое место.
         val emptySpot = emptySpotLocal(vm.state.value)
@@ -381,7 +382,7 @@ class EditorWheelTest : UiTestBase() {
     fun fitViewButtonResetsTheViewport() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         val emptySpot = emptySpotLocal(vm.state.value)
 
         onNodeWithTag(EDITOR_CANVAS_TAG).performMouseInput {
