@@ -87,13 +87,9 @@ internal fun ItemSnap.toDraft(): ItemDraft = ItemDraft(
 )
 
 /**
- * Содержимое драфта для [com.combo.core.render.buildItemFrame].
- *
- * Аналог `com.combo.data.frameContent` для сущностей Room: своя версия нужна потому,
- * что у билдера данные лежат в мутабельных драфтах, а не в Room-сущностях. Держим рядом
- * с остальным маппером, чтобы список полей драфта читался в одном файле.
+ * Rendering input for a published frame. Uses the same renderer as saved combos.
  */
-internal fun ItemDraft.frameContent(image: ImageBitmap, photo: PhotoEntity) =
+internal fun ItemSnap.frameContent(image: ImageBitmap, photo: PhotoEntity) =
     FrameContent(
         image = image,
         srcW = photo.width,
