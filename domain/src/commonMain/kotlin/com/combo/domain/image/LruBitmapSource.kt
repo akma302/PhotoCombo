@@ -60,9 +60,8 @@ class LruBitmapSource(
         val sample = sampleSizeFor(photo.width, photo.height, requiredPx.coerceAtLeast(1))
         val key = "$photoId:$sample"
 
-        lock.withLock { getLocked(key) }?.let { return it }
-
         val deferred = lock.withLock {
+            getLocked(key)?.let { return it }
             inFlight[key] ?: scope.async(start = CoroutineStart.LAZY) {
                 try {
                     val file = storage.photoPath(photo.fileName)
