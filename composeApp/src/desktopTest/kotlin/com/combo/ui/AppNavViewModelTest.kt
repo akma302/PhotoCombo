@@ -48,6 +48,15 @@ import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import java.util.concurrent.atomic.AtomicBoolean
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.runSkikoComposeUiTest
+import androidx.compose.ui.unit.Density
+import com.combo.data.createAppDb
+import com.combo.domain.ComboRepositoryImpl
+import kotlinx.coroutines.runBlocking
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 
 /**
  * Переходы через настоящий [AppNav]: ViewModel'и записей создаёт Koin из [viewModelModule],
@@ -57,10 +66,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 @OptIn(ExperimentalTestApi::class)
 class AppNavViewModelTest : UiTestBase() {
 
+    @get:Rule
+    val tempDir = TemporaryFolder()
+
     /** Прикладной Koin с фейковым слоем данных: фабрики ViewModel — боевые. */
     private fun appKoin(
         photoRepo: PhotoRepository,
-        comboRepo: FakeComboRepository = FakeComboRepository(),
+        comboRepo: ComboRepository = FakeComboRepository(),
         bitmapSource: BitmapSource = StubBitmapSource(),
         settings: FakeGallerySettingsRepository = FakeGallerySettingsRepository(),
     ): KoinApplication = trackKoin(
@@ -82,7 +94,10 @@ class AppNavViewModelTest : UiTestBase() {
                     }
                     single<ImagePicker> { FakeImagePicker() }
                     single<ThumbnailSource> { EmptyThumbnailSource }
-                    single<IdGenerator> { IdGenerator { "gen-1" } }
+                    single<IdGenerator> {
+                        var nextId = 0
+                        IdGenerator { "gen-${nextId++}" }
+                    }
                     single<WallClock> { WallClock { 1_000L } }
                     single<CoroutineDispatcher> { ioDispatcher }
                 },
@@ -218,4 +233,56 @@ class AppNavViewModelTest : UiTestBase() {
         assertEquals(com.combo.data.GallerySettings(150f, 75f), settings.settings)
     }
 
+    @Test
+    fun savingEditedComboAsNewRetainsOriginalAndCreatesIndependentFrames() {
+        val db = createAppDb(tempDir.newFile("combos.db"))
+        try {
+            val photos = listOf(photoEntity("p1"), photoEntity("p2"))
+            val initial = ComboWithItems(
+                comboEntity("c1", "Trip").copy(createdAt = 100L),
+                listOf(
+                    comboItemEntity("i1", "c1", 0, photoId = "p1"),
+                    comboItemEntity("i2", "c1", 1, photoId = "p2"),
+                ),
+            )
+            val repo = ComboRepositoryImpl(db, db.combos())
+            runBlocking {
+                for (photo in photos) db.photos().insert(photo)
+                repo.saveCombo(initial.combo, initial.items)
+            }
+
+            runSkikoComposeUiTest(Size(630f, 1050f), density = Density(1.5f, 1.25f)) {
+                setAppNavContent(appKoin(FakePhotoRepository(photos), repo))
+                onNodeWithText("Combos").performClick()
+                waitUntil(timeoutMillis = 5_000) {
+                    onAllNodesWithTag("combo_edit_c1").fetchSemanticsNodes().isNotEmpty()
+                }
+                onNodeWithTag("combo_edit_c1").performClick()
+                waitUntil(timeoutMillis = 5_000) {
+                    onAllNodesWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNodes().isNotEmpty()
+                }
+                onNodeWithTag("builder_combo_name").performTextReplacement("Trip variation")
+                onNodeWithText("Save as new").performClick()
+
+                waitUntil(timeoutMillis = 5_000) {
+                    onAllNodesWithTag("combo_preview_gen-0").fetchSemanticsNodes().isNotEmpty()
+                }
+                onNodeWithTag("combo_preview_c1").assertIsDisplayed()
+            }
+
+            runBlocking {
+                val (combo, frames) = checkNotNull(repo.get("gen-0"))
+                assertEquals("Trip variation", combo.name)
+                assertEquals(1_000L, combo.createdAt)
+                assertEquals(combo.createdAt, combo.updatedAt)
+                assertEquals(listOf("p1", "p2"), frames.map { it.photoId })
+                assertEquals(listOf(0, 1), frames.map { it.zIndex })
+                assertEquals(setOf("gen-1", "gen-2"), frames.map { it.id }.toSet())
+                assertTrue(frames.all { it.comboId == combo.id })
+                assertEquals(initial, repo.get("c1"))
+            }
+        } finally {
+            db.close()
+        }
+    }
 }

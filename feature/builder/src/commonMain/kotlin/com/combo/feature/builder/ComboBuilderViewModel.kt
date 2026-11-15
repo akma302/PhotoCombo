@@ -303,6 +303,7 @@ class ComboBuilderViewModel(
             BuilderEvent.Undo -> if (history.canUndo) undoRedo(history::undo)
             BuilderEvent.Redo -> if (history.canRedo) undoRedo(history::redo)
             BuilderEvent.Save -> save()
+            BuilderEvent.SaveAsNew -> save(asNew = true)
         }
     }
 
@@ -549,9 +550,9 @@ class ComboBuilderViewModel(
 
     // ---------- save ----------
 
-    private fun save() {
+    private fun save(asNew: Boolean = false) {
         val s = _state.value
-        if (s.saving || !s.loaded) return
+        if (s.saving || !s.loaded || (asNew && s.comboId == null)) return
         // Молчаливый return был хуже сообщения: пользователь ждал «сохранено», а редактор
         // оставался открытым — и непонятно было, что именно не так.
         if (s.items.isEmpty()) {
@@ -561,9 +562,9 @@ class ComboBuilderViewModel(
         _state.update { it.copy(saving = true) }
         val snapshot = s.canvasSnapshot()
         val draft = snapshot.cropTo(snapshot.cropBounds(s.photos))
-        val id = s.comboId ?: ids.newId()
+        val id = if (asNew) ids.newId() else s.comboId ?: ids.newId()
         val now = clock.nowMillis()
-        val created = if (createdAt > 0) createdAt else now
+        val created = if (asNew || createdAt <= 0) now else createdAt
         val combo = ComboEntity(
             id = id,
             name = s.name.ifBlank { "Combo" },
@@ -575,7 +576,10 @@ class ComboBuilderViewModel(
         )
         // Поля рамок и фото собирает `toEntities()`: enum'ы — через `.name` (enum'ы в базе
         // хранятся строками), zIndex — по индексу в списке.
-        val items = draft.items.toEntities(id)
+        val items = draft.items.toEntities(id).let { items ->
+            // Frame IDs are primary keys shared across all combos in storage.
+            if (asNew) items.map { it.copy(id = ids.newId()) } else items
+        }
         viewModelScope.launch(ioDispatcher) {
             try {
                 comboRepo.saveCombo(combo, items)
