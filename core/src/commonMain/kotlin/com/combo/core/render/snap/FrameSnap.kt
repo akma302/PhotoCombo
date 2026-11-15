@@ -98,16 +98,28 @@ class FrameSnap private constructor(
             val resize = FrameEdgeResize(frame, edge, minSize, oneSided)
             val axis = if (resize.horizontal) SnapAxis.X else SnapAxis.Y
             val limit = if (resize.horizontal) canvasW else canvasH
-            val guides = buildList {
-                val boundary = if (resize.towardEnd) limit else 0f
-                add(Alignment(boundary, boundary, null))
+            val boundary = if (resize.towardEnd) limit else 0f
+            val frameEdges = buildList {
                 for (target in targets) {
                     val start = axis.center(target) - axis.halfSize(target)
                     val end = axis.center(target) + axis.halfSize(target)
                     add(Alignment(start, start, target))
                     add(Alignment(end, end, target))
                 }
-            }.filter { it.coordinate in 0f..limit && resize.canReach(it.coordinate) }
+            }
+            val guides = buildList {
+                add(Alignment(boundary, boundary, null))
+                addAll(frameEdges)
+                if (!oneSided) {
+                    // The lock tracks the dragged edge, while the guide marks the edge that aligned.
+                    val twiceCenter = 2f * axis.center(frame)
+                    val oppositeBoundary = limit - boundary
+                    add(Alignment(twiceCenter - oppositeBoundary, oppositeBoundary, null))
+                    for (alignment in frameEdges) {
+                        add(alignment.copy(position = twiceCenter - alignment.coordinate))
+                    }
+                }
+            }.filter { it.coordinate in 0f..limit && resize.canReach(it.position) }
             return FrameSnap(
                 if (axis == SnapAxis.X) guides else emptyList(),
                 if (axis == SnapAxis.Y) guides else emptyList(),

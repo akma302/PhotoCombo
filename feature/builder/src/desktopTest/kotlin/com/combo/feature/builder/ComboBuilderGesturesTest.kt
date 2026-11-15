@@ -265,6 +265,60 @@ class ComboBuilderGesturesTest : UiTestBase() {
     }
 
     @Test
+    fun photoResizeSnapsOppositeEdgeKeepsTheCenterAndCommitsOnRelease() = runComposeUiTest {
+        val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
+        val combo = ComboWithItems(comboEntity("combo"), listOf(
+            comboItemEntity("moving", "combo", zIndex = 1, photoId = "p1").copy(
+                centerX = 400f, centerY = 450f, width = 200f, height = 200f,
+            ),
+            comboItemEntity("target", "combo", zIndex = 0, photoId = "p2").copy(
+                centerX = 180f, centerY = 250f, width = 80f, height = 120f,
+            ),
+        ))
+        val source = object : BitmapSource {
+            override suspend fun get(photoId: String, requiredPx: Int) =
+                ImageFixtures.solidBitmap(32, 22, if (photoId == "p1") 0xFF604C79.toInt() else 0xFF315B70.toInt())
+        }
+        val vm = builder(emptyList(), repo, FakeComboRepository(listOf(combo)), "combo", source)
+        setBuilderContent(vm)
+        selectPhotoMode(vm, "moving")
+        waitUntil { vm.bitmaps.value.keys.containsAll(listOf("p1", "p2")) }
+
+        val st = vm.state.value
+        val scale = st.viewport.scale(Size(st.canvasW, st.canvasH), Size(st.screenW, st.screenH))
+        val start = local(st, 500f, 450f)
+        val aligned = local(st, 580f, 450f)
+        fun moving() = vm.state.value.items.single { it.id == "moving" }.border()
+        fun move(pixelsFromGuide: Float, time: Long) {
+            canvasPointer(PointerEventType.Move, aligned + Offset(pixelsFromGuide, 0f), time)
+            waitForIdle()
+            assertEquals(400f, moving().centerX, 0.001f)
+        }
+
+        canvasPointer(PointerEventType.Press, start, time = 1_000L)
+        move(-3f, 1_016L)
+        assertEquals(220f, moving().rect().left, 0.001f)
+        assertEquals(580f, moving().rect().right, 0.001f)
+        assertEquals(220f, vm.state.value.snapGuides.single().coordinate, 0.001f)
+        val previews = File("build/ui-previews").apply { mkdirs() }
+        val image = onNodeWithTag(EDITOR_CANVAS_TAG).captureToImage()
+        File(previews, "builder-resize-opposite-guide.png").writeBytes(ImageFixtures.pngBytes(image))
+
+        move(10f, 1_032L)
+        assertEquals(580f + 10f / scale, moving().rect().right, 0.001f)
+        assertTrue(vm.state.value.snapGuides.isEmpty())
+        move(3f, 1_048L)
+        canvasPointer(PointerEventType.Release, aligned + Offset(3f, 0f), time = 1_064L)
+        assertEquals(220f, moving().rect().left, 0.001f)
+        assertEquals(580f, moving().rect().right, 0.001f)
+        assertTrue(vm.state.value.snapGuides.isEmpty())
+        assertTrue(vm.state.value.canUndo)
+        runOnUiThread { vm.onEvent(BuilderEvent.Undo) }
+        assertEquals(200f, moving().width, 0.001f)
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    @Test
     fun shiftResizeKeepsOppositeEdgeFixedThroughSnapReleaseAndUndo() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val combo = ComboWithItems(comboEntity("combo"), listOf(

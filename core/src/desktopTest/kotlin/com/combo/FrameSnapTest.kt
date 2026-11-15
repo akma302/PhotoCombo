@@ -163,6 +163,48 @@ class FrameSnapTest {
     }
 
     @Test
+    fun `symmetric resize can snap the opposite edge to each canvas boundary`() {
+        for (edge in Edge.entries) {
+            val horizontal = edge == Edge.LEFT || edge == Edge.RIGHT
+            val towardEnd = edge == Edge.RIGHT || edge == Edge.BOTTOM
+            val center = if (towardEnd) 220f else 380f
+            val boundary = if (towardEnd) 0f else 600f
+            val delta = if (towardEnd) 117f else -117f
+            val frame = Border(center, center, 200f, 200f)
+            val step = FrameSnap.resize(600f, 600f, frame, emptyList(), edge, 50f, oneSided = false)
+                .move(FrameSnapState(frame), if (horizontal) delta else 0f, if (horizontal) 0f else delta, distances)
+
+            assertEquals(if (horizontal) SnapAxis.X else SnapAxis.Y, step.guides.single().axis)
+            assertEquals(boundary, step.guides.single().coordinate, 0f)
+            assertEquals(if (horizontal) frame.copy(width = 440f) else frame.copy(height = 440f), step.placed)
+        }
+    }
+
+    @Test
+    fun `symmetric resize keeps the captured edge when the other edge gets closer to a guide`() {
+        val frame = Border(400f, 300f, 200f, 160f)
+        val leftTarget = Border(180f, 220f, 40f, 40f)
+        val rightTarget = Border(624f, 220f, 40f, 40f)
+        val snap = FrameSnap.resize(800f, 600f, frame, listOf(leftTarget, rightTarget), Edge.RIGHT, 50f, oneSided = false)
+
+        val opposite = snap.move(FrameSnapState(frame), 99f, 0f, distances)
+        assertEquals(200f, opposite.guides.single().coordinate, 0f)
+        assertEquals(frame.copy(width = 400f), opposite.placed)
+
+        val held = snap.move(opposite.state, 5f, 0f, distances)
+        assertEquals(opposite.guides, held.guides)
+        assertEquals(opposite.placed, held.placed)
+
+        val released = snap.move(held.state, 6f, 0f, distances)
+        assertEquals(frame.copy(width = 420f), released.placed)
+        assertTrue(released.guides.isEmpty())
+
+        val dragged = snap.move(released.state, -7f, 0f, distances)
+        assertEquals(604f, dragged.guides.single().coordinate, 0f)
+        assertEquals(frame.copy(width = 408f), dragged.placed)
+    }
+
+    @Test
     fun `resize cannot snap past minimum size and bypass keeps the fixed edge`() {
         val frame = Border(400f, 300f, 200f, 160f)
         val nearby = Border(550f, 200f, 20f, 40f)
