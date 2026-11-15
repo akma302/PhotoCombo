@@ -17,6 +17,8 @@ sealed interface ScreenKey : NavKey {
 
     data class Viewer(val photoId: String) : ScreenKey
 
+    data class ComboViewer(val comboId: String) : ScreenKey
+
     /** `comboId` — открытие существующего комбо; `photos` — порядок фото нового комбо. */
     data class Builder(val comboId: String? = null, val photos: List<String> = emptyList()) : ScreenKey
 }

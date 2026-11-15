@@ -1,6 +1,19 @@
 package com.combo.ui
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.pinch
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.click
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.MouseButton
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performSemanticsAction
@@ -16,6 +29,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import com.combo.ImageFixtures
 import com.combo.core.image.ImagePicker
 import com.combo.core.image.PngDestination
 import com.combo.core.image.PngOutput
@@ -47,6 +61,7 @@ import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.test.performTextReplacement
@@ -187,7 +202,6 @@ class AppNavViewModelTest : UiTestBase() {
         }
     }
 
-    /** Из списка комбо ведёт один путь — в редактор; кнопки Play больше нет. */
     @Test
     fun editFromComboListOpensBuilder() = runComposeUiTest {
         val comboRepo = FakeComboRepository(
@@ -210,6 +224,66 @@ class AppNavViewModelTest : UiTestBase() {
             onAllNodesWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNodes().isNotEmpty()
         }
     }
+    @Test
+    fun previewMouseButtonsOpenViewerAndEditor() = runComposeUiTest {
+        val photos = listOf(photoEntity("p1"), photoEntity("p2"))
+        val combos = listOf(
+            ComboWithItems(comboEntity("c1", "Trip"), listOf(comboItemEntity("i1", "c1", 0, photoId = "p1"))),
+            ComboWithItems(comboEntity("c2", "Weekend"), listOf(comboItemEntity("i2", "c2", 0, photoId = "p2"))),
+        )
+        val source = object : BitmapSource {
+            override suspend fun get(photoId: String, requiredPx: Int) = ImageFixtures.patternBitmap()
+        }
+        setAppNavContent(appKoin(FakePhotoRepository(photos), FakeComboRepository(combos), bitmapSource = source))
+        onNodeWithText("Combos").performClick()
+        onNodeWithTag("combo_preview_c2").performMouseInput { click() }
+        onNodeWithText("Weekend").assertIsDisplayed()
+        val viewer = onNodeWithTag("combo_viewer")
+        val fitted = viewer.captureToImage()
+        capturePreview("combo-viewer", fitted)
+
+        viewer.performTouchInput { swipeRight() }
+        onNodeWithText("Trip").assertIsDisplayed()
+        viewer.performKeyInput { pressKey(Key.DirectionRight) }
+        onNodeWithText("Weekend").assertIsDisplayed()
+
+        viewer.performTouchInput {
+            pinch(
+                start0 = center - Offset(40f, 0f),
+                end0 = center - Offset(125f, 0f),
+                start1 = center + Offset(40f, 0f),
+                end1 = center + Offset(125f, 0f),
+            )
+        }
+        val zoomed = viewer.captureToImage()
+        val sampleX = fitted.width / 2
+        val sampleY = fitted.height / 10
+        assertTrue(fitted.toPixelMap()[sampleX, sampleY] != zoomed.toPixelMap()[sampleX, sampleY])
+        capturePreview("combo-viewer-zoomed", zoomed)
+
+        pressEsc()
+        val preview = onNodeWithTag("combo_preview_c2").assertIsDisplayed()
+        preview.performMouseInput {
+            moveTo(center)
+            press(MouseButton.Secondary)
+            moveTo(topCenter - Offset(0f, 30f))
+            release(MouseButton.Secondary)
+        }
+        preview.assertIsDisplayed()
+        preview.performMouseInput { click(button = MouseButton.Secondary) }
+        onNodeWithTag(EDITOR_CANVAS_TAG).assertIsDisplayed()
+        onNodeWithTag("builder_combo_name").assertTextEquals("Weekend")
+        pressEsc()
+        preview.assertIsDisplayed()
+    }
+
+    private fun capturePreview(name: String, image: ImageBitmap) {
+        File("build/ui-previews", "$name.png").apply {
+            parentFile.mkdirs()
+            writeBytes(ImageFixtures.pngBytes(image))
+        }
+    }
+
     @Test
     fun galleryScaleSurvivesTabsViewerAndBuilderIndependently() = runComposeUiTest {
         val settings = FakeGallerySettingsRepository()

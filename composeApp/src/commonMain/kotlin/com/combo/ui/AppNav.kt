@@ -27,6 +27,7 @@ import com.combo.feature.builder.ComboBuilderScreen
 import com.combo.feature.builder.ComboBuilderViewModel
 import com.combo.feature.combo_list.ComboListScreen
 import com.combo.feature.library.LibraryScreen
+import com.combo.feature.viewer.ComboViewerScreen
 import com.combo.feature.viewer.PhotoViewerScreen
 import com.combo.ui.common.BackDispatcher
 import com.combo.ui.common.BackKeyHost
@@ -97,6 +98,7 @@ fun AppNav(backDispatcher: BackDispatcher) {
                                         ComboListScreen(
                                             onOpenBuilder = { backStack.add(ScreenKey.Builder(comboId = it)) },
                                             onCreateCombo = { backStack.add(ScreenKey.Builder()) },
+                                            onOpenViewer = { backStack.add(ScreenKey.ComboViewer(it)) },
                                         )
                                     }
                                 }
@@ -104,6 +106,14 @@ fun AppNav(backDispatcher: BackDispatcher) {
                                     EntryScope {
                                         PhotoViewerScreen(
                                             photoId = key.photoId,
+                                            onBack = { backStack.removeLastOrNull() },
+                                        )
+                                    }
+                                }
+                                entry<ScreenKey.ComboViewer> { key ->
+                                    EntryScope {
+                                        ComboViewerScreen(
+                                            comboId = key.comboId,
                                             onBack = { backStack.removeLastOrNull() },
                                         )
                                     }

@@ -1,9 +1,9 @@
 package com.combo.feature.combo_list
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import com.combo.ui.common.SavedComboPreview
 import com.combo.ui.common.GalleryGrid
 import com.combo.ui.common.GallerySizeControl
 import com.combo.ui.common.GalleryScaleUiState
@@ -12,6 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isOutOfBounds
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -19,11 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.combo.core.render.CanvasTransform
-import com.combo.core.render.comboBackgroundOf
-import com.combo.core.render.drawCombo
 import com.combo.data.ComboWithItems
-import com.combo.data.backgroundFrames
 import com.combo.ui.common.designsystem.components.PcButton
 import com.combo.ui.common.designsystem.components.PcButtonVariant
 import com.combo.ui.common.designsystem.components.PcIconButton
@@ -34,13 +35,13 @@ import com.combo.ui.common.designsystem.primitives.PcText
 import com.combo.ui.common.designsystem.theme.PcTheme
 import org.koin.compose.viewmodel.koinViewModel
 
-/** testTag кнопки «New combo» — единственный вход в builder из секции Combos. */
 internal const val NEW_COMBO_TAG = "combo_list_new_combo"
 
 @Composable
 fun ComboListScreen(
     onOpenBuilder: (String) -> Unit,
     onCreateCombo: () -> Unit,
+    onOpenViewer: (String) -> Unit,
     vm: ComboListViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -54,12 +55,21 @@ fun ComboListScreen(
         onDispose { vm.setVisibleCombos(emptySet()) }
     }
     ComboListContent(
-        state.combos, onOpenBuilder, onCreateCombo, vm::delete, vm::export,
-        galleryScale, vm.galleryScale::change, vm.galleryScale::commit, vm.galleryScale::reset,
-        state.exportingComboId, state.exportMessage,
-        gridState,
+        combos = state.combos,
+        onOpenBuilder = onOpenBuilder,
+        onCreateCombo = onCreateCombo,
+        onDelete = vm::delete,
+        onExport = vm::export,
+        onOpenViewer = onOpenViewer,
+        galleryScale = galleryScale,
+        onScaleChange = vm.galleryScale::change,
+        onScaleFinished = vm.galleryScale::commit,
+        onScaleReset = vm.galleryScale::reset,
+        exportingComboId = state.exportingComboId,
+        exportMessage = state.exportMessage,
+        gridState = gridState,
     ) { combo, modifier ->
-        StaticPreview(state, combo, modifier)
+        SavedComboPreview(combo, state.photos, state.images, modifier)
     }
 }
 
@@ -71,6 +81,7 @@ internal fun ComboListContent(
     onCreateCombo: () -> Unit,
     onDelete: (String) -> Unit,
     onExport: (String) -> Unit,
+    onOpenViewer: (String) -> Unit,
     galleryScale: GalleryScaleUiState = GalleryScaleUiState(loaded = true),
     onScaleChange: (Float) -> Unit = {},
     onScaleFinished: () -> Unit = {},
@@ -80,6 +91,7 @@ internal fun ComboListContent(
     gridState: LazyGridState = rememberLazyGridState(),
     preview: @Composable (ComboWithItems, Modifier) -> Unit,
 ) {
+    val openEditor by rememberUpdatedState(onOpenBuilder)
     PcSurface(Modifier.fillMaxSize().testTag("combo_list"), color = PcTheme.colors.app) {
         Column(Modifier.fillMaxSize()) {
             PcSurface(Modifier.fillMaxWidth()) {
@@ -130,8 +142,30 @@ internal fun ComboListContent(
                                 PcSurface(
                                     Modifier.fillMaxWidth().height(geometry.previewHeight)
                                         .clip(PcTheme.shapes.small)
-                                        .clickable(role = Role.Button) { onOpenBuilder(combo.combo.id) }
-                                        .semantics { contentDescription = "Edit ${combo.combo.name}" }
+                                        .clickable(role = Role.Button, onClickLabel = "View combo") { onOpenViewer(combo.combo.id) }
+                                        .pointerInput(combo.combo.id) {
+                                            awaitPointerEventScope {
+                                                var pressedInside = false
+                                                while (true) {
+                                                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                                                    if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
+                                                        pressedInside = true
+                                                        // Keep secondary clicks out of the preview's primary click handler.
+                                                        event.changes.forEach { it.consume() }
+                                                    } else if (pressedInside) {
+                                                        val outside = event.changes.any { it.isOutOfBounds(size, extendedTouchPadding) }
+                                                        if (outside || event.changes.any { it.isConsumed }) {
+                                                            pressedInside = false
+                                                        } else if (event.type == PointerEventType.Release && !event.buttons.isSecondaryPressed) {
+                                                            pressedInside = false
+                                                            event.changes.forEach { it.consume() }
+                                                            openEditor(combo.combo.id)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        .semantics { contentDescription = combo.combo.name }
                                         .testTag("combo_preview_${combo.combo.id}"),
                                     color = PcTheme.colors.workspace,
                                 ) {
@@ -175,27 +209,5 @@ private fun ComboDetails(
                     Modifier.testTag("combo_delete_${combo.combo.id}"), enabled = exportingComboId != combo.combo.id)
             }
         }
-    }
-}
-
-@Composable
-private fun StaticPreview(state: ComboListViewModel.State, combo: ComboWithItems, modifier: Modifier) {
-    val frames = remember(combo.items, state.images, state.photos) { state.framesFor(combo) }
-    val canvasW = combo.combo.canvasWidth.toFloat()
-    val canvasH = combo.combo.canvasHeight.toFloat()
-    val bg = remember(combo, state.photos) {
-        comboBackgroundOf(
-            combo.combo.canvasWidth,
-            combo.combo.canvasHeight,
-            combo.combo.background,
-            combo.backgroundFrames(state.photos),
-        )
-    }
-    Canvas(modifier) {
-        val t = CanvasTransform.fitInto(canvasW, canvasH, size.width, size.height)
-        // Тот же единый вызов, что в редакторе и плеере: вписывающий сдвиг считается
-        // здесь, а фон и рамки рисует drawCombo. `bg` и `frames` пришли готовыми из
-        // remember выше — их ключи не трогаем.
-        drawCombo(t, canvasW, canvasH, bg, frames)
     }
 }

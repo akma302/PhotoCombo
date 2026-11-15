@@ -70,9 +70,10 @@ class ComboListDesignSystemTest(
         )
         var created = 0
         val opened = mutableListOf<String>()
+        val viewed = mutableListOf<String>()
         setContent {
             PcDesktopTheme(motion = PcMotion(reducedMotion = true)) {
-                ComboListScreen({ opened += it }, { created++ }, vm)
+                ComboListScreen({ opened += it }, { created++ }, { viewed += it }, vm)
             }
         }
         waitUntil { vm.state.value.images.keys.containsAll(listOf("p1", "p2")) }
@@ -102,8 +103,8 @@ class ComboListDesignSystemTest(
         onNodeWithTag("gallery_size_reset").performClick()
         assertEquals(100f, vm.galleryScale.state.value.percent)
         onNodeWithTag("combo_preview_c2").performScrollTo().performClick()
-        assertEquals(listOf("c2"), opened)
-        opened.clear()
+        assertEquals(listOf("c2"), viewed)
+        assertTrue(opened.isEmpty())
 
         val create = onNodeWithTag(NEW_COMBO_TAG)
         create.performMouseInput { moveTo(center); press(); moveTo(topLeft - androidx.compose.ui.geometry.Offset(20f, 20f)); release() }
@@ -176,7 +177,7 @@ class ComboGridResizeTest {
         val width = mutableStateOf(420.dp)
         setContent { PcDesktopTheme {
             Box(Modifier.width(width.value).fillMaxSize()) {
-                ComboListContent(gridCombos(), {}, {}, {}, {}) { _, modifier -> Box(modifier.background(Color(0xFF547C80))) }
+                ComboListContent(gridCombos(), {}, {}, {}, {}, onOpenViewer = {}) { _, modifier -> Box(modifier.background(Color(0xFF547C80))) }
             }
         } }
         fun bounds(id: Int) = onNodeWithTag("combo_preview_c$id").fetchSemanticsNode().boundsInRoot
