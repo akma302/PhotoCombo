@@ -45,12 +45,31 @@ Tests use personal photos only when the owner explicitly selects them:
 
 ## Git
 
-- Check the working tree and task base. Branch names: `feature_<id>_<name>` or `bug_<id>_<name>`;
-  find an unused ID among existing branches.
-- Independent tasks use separate PRs into main. A shared branch for dependent parts requires owner agreement.
-  Delegation requires authorization; when agreed, use separate worktrees.
-- Commit verified work, push the branch, and open a PR when GitHub is available.
-  The PR description covers resulting behavior, verification, and limitations.
+### Before editing
+
+1. Check the current branch, working-tree status, and intended base. Use `main`
+   as the base for independent tasks unless the owner specifies a different base.
+2. Create or select the task branch. For a new branch, use
+   `feature_<id>_<name>` or `bug_<id>_<name>` with an unused ID. If the current
+   worktree contains unrelated changes, use a separate worktree and leave those
+   changes in place.
+3. Confirm that the task branch is checked out in the worktree you will edit.
+   Complete this step before changing repository files, including documentation,
+   even if the work will stay local. If Git permissions block this step, request
+   the access needed for branch setup and continue with read-only investigation
+   until it is available.
+
+Use a separate branch for each change that can be reviewed and merged on its
+own. A single request or overlapping files can contain multiple independent
+changes. A shared branch for dependent parts requires owner agreement.
+Delegation requires authorization; when agreed, use separate worktrees.
+
+### After verification
+
+- Commit the verified changes on their task branch.
+- When GitHub is available, push the branch and open a PR. Open separate PRs
+  into `main` for independent tasks. Describe the resulting behavior, verification,
+  and limitations in each PR.
 - After merge confirmation, switch to a clean main and run `git pull --ff-only`.
   Do not automatically delete local branches.
 

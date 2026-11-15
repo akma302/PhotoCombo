@@ -1,8 +1,20 @@
 # PhotoCombo: agent map
 
-Windows desktop application built with KMP / Compose Multiplatform. Load only
-material relevant to the task; there is no required document reading order.
+Windows desktop application built with KMP / Compose Multiplatform. Use the map
+below to find the material relevant to the task.
 Find actual behavior and APIs in code and tests. The owner's task defines product changes.
+
+## Before editing
+
+Read [the Git workflow](docs/DEVELOPMENT.md#git). Before changing any repository
+file, check the working tree and create or select a task branch from the intended
+base. Confirm that the worktree is on that branch. This applies to local-only work
+and documentation. Use a separate branch for each independently reviewable task,
+even when the owner requests several tasks in one message.
+
+If branch setup fails or requires approval, continue with read-only investigation
+and report what blocks the edits. Do not make the edits on `main` while branch
+setup is pending.
 
 ## Where to look
 
