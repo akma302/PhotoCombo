@@ -7,7 +7,6 @@ import com.combo.data.ComboItemEntity
 import com.combo.data.ComboWithItems
 import com.combo.data.PhotoEntity
 import kotlinx.coroutines.flow.Flow
-import okio.Path
 
 data class ImportResult(val added: Int, val duplicates: Int, val failed: Int)
 
@@ -23,9 +22,6 @@ interface PhotoRepository {
 
     /** Удаление фото, используемого в комбо — BLOCKED_IF_USED_IN_COMBO. */
     suspend fun delete(id: String): DeleteResult
-
-    /** Миниатюра для списков (путь строит `PhotoStorage`, он же владеет каталогами). */
-    fun thumbPath(photoId: String): Path?
 }
 
 interface ComboRepository {

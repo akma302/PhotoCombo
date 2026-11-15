@@ -46,9 +46,7 @@ fun PhotoGrid(
     cellHeight: Dp? = null,
     isSelected: (PhotoEntity) -> Boolean = { false },
     onCellLongClick: ((PhotoEntity) -> Unit)? = null,
-    thumbnail: @Composable (PhotoEntity, Modifier) -> Unit = { photo, imageModifier ->
-        ThumbImage(photo.id, imageModifier)
-    },
+    thumbnail: @Composable (PhotoEntity, Modifier) -> Unit,
 ) {
     // Обработчик может смениться при рекомпозиции родителя, а pointerInput нет: без
     // обёртки замыкание внутри осталось бы старым.

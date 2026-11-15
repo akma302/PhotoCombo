@@ -12,6 +12,7 @@ import com.combo.data.PhotoEntity
 import com.combo.feature.builder.draft.FitPreset
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.comboEntity
 import com.combo.ui.comboItemEntity
@@ -88,6 +89,7 @@ class ComboBuilderViewModelTest {
             comboRepo = comboRepo,
             photoRepo = FakePhotoRepository(photos),
             bitmapSource = StubBitmapSource(),
+            thumbnailSource = EmptyThumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = Dispatchers.IO,

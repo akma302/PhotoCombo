@@ -12,12 +12,14 @@ import com.combo.di.desktopModule
 import com.combo.domain.BitmapSource
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okio.FileSystem
 import okio.Path.Companion.toOkioPath
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.koin.dsl.koinApplication
@@ -46,6 +48,7 @@ class AppModulesTest {
             assertNotNull(app.koin.get<PhotoRepository>())
             assertNotNull(app.koin.get<ComboRepository>())
             assertNotNull(app.koin.get<BitmapSource>())
+            assertNotNull(app.koin.get<ThumbnailSource>())
             assertNotNull(app.koin.get<AppDb>())
         } finally {
             app.close()
@@ -73,6 +76,11 @@ class AppModulesTest {
             val bitmap = app.koin.get<BitmapSource>().get(photo.id, 64)
             assertEquals(4, bitmap.width)
             assertEquals(2, bitmap.height)
+            val thumbnails = app.koin.get<ThumbnailSource>()
+            val thumbnail = checkNotNull(thumbnails.load(photo.id))
+            assertEquals(4, thumbnail.width)
+            assertEquals(2, thumbnail.height)
+            assertNull(thumbnails.load("missing"))
 
             assertTrue(app.koin.get<ComboRepository>().all().first().isEmpty())
         } finally {

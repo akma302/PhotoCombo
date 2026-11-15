@@ -15,6 +15,7 @@ import com.combo.core.platform.WallClock
 import com.combo.data.ComboWithItems
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
@@ -49,16 +50,16 @@ class BuilderExitDialogTest : UiTestBase() {
         comboRepo = comboRepo,
         photoRepo = repo,
         bitmapSource = StubBitmapSource(),
+        thumbnailSource = EmptyThumbnailSource,
         ids = IdGenerator { "gen-${nextId++}" },
         clock = WallClock { 1_000L },
         ioDispatcher = ioDispatcher,
     )
 
-    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel, repo: FakePhotoRepository) {
+    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel) {
         backCalls = 0
-        val koin = trackKoin(repo)
         setContent {
-            TestScreen(koin, backDispatcher) { ComboBuilderScreen(onBack = { backCalls++ }, vm = vm) }
+            TestScreen(backDispatcher) { ComboBuilderScreen(onBack = { backCalls++ }, vm = vm) }
         }
         waitUntil(timeoutMillis = 5_000) {
             vm.state.value.loaded && vm.state.value.screenW > 0f
@@ -77,7 +78,7 @@ class BuilderExitDialogTest : UiTestBase() {
         )
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, comboRepo, mapOf("comboId" to "c1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         assertFalse("предусловие: комбо не изменено", vm.state.value.isDirty)
 
         pressEsc()
@@ -91,7 +92,7 @@ class BuilderExitDialogTest : UiTestBase() {
     fun dirtyEditorAsksAndDiscardExits() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, state = mapOf("photos" to "p1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         assertTrue("предусловие: New combo сразу считается изменённым", vm.state.value.isDirty)
 
         pressEsc()
@@ -109,7 +110,7 @@ class BuilderExitDialogTest : UiTestBase() {
     fun keepEditingClosesDialogAndStaysInEditor() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, state = mapOf("photos" to "p1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         pressEsc()
         waitForIdle()
@@ -126,7 +127,7 @@ class BuilderExitDialogTest : UiTestBase() {
         val comboRepo = FakeComboRepository()
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, comboRepo, mapOf("photos" to "p1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         pressEsc()
         waitForIdle()
@@ -142,7 +143,7 @@ class BuilderExitDialogTest : UiTestBase() {
     fun saveWithoutPhotosShowsMessageAndKeepsEditorOpen() = runComposeUiTest {
         val repo = FakePhotoRepository()
         val vm = builder(repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         // New combo без фото: рамок нет, сохранять нечего.
         assertTrue(vm.state.value.items.isEmpty())
         assertTrue("предусловие: комбо помечено изменённым", vm.state.value.isDirty)
@@ -162,7 +163,7 @@ class BuilderExitDialogTest : UiTestBase() {
     fun topBarBackArrowUsesTheSameConfirmation() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, state = mapOf("photos" to "p1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         onNodeWithContentDescription("Back").performClick()
         waitForIdle()
@@ -175,7 +176,7 @@ class BuilderExitDialogTest : UiTestBase() {
     fun toolbarSaveWithoutPhotosAlsoReportsIt() = runComposeUiTest {
         val repo = FakePhotoRepository()
         val vm = builder(repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         onNodeWithTag(TOOL_TAG_SAVE).performClick()
         waitUntil(timeoutMillis = 5_000) {
@@ -196,7 +197,7 @@ class BuilderExitDialogTest : UiTestBase() {
         val comboRepo = FakeComboRepository().apply { saveGate = { gate.await() } }
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, comboRepo, mapOf("photos" to "p1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         onNodeWithTag(TOOL_TAG_SAVE).performClick()
         waitUntil(timeoutMillis = 5_000) { vm.state.value.saving }
@@ -216,7 +217,7 @@ class BuilderExitDialogTest : UiTestBase() {
     fun dialogButtonsAreEnabledInNormalState() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(repo, state = mapOf("photos" to "p1"))
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         pressEsc()
         waitForIdle()
 

@@ -11,6 +11,8 @@ import com.combo.data.PhotoEntity
 import com.combo.domain.DeleteResult
 import com.combo.domain.ImportResult
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
+import com.combo.ui.common.ThumbnailState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,8 +27,10 @@ class LibraryViewModel(
     private val photoRepo: PhotoRepository,
     private val picker: ImagePicker,
     settingsRepository: GallerySettingsRepository,
+    thumbnailSource: ThumbnailSource,
 ) : ViewModel() {
     internal val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Photos)
+    internal val thumbnails = ThumbnailState(viewModelScope, thumbnailSource)
 
     internal val photos: StateFlow<List<PhotoEntity>> = photoRepo.all()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

@@ -13,7 +13,7 @@ val moduleDependencies = mapOf(
     ":data" to setOf(":core"),
     ":domain" to setOf(":core", ":data"),
     ":design-system" to emptySet(),
-    ":ui-common" to setOf(":core", ":data", ":domain", ":design-system"),
+    ":ui-common" to setOf(":data", ":domain", ":design-system"),
     ":feature:builder" to setOf(":core", ":data", ":domain", ":design-system", ":ui-common"),
     ":feature:library" to setOf(":core", ":data", ":domain", ":design-system", ":ui-common"),
     ":feature:combo-list" to setOf(":core", ":data", ":domain", ":design-system", ":ui-common"),

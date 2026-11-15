@@ -1,6 +1,5 @@
 package com.combo.ui
 
-import com.combo.domain.PhotoRepository
 import com.combo.ui.common.BackDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,14 +32,7 @@ abstract class UiTestBase {
 
     private val koinApps = mutableListOf<KoinApplication>()
 
-    /** Koin экрана: `ThumbImage` берёт из него репозиторий, декодер и IO-диспетчер. */
-    protected fun trackKoin(photoRepo: PhotoRepository): KoinApplication =
-        uiTestKoin(photoRepo).also { koinApps += it }
-
-    /**
-     * Koin произвольной конфигурации (например, с `viewModelModule`): закрывается после
-     * теста так же, как экранный.
-     */
+    /** The integration test supplies its own Koin modules. */
     protected fun trackKoin(app: KoinApplication): KoinApplication = app.also { koinApps += it }
 
     @Before
