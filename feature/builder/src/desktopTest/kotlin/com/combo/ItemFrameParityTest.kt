@@ -13,10 +13,12 @@ import com.combo.data.ComboEntity
 import com.combo.data.ComboItemEntity
 import com.combo.data.ComboWithItems
 import com.combo.data.PhotoEntity
+import com.combo.data.toItemFrame
 import com.combo.feature.builder.ComboBuilderViewModel
-import com.combo.feature.combo_list.ComboListViewModel
+import com.combo.feature.builder.frameFor
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,7 +34,7 @@ import org.junit.Test
 
 /**
  * ПАРИТЕТ кадра рамки между двумя путями отрисовки: редактор (`ComboBuilderViewModel.frameFor`)
- * и превью списка (`ComboListViewModel.State.framesFor`).
+ * и общий адаптер сохранённых рамок для списка и PNG.
  *
  * Оба собирают кадр через общую фабрику `buildItemFrame`, но у каждого свои адаптеры
  * входных данных (драфты или Room-сущности). Тест гарантирует, что при одинаковом комбо
@@ -148,6 +150,7 @@ class ItemFrameParityTest {
             comboRepo = repo,
             photoRepo = FakePhotoRepository(photos),
             bitmapSource = StubBitmapSource(),
+            thumbnailSource = EmptyThumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = Dispatchers.IO,
@@ -156,26 +159,17 @@ class ItemFrameParityTest {
         vm.refreshBitmaps(immediate = true)
         awaitBitmaps("билдера", { vm.bitmaps.value }, 2)
 
-        val drafts = vm.state.value.items.sortedBy { it.zIndex }
+        val state = vm.state.value
+        val drafts = state.items.sortedBy { it.zIndex }
         assertEquals(2, drafts.size)
-        return drafts.map { vm.frameFor(it) }
+        return drafts.map { state.frameFor(it, vm.bitmaps.value) }
     }
 
-    private fun listFrames(): List<ItemFrame?> {
-        val vm = ComboListViewModel(
-            FakeComboRepository(listOf(combo)),
-            FakePhotoRepository(photos),
-            StubBitmapSource(),
-            settingsRepository = com.combo.ui.FakeGallerySettingsRepository(),
-            exportPng = { null },
-        )
-        dispatcher.scheduler.advanceUntilIdle()
-        vm.setVisibleCombos(setOf(combo.combo.id))
-        awaitBitmaps("списка", { vm.state.value.images }, 2)
-
-        val frames = vm.state.value.framesFor(combo)
-        assertEquals(2, frames.size)
-        return frames
+    private fun savedFrames(): List<ItemFrame> {
+        val bitmap = ImageBitmap(8, 8)
+        return combo.items.sortedBy { it.zIndex }.map { item ->
+            item.toItemFrame(bitmap, photos.first { it.id == item.photoId })
+        }
     }
 
     // ---------- сам тест ----------
@@ -193,14 +187,13 @@ class ItemFrameParityTest {
     @Test
     fun `both paths produce the same draw data for free and fit frames`() {
         val b = builderFrames()
-        val l = listFrames()
+        val l = savedFrames()
 
         for (i in 0..1) {
             val bf = b[i]
             val lf = l[i]
             assertNotNull("билдер: кадр $i", bf)
-            assertNotNull("список: кадр $i", lf)
-            assertSameDrawData("список vs билдер [$i]", bf!!, lf!!)
+            assertSameDrawData("список vs билдер [$i]", bf!!, lf)
         }
     }
 

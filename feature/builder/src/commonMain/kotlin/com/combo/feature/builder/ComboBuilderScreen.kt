@@ -155,7 +155,17 @@ fun ComboBuilderScreen(
             }
         }
     }
-    BuilderPhotoPicker(pickMode, state, vm::onEvent) { pickMode = BuilderPickMode.NONE }
+    if (pickMode != BuilderPickMode.NONE) {
+        val thumbnails by vm.pickerThumbnails.images.collectAsState()
+        BuilderPhotoPicker(
+            mode = pickMode,
+            state = state,
+            thumbnails = thumbnails,
+            onVisiblePhotos = vm.pickerThumbnails::setVisiblePhotos,
+            onEvent = vm::onEvent,
+            onDismiss = { pickMode = BuilderPickMode.NONE },
+        )
+    }
     if (showCanvasSizeDialog) {
         CanvasSizeDialog(
             size = CanvasFormat(state.canvasW.toInt(), state.canvasH.toInt()),

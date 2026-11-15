@@ -28,9 +28,19 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.combo.core.render.CanvasTransform
+import com.combo.core.render.ItemFrame
+import com.combo.core.render.buildItemFrame
 import com.combo.core.render.comboBackgroundOf
 import com.combo.core.render.drawCombo
 import com.combo.core.render.snap.SnapDistances
+import com.combo.feature.builder.draft.ItemSnap
+import com.combo.feature.builder.draft.frameContent
+
+internal fun BuilderUiState.frameFor(item: ItemSnap, bitmaps: Map<String, ImageBitmap>): ItemFrame? {
+    val photo = photos[item.photoId] ?: return null
+    val image = bitmaps[item.photoId] ?: return null
+    return buildItemFrame(item.border(), item.framingMode, item.frameContent(image, photo))
+}
 
 /**
  * Вьюпорт редактора: следит за размером экрана, считает [CanvasTransform] и рисует холст.
@@ -126,12 +136,7 @@ private fun EditorCanvas(
                 // таймаут (см. editorWheelZoom).
                 .editorWheelZoom(vm, curState, curTransform, spaceHeld),
         ) {
-            // Захват [bitmaps] draw-лямбдой: см. KDoc EditorViewport.
-            val loaded = bitmaps.size
-            // Холст и рамки — единым вызовом (тот же transform, тот же фон и тот же
-            // drawItem, что в списке комбо). Сбор кадров остаётся ЗДЕСЬ, внутри
-            // draw-лямбды: поднять его в композицию значило бы читать состояние при
-            // отрисовке и перерисовывать холст на каждой смене ревизии без нужды.
+            // Холст и рамки строятся из одного снимка редактора и переданных битмапов.
             drawCombo(
                 transform,
                 state.canvasW,
@@ -147,7 +152,7 @@ private fun EditorCanvas(
                 ),
                 // Порядок как в state.items: редактор не сортирует рамки по zIndex,
                 // список идёт от нижнего слоя к верхнему.
-                state.items.mapNotNull { if (loaded == 0) null else vm.frameFor(it) },
+                state.items.mapNotNull { state.frameFor(it, bitmaps) },
             )
             drawSelectionOverlay(state, transform, primaryColor)
             drawSnapGuideOverlay(state, transform, guideColor, guideOutline)

@@ -21,8 +21,11 @@ import com.combo.core.model.FramingMode
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.data.ComboWithItems
+import com.combo.domain.image.ThumbnailSource
+import com.combo.ImageFixtures
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
@@ -49,21 +52,22 @@ class ComboBuilderToolbarTest : UiTestBase() {
         repo: FakePhotoRepository,
         comboRepo: FakeComboRepository = FakeComboRepository(),
         comboId: String? = null,
+        thumbnailSource: ThumbnailSource = EmptyThumbnailSource,
     ): ComboBuilderViewModel =
         ComboBuilderViewModel(
             savedStateHandle = SavedStateHandle(mapOf("photos" to photoIds.joinToString(","), "comboId" to comboId)),
             comboRepo = comboRepo,
             photoRepo = repo,
             bitmapSource = StubBitmapSource(),
+            thumbnailSource = thumbnailSource,
             ids = IdGenerator { "gen-${nextId++}" },
             clock = WallClock { 1_000L },
             ioDispatcher = ioDispatcher,
         )
 
-    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel, repo: FakePhotoRepository) {
-        val koin = trackKoin(repo)
+    private fun ComposeUiTest.setBuilderContent(vm: ComboBuilderViewModel) {
         setContent {
-            TestScreen(koin, backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
+            TestScreen(backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
         }
         waitUntil(timeoutMillis = 5_000) {
             vm.state.value.loaded && vm.state.value.screenW > 0f
@@ -78,7 +82,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
             listOf(comboItemEntity("large-frame", "c1").copy(framingMode = "FIT")),
         )))
         val vm = builder(emptyList(), repo, comboRepo, "c1")
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         assertFalse(vm.state.value.isDirty)
         onNodeWithTag(TOOL_TAG_SAVE).assertIsEnabled().performClick()
         waitUntil { comboRepo.savedCombos.isNotEmpty() }
@@ -92,7 +96,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
     fun delIsAbsentWhenTwoFramesButNoSelection() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         assertEquals(2, vm.state.value.items.size)
         vm.onEvent(BuilderEvent.CanvasTapped)
         waitForIdle()
@@ -105,7 +109,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
     fun delIsEnabledWithSelectionAndTwoFrames() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         vm.onEvent(BuilderEvent.ItemTapped(vm.state.value.items[0].id))
         waitForIdle()
 
@@ -117,7 +121,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
     fun autoFitIsAbsentWithoutSelectionAndReflectsTheFramingMode() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         vm.onEvent(BuilderEvent.CanvasTapped)
         waitForIdle()
@@ -139,7 +143,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
     fun delIsDisabledForTheOnlyFrame() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1")))
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         vm.onEvent(BuilderEvent.ItemTapped(vm.state.value.items.single().id))
         waitForIdle()
 
@@ -152,7 +156,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
         val ids = List(Const.MAX_ITEMS) { "p$it" }
         val repo = FakePhotoRepository(ids.map { photoEntity(it) })
         val vm = builder(ids, repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         assertEquals(Const.MAX_ITEMS, vm.state.value.items.size)
 
         onNodeWithTag(TOOL_TAG_ADD_ITEM).assertExists().assertIsNotEnabled()
@@ -171,7 +175,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
         val library = listOf("p1", "p2", "p3")
         val repo = FakePhotoRepository(library.map { photoEntity(it) })
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         waitUntil(timeoutMillis = 5_000) { vm.state.value.libraryPhotos.size == library.size }
         assertEquals(1, vm.state.value.items.size)
 
@@ -188,12 +192,13 @@ class ComboBuilderToolbarTest : UiTestBase() {
     fun pickedPhotosBecomeFrames() = runComposeUiTest {
         val library = listOf("p1", "p2", "p3")
         val repo = FakePhotoRepository(library.map { photoEntity(it) })
-        val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        val image = ImageFixtures.patternBitmap()
+        val vm = builder(listOf("p1"), repo, thumbnailSource = ThumbnailSource { image })
+        setBuilderContent(vm)
         waitUntil(timeoutMillis = 5_000) { vm.state.value.libraryPhotos.size == library.size }
 
         onNodeWithTag(TOOL_TAG_ADD_ITEM).performSemanticsAction(SemanticsActions.OnClick)
-        waitForIdle()
+        waitUntil(timeoutMillis = 5_000) { vm.pickerThumbnails.images.value.keys == library.toSet() }
         onNodeWithTag(addPhotoCellTag("p3")).performClick()
         onNodeWithTag(addPhotoCellTag("p2")).performClick()
         waitForIdle()
@@ -204,6 +209,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
         assertEquals(listOf("p1", "p3", "p2"), vm.state.value.items.map { it.photoId })
         assertEquals(vm.state.value.items.last().id, vm.state.value.selectedItemId)
         onNodeWithText("Add frames").assertDoesNotExist()
+        assertEquals(emptyMap<String, Any>(), vm.pickerThumbnails.images.value)
     }
 
     /** Отметить больше свободных мест нельзя: лишнее касание игнорируется. */
@@ -214,7 +220,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
         val library = listOf("x1", "x2") + ids
         val repo = FakePhotoRepository(library.map { photoEntity(it) })
         val vm = builder(ids, repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         waitUntil(timeoutMillis = 5_000) { vm.state.value.libraryPhotos.size == library.size }
 
         onNodeWithTag(TOOL_TAG_ADD_ITEM).performSemanticsAction(SemanticsActions.OnClick)
@@ -234,7 +240,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
     fun replaceIsAbsentWithoutSelection() = runComposeUiTest {
         val repo = FakePhotoRepository(listOf(photoEntity("p1"), photoEntity("p2")))
         val vm = builder(listOf("p1", "p2"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
 
         vm.onEvent(BuilderEvent.CanvasTapped)
         waitForIdle()
@@ -251,7 +257,7 @@ class ComboBuilderToolbarTest : UiTestBase() {
         val library = listOf("p1", "p2", "p3")
         val repo = FakePhotoRepository(library.map { photoEntity(it) })
         val vm = builder(listOf("p1"), repo)
-        setBuilderContent(vm, repo)
+        setBuilderContent(vm)
         waitUntil(timeoutMillis = 5_000) { vm.state.value.libraryPhotos.size == library.size }
         val before = vm.state.value.items.single()
         vm.onEvent(BuilderEvent.ItemTapped(before.id))

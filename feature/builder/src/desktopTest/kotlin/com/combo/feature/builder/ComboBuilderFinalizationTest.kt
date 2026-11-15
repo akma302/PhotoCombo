@@ -13,23 +13,26 @@ import com.combo.data.ComboWithItems
 import com.combo.domain.BitmapSource
 import com.combo.domain.ComboPngExporter
 import com.combo.feature.builder.draft.FitPreset
-import com.combo.feature.builder.draft.toSnap
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.comboEntity
 import com.combo.ui.comboItemEntity
 import com.combo.ui.photoEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -66,6 +69,7 @@ class ComboBuilderFinalizationTest {
         comboRepo = repo,
         photoRepo = photos,
         bitmapSource = StubBitmapSource(),
+        thumbnailSource = EmptyThumbnailSource,
         ids = IdGenerator { "new-id" },
         clock = WallClock { 1_000L },
         ioDispatcher = dispatcher,
@@ -75,8 +79,10 @@ class ComboBuilderFinalizationTest {
     fun `save crops to the visible photos and translates the unmodified frame geometry`() {
         val repo = FakeComboRepository(listOf(original))
         val vm = builder(repo)
-        val draftsBefore = vm.state.value.items.map { it.toSnap() }
+        val draftsBefore = vm.state.value.items
 
+        assertFalse(vm.state.value.isDirty)
+        assertTrue(vm.state.value.canSave)
         vm.onEvent(BuilderEvent.Save)
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -89,7 +95,7 @@ class ComboBuilderFinalizationTest {
         assertEquals(original.combo.background, combo.background)
         assertEquals(1_000L, combo.updatedAt)
         assertEquals(original.items.map { it.copy(centerX = it.centerX - 200f, centerY = it.centerY - 217f) }, items)
-        assertEquals(draftsBefore, vm.state.value.items.map { it.toSnap() })
+        assertEquals(draftsBefore, vm.state.value.items)
         assertEquals(1600f, vm.state.value.canvasW, 0f)
         assertEquals(900f, vm.state.value.canvasH, 0f)
     }
@@ -102,7 +108,7 @@ class ComboBuilderFinalizationTest {
         val item = vm.state.value.items.single()
         vm.onEvent(BuilderEvent.ApplyPreset(item.id, FitPreset.FIT))
         vm.onEvent(BuilderEvent.ContentZoom(item.id, 0.5f, GesturePhase.CHANGE))
-        val photoScale = item.contentScale
+        val photoScale = vm.state.value.items.single().contentScale
         vm.onEvent(BuilderEvent.Save)
         dispatcher.scheduler.advanceUntilIdle()
         val (combo, items) = repo.savedCombos.single()
@@ -139,7 +145,9 @@ class ComboBuilderFinalizationTest {
         val (firstCombo, firstItems) = repo.savedCombos.single()
         val reopenedRepo = FakeComboRepository(listOf(ComboWithItems(firstCombo, firstItems)))
 
-        builder(reopenedRepo).onEvent(BuilderEvent.Save)
+        val reopened = builder(reopenedRepo)
+        assertFalse(reopened.state.value.canSave)
+        reopened.onEvent(BuilderEvent.Save)
         dispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(firstCombo, reopenedRepo.savedCombos.single().first)
@@ -147,19 +155,20 @@ class ComboBuilderFinalizationTest {
     }
 
     @Test
-    fun `failed save leaves the editable canvas and undo history intact`() {
-        val repo = FakeComboRepository(listOf(original)).apply { failWith = IllegalStateException("disk full") }
+    fun `failed save leaves the editable canvas and undo history intact`() = runBlocking {
+        val repo = FakeComboRepository(listOf(original)).apply { failWith = IllegalStateException() }
         val vm = builder(repo)
         vm.onEvent(BuilderEvent.SetName("Edited"))
         val before = vm.state.value.copy()
-        val draftsBefore = before.items.map { it.toSnap() }
+        val draftsBefore = before.items
 
         vm.onEvent(BuilderEvent.Save)
         dispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(vm.state.value.saving)
         assertEquals(before, vm.state.value)
-        assertEquals(draftsBefore, vm.state.value.items.map { it.toSnap() })
+        assertEquals(draftsBefore, vm.state.value.items)
         assertEquals(emptyList<Any>(), repo.savedCombos)
+        assertEquals("Failed to save combo", withTimeout(1_000) { vm.messages.first() })
     }
 }

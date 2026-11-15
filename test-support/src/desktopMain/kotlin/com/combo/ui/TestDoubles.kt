@@ -1,12 +1,8 @@
 package com.combo.ui
 
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.unit.IntSize
 import com.combo.ImageFixtures
 import com.combo.core.background.BackgroundSpec
-import com.combo.core.image.ExifOrientation
-import com.combo.core.image.ImageCodec
-import com.combo.core.image.ImageFormat
 import com.combo.core.image.ImagePicker
 import com.combo.core.image.ImageSource
 import com.combo.data.ComboEntity
@@ -18,9 +14,9 @@ import com.combo.domain.ComboRepository
 import com.combo.domain.DeleteResult
 import com.combo.domain.ImportResult
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import okio.Path
 
 fun photoEntity(id: String, originalName: String = "$id.jpg") = PhotoEntity(
     id = id,
@@ -91,8 +87,6 @@ class FakePhotoRepository(initial: List<PhotoEntity> = emptyList()) : PhotoRepos
         state.value = state.value.filterNot { it.id == id }
         return DeleteResult.DELETED
     }
-
-    override fun thumbPath(photoId: String): Path? = null
 }
 
 class FakeComboRepository(initial: List<ComboWithItems> = emptyList()) : ComboRepository {
@@ -141,13 +135,6 @@ class FakeImagePicker : ImagePicker {
     override suspend fun pickImages(): List<ImageSource> = emptyList()
 }
 
-/** Декодер-заглушка для UI-тестов: фейковые репозитории не отдают путей к миниатюрам. */
-class StubImageCodec : ImageCodec {
-    override fun readBounds(path: Path): IntSize? = null
-
-    override fun readOrientation(path: Path): ExifOrientation = ExifOrientation.NORMAL
-
-    override fun decode(path: Path, sample: Int): ImageBitmap? = null
-
-    override fun encode(path: Path, image: ImageBitmap, format: ImageFormat, quality: Int): Boolean = false
+object EmptyThumbnailSource : ThumbnailSource {
+    override suspend fun load(photoId: String): ImageBitmap? = null
 }

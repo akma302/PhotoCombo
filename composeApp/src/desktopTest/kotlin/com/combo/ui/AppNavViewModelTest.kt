@@ -1,6 +1,7 @@
 package com.combo.ui
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performSemanticsAction
 import org.junit.Assert.assertEquals
@@ -15,25 +16,28 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
-import com.combo.core.image.ImageCodec
 import com.combo.core.image.ImagePicker
 import com.combo.core.image.PngDestination
 import com.combo.core.image.PngOutput
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.data.ComboWithItems
+import com.combo.data.PhotoEntity
 import com.combo.di.viewModelModule
 import com.combo.domain.BitmapSource
 import com.combo.domain.ComboPngExporter
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
 import com.combo.feature.builder.EDITOR_CANVAS_TAG
 import com.combo.feature.library.LIB_CREATE_COMBO_TAG
 import com.combo.feature.library.LIB_SELECT_TAG
 import com.combo.feature.library.PHOTO_CELL_TAG_PREFIX
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertTrue
@@ -43,6 +47,7 @@ import org.koin.compose.KoinIsolatedContext
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Переходы через настоящий [AppNav]: ViewModel'и записей создаёт Koin из [viewModelModule],
@@ -54,7 +59,7 @@ class AppNavViewModelTest : UiTestBase() {
 
     /** Прикладной Koin с фейковым слоем данных: фабрики ViewModel — боевые. */
     private fun appKoin(
-        photoRepo: FakePhotoRepository,
+        photoRepo: PhotoRepository,
         comboRepo: FakeComboRepository = FakeComboRepository(),
         bitmapSource: BitmapSource = StubBitmapSource(),
         settings: FakeGallerySettingsRepository = FakeGallerySettingsRepository(),
@@ -76,7 +81,7 @@ class AppNavViewModelTest : UiTestBase() {
                         ComboPngExporter(comboRepo, photoRepo, bitmapSource, output, ioDispatcher)
                     }
                     single<ImagePicker> { FakeImagePicker() }
-                    single<ImageCodec> { StubImageCodec() }
+                    single<ThumbnailSource> { EmptyThumbnailSource }
                     single<IdGenerator> { IdGenerator { "gen-1" } }
                     single<WallClock> { WallClock { 1_000L } }
                     single<CoroutineDispatcher> { ioDispatcher }
@@ -89,6 +94,35 @@ class AppNavViewModelTest : UiTestBase() {
         setContent {
             KoinIsolatedContext(koin) { AppNav(backDispatcher) }
         }
+    }
+
+    @Test
+    fun removingAppNavCancelsTheRootViewModelCollectors() = runComposeUiTest {
+        val delegate = FakePhotoRepository()
+        val collecting = AtomicBoolean(false)
+        val cancelled = AtomicBoolean(false)
+        val repo = object : PhotoRepository by delegate {
+            override fun all() = flow<List<PhotoEntity>> {
+                collecting.set(true)
+                try {
+                    emit(emptyList())
+                    awaitCancellation()
+                } finally {
+                    cancelled.set(true)
+                }
+            }
+        }
+        val koin = appKoin(repo)
+        val present = mutableStateOf(true)
+        setContent {
+            KoinIsolatedContext(koin) {
+                if (present.value) AppNav(backDispatcher)
+            }
+        }
+        waitUntil { collecting.get() }
+
+        runOnIdle { present.value = false }
+        waitUntil { cancelled.get() }
     }
 
     @Test
