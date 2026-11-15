@@ -42,9 +42,9 @@ import org.koin.core.parameter.parametersOf
  * перезапуска (на desktop его не бывает), зато аргументы перехода типизированы и не
  * требуют `@Serializable`-регистрации.
  *
- * ВЛАДЕЛЬЦЫ VIEWMODEL. У корневых вкладок владелец — [rememberRootViewModelStoreOwner]:
+ * ВЛАДЕЛЬЦЫ VIEWMODEL. У корневых вкладок общий владелец, созданный в [AppNav]:
  * выбор фото и настройки списка комбо обязаны переживать переход в просмотр и назад.
- * Каждая запись поверх вкладки получает свой владелец ([rememberEntryViewModelStoreOwner]) —
+ * Каждая запись поверх вкладки получает своего владельца в [EntryScope] —
  * иначе `koinViewModel` вернул бы один и тот же экземпляр всем записям одного класса, и
  * билдер второго комбо открылся бы поверх состояния первого.
  *
@@ -60,7 +60,7 @@ import org.koin.core.parameter.parametersOf
 fun AppNav(backDispatcher: BackDispatcher) {
     val backStack = remember { mutableStateListOf<NavKey>(ScreenKey.Library) }
     val current = backStack.lastOrNull()
-    val rootOwner = rememberRootViewModelStoreOwner()
+    val rootOwner = rememberCompositionViewModelStoreOwner()
 
     // Нижний обработчик: стек уходит на шаг назад. Держится всё время жизни AppNav,
     // поэтому регистрация «поверх» него всегда перекрывает его.
@@ -155,7 +155,7 @@ private fun builderHandle(key: ScreenKey.Builder): SavedStateHandle {
 /** Запись поверх вкладки живёт со своим ViewModel-хранилищем и уносит его при уходе. */
 @Composable
 private fun EntryScope(content: @Composable () -> Unit) {
-    val owner = rememberEntryViewModelStoreOwner()
+    val owner = rememberCompositionViewModelStoreOwner()
     CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
         content()
     }

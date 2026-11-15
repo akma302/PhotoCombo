@@ -10,31 +10,12 @@ private class StackViewModelStoreOwner : ViewModelStoreOwner {
     override val viewModelStore = ViewModelStore()
 }
 
-/**
- * Хранилище ViewModel, живущее ровно столько, сколько экран в стеке навигации.
- *
- * Нужно потому, что Nav3 на desktop не даёт каждой записи своего `ViewModelStoreOwner`:
- * без него `koinViewModel` вернул бы один и тот же экземпляр всем записям одного класса, и
- * билдер для второго комбо открылся бы поверх состояния первого. `clear()` при уходе с
- * экрана отменяет `viewModelScope` — как это делал Nav2 на Android.
- *
- * В `DisposableEffect`, а не в `LaunchedEffect`: очистка обязана произойти и когда
- * композиция разбирается целиком (выход из приложения), — эффект на `onDispose` это
- * гарантирует.
- */
+/** Keeps a store at its call site and cancels its ViewModels when that site leaves composition. */
 @Composable
-fun rememberEntryViewModelStoreOwner(): ViewModelStoreOwner {
+internal fun rememberCompositionViewModelStoreOwner(): ViewModelStoreOwner {
     val owner = remember { StackViewModelStoreOwner() }
     DisposableEffect(owner) {
         onDispose { owner.viewModelStore.clear() }
     }
     return owner
 }
-
-/**
- * Хранилище корневых вкладок: переживает любые переходы внутри вкладки, очищается только
- * вместе с приложением. Вкладка Libraries и вкладка Combos должны сохранять выбранное и
- * прокрученное при открытии просмотра и возврате назад.
- */
-@Composable
-fun rememberRootViewModelStoreOwner(): ViewModelStoreOwner = remember { StackViewModelStoreOwner() }
