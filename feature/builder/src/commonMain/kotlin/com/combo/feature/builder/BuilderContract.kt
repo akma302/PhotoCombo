@@ -109,6 +109,7 @@ internal sealed interface BuilderEvent {
     object Redo : BuilderEvent
     object ResetViewport : BuilderEvent
     object Save : BuilderEvent
+    object SaveAsNew : BuilderEvent
 }
 
 // ---------- состояние ----------

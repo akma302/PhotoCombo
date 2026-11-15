@@ -1,7 +1,9 @@
 package com.combo.feature.builder
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,33 +26,57 @@ import com.combo.ui.common.designsystem.theme.PcTheme
 /** Название редактируется на месте, не вытесняя историю и основное действие сохранения. */
 @Composable
 internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> Unit, onEvent: (BuilderEvent) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().background(PcTheme.colors.panel).heightIn(min = 57.dp).padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BuilderIconButton(PcIcons.Back, "Back", onBack)
-        Box((if (wide) Modifier.width(190.dp) else Modifier.weight(1f)).padding(horizontal = 8.dp)) {
-            PcTextField(
-                value = state.name,
-                onValueChange = { onEvent(BuilderEvent.SetName(it)) },
-                label = "Combo name",
-                enabled = state.loaded && !state.saving,
-                modifier = Modifier.widthIn(max = 280.dp).fillMaxWidth().testTag(TOOL_TAG_NAME),
-                showLabel = false,
+    val showCopy = state.comboId != null
+    Column(Modifier.fillMaxWidth().background(PcTheme.colors.panel).padding(horizontal = 8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 57.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BuilderIconButton(PcIcons.Back, "Back", onBack)
+            Box((if (wide) Modifier.width(190.dp) else Modifier.weight(1f)).padding(horizontal = 8.dp)) {
+                PcTextField(
+                    value = state.name,
+                    onValueChange = { onEvent(BuilderEvent.SetName(it)) },
+                    label = "Combo name",
+                    enabled = state.loaded && !state.saving,
+                    modifier = Modifier.widthIn(max = 280.dp).fillMaxWidth().testTag(TOOL_TAG_NAME),
+                    showLabel = false,
+                )
+            }
+            if (wide) {
+                PcText(
+                    if (state.saving) "Saving…" else if (state.isDirty) "Unsaved changes" else "Saved",
+                    style = PcTheme.typography.caption,
+                    color = PcTheme.colors.textSecondary,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            }
+            if (wide) Spacer(Modifier.weight(1f))
+            BuilderIconButton(PcIcons.Undo, "Undo", { onEvent(BuilderEvent.Undo) }, enabled = state.canUndo && !state.saving)
+            BuilderIconButton(PcIcons.Redo, "Redo", { onEvent(BuilderEvent.Redo) }, enabled = state.canRedo && !state.saving)
+            if (wide || !showCopy) {
+                Spacer(Modifier.width(8.dp))
+                SaveActions(state, showCopy, onEvent)
+            }
+        }
+        if (!wide && showCopy) {
+            Box(Modifier.fillMaxWidth().padding(bottom = PcTheme.spacing.sm), contentAlignment = Alignment.CenterEnd) {
+                SaveActions(state, showCopy = true, onEvent)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveActions(state: BuilderUiState, showCopy: Boolean, onEvent: (BuilderEvent) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(PcTheme.spacing.sm)) {
+        if (showCopy) {
+            PcButton(
+                text = "Save as new",
+                enabled = state.canSave,
+                onClick = { onEvent(BuilderEvent.SaveAsNew) },
             )
         }
-        if (wide) {
-            PcText(
-                if (state.saving) "Saving…" else if (state.isDirty) "Unsaved changes" else "Saved",
-                style = PcTheme.typography.caption,
-                color = PcTheme.colors.textSecondary,
-                modifier = Modifier.padding(horizontal = 12.dp),
-            )
-        }
-        if (wide) Spacer(Modifier.weight(1f))
-        BuilderIconButton(PcIcons.Undo, "Undo", { onEvent(BuilderEvent.Undo) }, enabled = state.canUndo && !state.saving)
-        BuilderIconButton(PcIcons.Redo, "Redo", { onEvent(BuilderEvent.Redo) }, enabled = state.canRedo && !state.saving)
-        Spacer(Modifier.width(8.dp))
         PcButton(
             text = "Save",
             enabled = state.canSave,
