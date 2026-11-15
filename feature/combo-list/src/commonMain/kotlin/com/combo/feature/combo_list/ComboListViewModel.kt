@@ -7,11 +7,9 @@ import com.combo.ui.common.GalleryScaleState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.combo.core.render.ItemFrame
-import com.combo.core.render.buildItemFrame
 import com.combo.data.ComboWithItems
 import com.combo.data.PhotoEntity
-import com.combo.data.border
-import com.combo.data.frameContent
+import com.combo.data.toItemFrame
 import com.combo.domain.BitmapSource
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoAssets
@@ -39,9 +37,9 @@ class ComboListViewModel(
     settingsRepository: GallerySettingsRepository,
     private val exportPng: suspend (String) -> String?,
 ) : ViewModel() {
-    val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Combos)
+    internal val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Combos)
 
-    data class State(
+    internal data class State(
         val combos: List<ComboWithItems> = emptyList(),
         val photos: Map<String, PhotoEntity> = emptyMap(),
         val images: Map<String, ImageBitmap> = emptyMap(),
@@ -52,16 +50,12 @@ class ComboListViewModel(
             combo.items.sortedBy { it.zIndex }.mapNotNull { item ->
                 val image = images[item.photoId] ?: return@mapNotNull null
                 val photo = photos[item.photoId] ?: return@mapNotNull null
-                buildItemFrame(
-                    border = item.border(),
-                    mode = item.framingModeEnum,
-                    content = item.frameContent(image, photo),
-                )
+                item.toItemFrame(image, photo)
             }
     }
 
     private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+    internal val state: StateFlow<State> = _state.asStateFlow()
 
     /** Метаданные и битмапы — в общем кэше; [PREVIEW_PX] остаётся политикой превью. */
     private val assets = PhotoAssets(photoRepo, bitmapSource)
@@ -87,7 +81,7 @@ class ComboListViewModel(
         }
     }
 
-    fun setVisibleCombos(ids: Set<String>) {
+    internal fun setVisibleCombos(ids: Set<String>) {
         visibleCombos = ids
         updatePreviewWindow()
     }
@@ -113,11 +107,11 @@ class ComboListViewModel(
         }
     }
 
-    fun delete(id: String) {
+    internal fun delete(id: String) {
         viewModelScope.launch { comboRepo.delete(id) }
     }
 
-    fun export(id: String) {
+    internal fun export(id: String) {
         if (_state.value.exportingComboId != null) return
         _state.update { it.copy(exportingComboId = id, exportMessage = null) }
         viewModelScope.launch {

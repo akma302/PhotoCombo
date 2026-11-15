@@ -47,7 +47,7 @@ internal fun ComboWithItems.toDrafts(): List<ItemDraft> =
  *
  * Enum'ы пишутся через `.name`: соответствующие колонки в `ComboItemEntity` строковые.
  */
-internal fun List<ItemDraft>.toEntities(comboId: String): List<ComboItemEntity> =
+internal fun List<ItemSnap>.toEntities(comboId: String): List<ComboItemEntity> =
     mapIndexed { i, d ->
         ComboItemEntity(
             id = d.id, comboId = comboId, zIndex = i,
@@ -62,8 +62,7 @@ internal fun List<ItemDraft>.toEntities(comboId: String): List<ComboItemEntity> 
     }
 
 /**
- * Снапшот драфта для undo. Копирование по полям обязательно: драфт мутируется на месте
- * жеста, и снапшот должен остаться тем, чем был на START.
+ * Published copy for the UI, history, and persistence. Gesture updates mutate the draft in place.
  */
 internal fun ItemDraft.toSnap(): ItemSnap = ItemSnap(
     id = id, zIndex = zIndex,
@@ -87,13 +86,9 @@ internal fun ItemSnap.toDraft(): ItemDraft = ItemDraft(
 )
 
 /**
- * Содержимое драфта для [com.combo.core.render.buildItemFrame].
- *
- * Аналог `com.combo.data.frameContent` для сущностей Room: своя версия нужна потому,
- * что у билдера данные лежат в мутабельных драфтах, а не в Room-сущностях. Держим рядом
- * с остальным маппером, чтобы список полей драфта читался в одном файле.
+ * Rendering input for a published frame. Uses the same renderer as saved combos.
  */
-internal fun ItemDraft.frameContent(image: ImageBitmap, photo: PhotoEntity) =
+internal fun ItemSnap.frameContent(image: ImageBitmap, photo: PhotoEntity) =
     FrameContent(
         image = image,
         srcW = photo.width,

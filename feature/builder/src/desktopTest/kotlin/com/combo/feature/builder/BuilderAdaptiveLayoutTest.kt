@@ -40,9 +40,9 @@ import androidx.lifecycle.SavedStateHandle
 import com.combo.core.background.BackgroundSpec
 import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
-import com.combo.feature.builder.draft.toSnap
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
+import com.combo.ui.EmptyThumbnailSource
 import com.combo.ui.StubBitmapSource
 import com.combo.ui.TestScreen
 import com.combo.ui.UiTestBase
@@ -94,17 +94,17 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         comboRepo = FakeComboRepository(), photoRepo = repo, bitmapSource = object : BitmapSource {
             override suspend fun get(photoId: String, requiredPx: Int): ImageBitmap = ImageFixtures.halvesBitmap()
         },
+        thumbnailSource = EmptyThumbnailSource,
         ids = IdGenerator { "frame-${nextId++}" }, clock = WallClock { 1_000L }, ioDispatcher = ioDispatcher,
     )
 
     private fun ComposeUiTest.show(vm: ComboBuilderViewModel) {
-        val koin = trackKoin(repo)
         setContent {
             MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
                 CompositionLocalProvider(LocalDensity provides sceneDensity) {
                     Surface(Modifier.width(width).height(height).testTag("adaptive_builder_root")) {
                         PcDesktopTheme(motion = PcMotion(reducedMotion = true)) {
-                            TestScreen(koin, backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
+                            TestScreen(backDispatcher) { ComboBuilderScreen(onBack = {}, vm = vm) }
                         }
                     }
                 }
@@ -209,13 +209,13 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
     fun collapsingInspectorChangesOnlyAvailableSpace() = runSkikoComposeUiTest(Size(1200f, 800f)) {
         val vm = builder()
         show(vm)
-        val items = vm.state.value.items.map { it.toSnap() }
+        val items = vm.state.value.items
         val mode = vm.state.value.mode
         val widthBefore = onNodeWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNode().boundsInRoot.width
         onNodeWithContentDescription("Hide inspector").performClick()
         waitForIdle()
         assertTrue(onNodeWithTag(EDITOR_CANVAS_TAG).fetchSemanticsNode().boundsInRoot.width > widthBefore)
-        assertEquals(items, vm.state.value.items.map { it.toSnap() })
+        assertEquals(items, vm.state.value.items)
         assertEquals(mode, vm.state.value.mode)
         onNodeWithContentDescription("Show inspector").performClick()
         waitForIdle()
@@ -230,14 +230,14 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         onNodeWithTag(TOOL_TAG_ZOOM_IN).performClick()
         onNodeWithTag(TOOL_TAG_FIT).performClick()
         val before = vm.state.value
-        val itemsBefore = before.items.map { it.toSnap() }
+        val itemsBefore = before.items
         assertTrue(before.canUndo)
 
         onNodeWithTag(TOOL_TAG_ADD_ITEM).performClick()
         onNodeWithTag(addPhotoCellTag("p3")).performClick()
         resize(420)
         onNodeWithText("Add 1").assertIsDisplayed()
-        assertEquals(itemsBefore, vm.state.value.items.map { it.toSnap() })
+        assertEquals(itemsBefore, vm.state.value.items)
         assertEquals(before.selectedItemId, vm.state.value.selectedItemId)
         assertEquals(before.viewport, vm.state.value.viewport)
         assertEquals(before.mode, vm.state.value.mode)
@@ -259,7 +259,7 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         val vm = builder()
         show(vm)
         resize(420)
-        val items = vm.state.value.items.map { it.toSnap() }
+        val items = vm.state.value.items
         val dirty = vm.state.value.isDirty
         val fittedScale = vm.state.value.let { minOf(it.screenW / 1600f, it.screenH / 900f) }
         val fittedPercent = (100f * fittedScale).roundToInt()
@@ -274,7 +274,7 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         waitForIdle()
         onNodeWithText("View ${fittedPercent}%").assertIsDisplayed()
         onNodeWithTag(TOOL_TAG_FIT_VIEW).assertIsNotEnabled()
-        assertEquals(items, vm.state.value.items.map { it.toSnap() })
+        assertEquals(items, vm.state.value.items)
         assertEquals(dirty, vm.state.value.isDirty)
         assertTrue(!vm.state.value.canUndo)
 
@@ -316,7 +316,7 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         val vm = builder()
         show(vm)
         resize(420)
-        val original = vm.state.value.items.first().toSnap()
+        val original = vm.state.value.items.first()
         onNodeWithText("Canvas 1600 × 900 px").performClick()
         val input = onNodeWithContentDescription("Width (px)")
         input.performTextReplacement("1919")
@@ -338,7 +338,7 @@ class BuilderAdaptiveLayoutTest : UiTestBase() {
         onNodeWithText("Canvas 1920 × 1080 px").assertIsDisplayed()
         runOnIdle { vm.onEvent(BuilderEvent.Undo) }
         onNodeWithText("Canvas 1600 × 900 px").assertIsDisplayed()
-        assertEquals(original, vm.state.value.items.first().toSnap())
+        assertEquals(original, vm.state.value.items.first())
     }
 
     @Test

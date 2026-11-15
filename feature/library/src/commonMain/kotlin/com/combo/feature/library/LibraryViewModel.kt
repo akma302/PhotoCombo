@@ -11,6 +11,8 @@ import com.combo.data.PhotoEntity
 import com.combo.domain.DeleteResult
 import com.combo.domain.ImportResult
 import com.combo.domain.PhotoRepository
+import com.combo.domain.image.ThumbnailSource
+import com.combo.ui.common.ThumbnailState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,10 +27,12 @@ class LibraryViewModel(
     private val photoRepo: PhotoRepository,
     private val picker: ImagePicker,
     settingsRepository: GallerySettingsRepository,
+    thumbnailSource: ThumbnailSource,
 ) : ViewModel() {
-    val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Photos)
+    internal val galleryScale = GalleryScaleState(viewModelScope, settingsRepository, GalleryKind.Photos)
+    internal val thumbnails = ThumbnailState(viewModelScope, thumbnailSource)
 
-    val photos: StateFlow<List<PhotoEntity>> = photoRepo.all()
+    internal val photos: StateFlow<List<PhotoEntity>> = photoRepo.all()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
@@ -36,7 +40,7 @@ class LibraryViewModel(
      * рамкам именно в этом порядке, а `Set` его терял.
      */
     private val _selected = MutableStateFlow<List<String>>(emptyList())
-    val selected: StateFlow<List<String>> = _selected.asStateFlow()
+    internal val selected: StateFlow<List<String>> = _selected.asStateFlow()
 
     /**
      * Режим выбора включается долгим нажатием или пунктом «Select» и НЕ выключается сам,
@@ -44,31 +48,31 @@ class LibraryViewModel(
      * случайно открывать фото вместо касаний. Выход — «отмена» в заголовке или «назад».
      */
     private val _selectionMode = MutableStateFlow(false)
-    val selectionMode: StateFlow<Boolean> = _selectionMode.asStateFlow()
+    internal val selectionMode: StateFlow<Boolean> = _selectionMode.asStateFlow()
 
     private val _messages = Channel<String>(Channel.BUFFERED)
-    val messages: Flow<String> = _messages.receiveAsFlow()
+    internal val messages: Flow<String> = _messages.receiveAsFlow()
 
-    fun enterSelectionMode() {
+    internal fun enterSelectionMode() {
         _selectionMode.value = true
     }
 
-    fun exitSelectionMode() {
+    internal fun exitSelectionMode() {
         _selectionMode.value = false
         _selected.value = emptyList()
     }
 
     /** Переключение выбора имеет смысл только в режиме выбора. */
-    fun toggle(id: String) {
+    internal fun toggle(id: String) {
         if (!_selectionMode.value) return
         _selected.value = _selected.value.let { if (id in it) it - id else it + id }
     }
 
-    fun clearSelection() {
+    internal fun clearSelection() {
         exitSelectionMode()
     }
 
-    fun deleteSelected() {
+    internal fun deleteSelected() {
         val ids = _selected.value
         _selected.value = emptyList()
         viewModelScope.launch {
@@ -87,7 +91,7 @@ class LibraryViewModel(
      * результат. Пустой выбор — отмена диалога: сообщения об этом не шлём, как и раньше,
      * когда пустой результат системного пикера просто не доходил до импорта.
      */
-    fun import() {
+    internal fun import() {
         viewModelScope.launch {
             val sources = picker.pickImages()
             if (sources.isEmpty()) return@launch
@@ -101,7 +105,7 @@ class LibraryViewModel(
      * вместит, поэтому лишние отбрасываются С ЯВНЫМ сообщением: молчаливый обрез выглядел
      * бы как «фото потерялись».
      */
-    suspend fun photosForNewCombo(): List<String> {
+    internal suspend fun photosForNewCombo(): List<String> {
         val ids = _selected.value
         if (ids.size > Const.MAX_ITEMS) {
             _messages.send("Only the first ${Const.MAX_ITEMS} photos will be used")

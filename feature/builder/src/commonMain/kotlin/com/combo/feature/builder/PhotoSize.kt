@@ -4,7 +4,7 @@ import com.combo.core.render.effectiveFraming
 import kotlin.math.roundToInt
 
 /** Immutable dimensions of the selected photo in canvas pixels. */
-data class PhotoSize(
+internal data class PhotoSize(
     val frameId: String,
     val photoId: String,
     val originalWidth: Int,

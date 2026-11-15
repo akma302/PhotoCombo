@@ -2,6 +2,7 @@ package com.combo.feature.builder.draft
 
 import com.combo.core.background.BackgroundSpec
 import com.combo.core.model.FramingMode
+import com.combo.core.render.Border
 
 /**
  * Снапшот рамки целиком: граница, режим вписывания и фото с его положением.
@@ -17,7 +18,9 @@ internal data class ItemSnap(
     val framingMode: FramingMode,
     val photoId: String,
     val contentScale: Float, val panX: Float, val panY: Float,
-)
+) {
+    fun border(): Border = Border(centerX, centerY, width, height)
+}
 
 /**
  * Снапшот всего холста для undo: размеры, фон и упорядоченный список рамок. Имя комбо и
