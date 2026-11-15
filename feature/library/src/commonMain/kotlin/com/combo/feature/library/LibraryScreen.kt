@@ -44,11 +44,13 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** testTag ячейки сетки: `PHOTO_CELL_TAG_PREFIX + photo.id`. */
 const val PHOTO_CELL_TAG_PREFIX = "library_photo_"
+/** Entry to selection mode, used by the app's navigation test. */
 const val LIB_SELECT_TAG = "library_action_select"
-const val LIB_CANCEL_TAG = "library_action_cancel"
-const val LIB_DELETE_TAG = "library_action_delete"
+/** Action that opens the Builder, used by the app's navigation test. */
 const val LIB_CREATE_COMBO_TAG = "library_action_create_combo"
-const val LIB_IMPORT_TAG = "library_action_import"
+internal const val LIB_CANCEL_TAG = "library_action_cancel"
+internal const val LIB_DELETE_TAG = "library_action_delete"
+internal const val LIB_IMPORT_TAG = "library_action_import"
 
 @Composable
 fun LibraryScreen(

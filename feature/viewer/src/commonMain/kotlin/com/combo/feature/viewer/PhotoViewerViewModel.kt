@@ -27,13 +27,13 @@ class PhotoViewerViewModel(
     private val bitmapSource: BitmapSource,
 ) : ViewModel() {
 
-    data class State(
+    internal data class State(
         val photos: List<PhotoEntity> = emptyList(),
         val images: Map<String, ImageBitmap> = emptyMap(),
     )
 
     private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+    internal val state: StateFlow<State> = _state.asStateFlow()
 
     /** Битмапы и их учёт — в общем кэше; окно `index±1` и 2048 остаются политикой экрана. */
     private val assets = PhotoAssets(photoRepo, bitmapSource)
@@ -60,7 +60,7 @@ class PhotoViewerViewModel(
      * это дорого по времени и памяти, а `LruBitmapSource` вытеснил бы большую часть
      * результата раньше, чем пользователь до неё долистает.
      */
-    fun ensureLoaded(index: Int) {
+    internal fun ensureLoaded(index: Int) {
         requestedPage = index
         val photos = _state.value.photos
         val page = index.coerceIn(0, photos.lastIndex.coerceAtLeast(0))

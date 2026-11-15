@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
  * по решению владельца обратная совместимость не нужна (приложение 0.1.0, данные
  * разработки можно сбросить).
  */
-class BackgroundConverters {
+internal class BackgroundConverters {
 
     /**
      * `encodeDefaults = true`: id стратегии пишется в данные явно, чтобы смена дефолта

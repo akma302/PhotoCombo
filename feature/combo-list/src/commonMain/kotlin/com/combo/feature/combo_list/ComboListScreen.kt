@@ -35,7 +35,7 @@ import com.combo.ui.common.designsystem.theme.PcTheme
 import org.koin.compose.viewmodel.koinViewModel
 
 /** testTag кнопки «New combo» — единственный вход в builder из секции Combos. */
-const val NEW_COMBO_TAG = "combo_list_new_combo"
+internal const val NEW_COMBO_TAG = "combo_list_new_combo"
 
 @Composable
 fun ComboListScreen(

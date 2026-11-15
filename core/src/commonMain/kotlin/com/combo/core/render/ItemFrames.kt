@@ -27,26 +27,20 @@ class FrameContent(
  *  - [ContentDrawArgs] собирается через [contentArgsOf], то есть режим рамки (`FIT`)
  *    учитывается в одном месте.
  *
- * Фото ещё не загружено ([content] == `null`) — кадра нет, рамку пока не рисуем.
+ * Callers assemble a frame after the photo is available.
  */
-fun buildItemFrame(
-    border: Border,
-    mode: FramingMode,
-    content: FrameContent?,
-): ItemFrame? {
-    val c = content ?: return null
-    return ItemFrame(
+fun buildItemFrame(border: Border, mode: FramingMode, content: FrameContent): ItemFrame =
+    ItemFrame(
         border = border,
-        fillColor = Color(c.avgColor),
+        fillColor = Color(content.avgColor),
         content = contentArgsOf(
             mode = mode,
-            image = c.image,
+            image = content.image,
             border = border,
-            srcW = c.srcW,
-            srcH = c.srcH,
-            storedScale = c.storedScale,
-            storedPanX = c.storedPanX,
-            storedPanY = c.storedPanY,
+            srcW = content.srcW,
+            srcH = content.srcH,
+            storedScale = content.storedScale,
+            storedPanX = content.storedPanX,
+            storedPanY = content.storedPanY,
         ),
     )
-}

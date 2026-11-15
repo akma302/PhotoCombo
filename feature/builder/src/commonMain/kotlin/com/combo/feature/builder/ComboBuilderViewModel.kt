@@ -78,21 +78,21 @@ class ComboBuilderViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BuilderUiState())
-    val state: StateFlow<BuilderUiState> = _state.asStateFlow()
-    val selectedPhotoSize: StateFlow<PhotoSize?> = state
+    internal val state: StateFlow<BuilderUiState> = _state.asStateFlow()
+    internal val selectedPhotoSize: StateFlow<PhotoSize?> = state
         .map { it.selectedPhotoSize() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Метаданные и битмапы живут в общем кэше; размеры и debounce — политика этого экрана. */
     private val assets = PhotoAssets(photoRepo, bitmapSource)
 
-    val bitmaps: StateFlow<Map<String, ImageBitmap>> = assets.bitmaps
+    internal val bitmaps: StateFlow<Map<String, ImageBitmap>> = assets.bitmaps
 
     private val _saved = Channel<Unit>(Channel.BUFFERED)
-    val saved = _saved.receiveAsFlow()
+    internal val saved = _saved.receiveAsFlow()
 
     private val _messages = Channel<String>(Channel.BUFFERED)
-    val messages: Flow<String> = _messages.receiveAsFlow()
+    internal val messages: Flow<String> = _messages.receiveAsFlow()
 
     /**
      * История правок холста. Класс ничего не знает ни про ViewModel, ни про состояние
@@ -196,7 +196,7 @@ class ComboBuilderViewModel(
      * происходит [emitRevision], и видно, что при отсутствии активного фото не будет ни
      * мутации, ни ревизии.
      */
-    fun onEvent(e: BuilderEvent) {
+    internal fun onEvent(e: BuilderEvent) {
         when (e) {
             is BuilderEvent.ItemTapped -> selectItem(e.id)
             is BuilderEvent.ItemPressed -> {
@@ -545,7 +545,7 @@ class ComboBuilderViewModel(
 
     // ---------- frames for rendering ----------
 
-    fun frameFor(item: ItemDraft): ItemFrame? {
+    internal fun frameFor(item: ItemDraft): ItemFrame? {
         val photo = _state.value.photos[item.photoId] ?: return null
         val image = assets.bitmaps.value[item.photoId] ?: return null
         return buildItemFrame(
@@ -557,7 +557,7 @@ class ComboBuilderViewModel(
 
     // ---------- bitmaps ----------
 
-    fun refreshBitmaps(immediate: Boolean = false) {
+    internal fun refreshBitmaps(immediate: Boolean = false) {
         bitmapJob?.cancel()
         assets.evictExcept(_state.value.items.map { it.photoId }.toSet())
         bitmapJob = viewModelScope.launch {
@@ -672,12 +672,12 @@ class ComboBuilderViewModel(
         return ids.mapNotNull { id -> known[id]?.let { id to it } }.toMap()
     }
 
-    fun currentVs(): Float {
+    internal fun currentVs(): Float {
         val s = _state.value
         return s.viewport.scale(s.canvasSize, s.viewportSize)
     }
 
-    fun hitTest(canvasPoint: Offset): String? =
+    internal fun hitTest(canvasPoint: Offset): String? =
         _state.value.items.sortedByDescending { it.zIndex }
             .firstOrNull { it.border().rect().contains(canvasPoint) }?.id
 

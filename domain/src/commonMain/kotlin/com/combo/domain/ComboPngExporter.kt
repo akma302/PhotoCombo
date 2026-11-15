@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.combo.Const
 import com.combo.core.image.PngOutput
 import com.combo.core.render.CanvasTransform
-import com.combo.core.render.buildItemFrame
 import com.combo.core.render.comboBackgroundOf
 import com.combo.core.render.drawCombo
 import com.combo.core.render.effectiveFraming
@@ -18,7 +17,7 @@ import com.combo.data.ComboItemEntity
 import com.combo.data.PhotoEntity
 import com.combo.data.backgroundFrames
 import com.combo.data.border
-import com.combo.data.frameContent
+import com.combo.data.toItemFrame
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlin.math.ceil
@@ -51,11 +50,7 @@ class ComboPngExporter(
             bitmaps.get(photoId, items.maxOf { it.exportPixels(photo) })
         }
         val frames = snapshot.items.sortedBy { it.zIndex }.map { item ->
-            checkNotNull(buildItemFrame(
-                border = item.border(),
-                mode = item.framingModeEnum,
-                content = item.frameContent(images.getValue(item.photoId), metadata.getValue(item.photoId)),
-            ))
+            item.toItemFrame(images.getValue(item.photoId), metadata.getValue(item.photoId))
         }
         val background = comboBackgroundOf(width, height, combo.background, snapshot.backgroundFrames(metadata))
         val size = Size(width.toFloat(), height.toFloat())

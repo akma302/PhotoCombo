@@ -9,14 +9,14 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core"))
-            api(project(":data"))
+            implementation(project(":data"))
             api(project(":domain"))
             implementation(project(":design-system"))
             implementation(project(":ui-common"))
             api(compose.runtime)
             implementation(compose.foundation)
-            api(compose.ui)
-            api(libs.kotlinx.coroutines.core)
+            implementation(compose.ui)
+            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)

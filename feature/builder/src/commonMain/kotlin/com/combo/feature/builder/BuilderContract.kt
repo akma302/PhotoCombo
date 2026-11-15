@@ -25,52 +25,52 @@ import com.combo.feature.builder.draft.FitPreset
 const val EDITOR_CANVAS_TAG = "builder_editor_canvas"
 
 /** testTag'ы кнопок тулбара: UI-тесты проверяют их enabled-состояние и окно выбора фото. */
-const val TOOL_TAG_DEL = "builder_tool_del"
-const val TOOL_TAG_REPLACE_PHOTO = "builder_tool_replace_photo"
-const val TOOL_TAG_ADD_ITEM = "builder_tool_add_item"
-const val TOOL_TAG_AUTOFIT = "builder_tool_autofit"
-const val TOOL_TAG_ASPECT = "builder_tool_aspect"
-const val TOOL_TAG_FIT_VIEW = "builder_tool_fit_view"
-const val TOOL_TAG_SAVE = "builder_tool_save"
-const val TOOL_TAG_NAME = "builder_combo_name"
-const val TOOL_TAG_BACKGROUND = "builder_tool_background"
-const val TOOL_TAG_MODE_FRAME = "builder_mode_frame"
-const val TOOL_TAG_MODE_PHOTO = "builder_mode_photo"
-const val TOOL_TAG_FIT = "builder_tool_fit"
-const val TOOL_TAG_FILL = "builder_tool_fill"
-const val TOOL_TAG_ZOOM_IN = "builder_zoom_in"
-const val TOOL_TAG_ZOOM_OUT = "builder_zoom_out"
-const val BUILDER_ZOOM_TAG = "builder_zoom_value"
-const val BUILDER_INSPECTOR_TAG = "builder_inspector"
+internal const val TOOL_TAG_DEL = "builder_tool_del"
+internal const val TOOL_TAG_REPLACE_PHOTO = "builder_tool_replace_photo"
+internal const val TOOL_TAG_ADD_ITEM = "builder_tool_add_item"
+internal const val TOOL_TAG_AUTOFIT = "builder_tool_autofit"
+internal const val TOOL_TAG_ASPECT = "builder_tool_aspect"
+internal const val TOOL_TAG_FIT_VIEW = "builder_tool_fit_view"
+internal const val TOOL_TAG_SAVE = "builder_tool_save"
+internal const val TOOL_TAG_NAME = "builder_combo_name"
+internal const val TOOL_TAG_BACKGROUND = "builder_tool_background"
+internal const val TOOL_TAG_MODE_FRAME = "builder_mode_frame"
+internal const val TOOL_TAG_MODE_PHOTO = "builder_mode_photo"
+internal const val TOOL_TAG_FIT = "builder_tool_fit"
+internal const val TOOL_TAG_FILL = "builder_tool_fill"
+internal const val TOOL_TAG_ZOOM_IN = "builder_zoom_in"
+internal const val TOOL_TAG_ZOOM_OUT = "builder_zoom_out"
+internal const val BUILDER_ZOOM_TAG = "builder_zoom_value"
+internal const val BUILDER_INSPECTOR_TAG = "builder_inspector"
 
 /** testTag'ы кнопок диалога выхода с несохранёнными изменениями. */
-const val DIALOG_TAG_SAVE = "builder_exit_save"
-const val DIALOG_TAG_DISCARD = "builder_exit_discard"
-const val DIALOG_TAG_KEEP = "builder_exit_keep"
+internal const val DIALOG_TAG_SAVE = "builder_exit_save"
+internal const val DIALOG_TAG_DISCARD = "builder_exit_discard"
+internal const val DIALOG_TAG_KEEP = "builder_exit_keep"
 
 /** testTag кнопки подтверждения окна выбора фото для «+Frame». */
-const val DIALOG_TAG_PICK_CONFIRM = "builder_pick_confirm"
+internal const val DIALOG_TAG_PICK_CONFIRM = "builder_pick_confirm"
 
-fun addPhotoCellTag(photoId: String) = "builder_add_photo_$photoId"
+internal fun addPhotoCellTag(photoId: String) = "builder_add_photo_$photoId"
 
 // ---------- режимы и фазы ----------
 
-enum class GesturePhase { START, CHANGE, END, CANCEL }
+internal enum class GesturePhase { START, CHANGE, END, CANCEL }
 
-enum class EditMode { EDIT, BORDER }
+internal enum class EditMode { EDIT, BORDER }
 
-sealed interface SnapDragKind {
+internal sealed interface SnapDragKind {
     object MoveFrame : SnapDragKind
     object PanPhoto : SnapDragKind
     data class Resize(val edge: Edge, val oneSided: Boolean) : SnapDragKind
 }
 
 /** Сообщение при попытке сохранить комбо без рамок (рамка создаётся выбором фото). */
-const val MSG_NOTHING_TO_SAVE = "Add at least one photo"
+internal const val MSG_NOTHING_TO_SAVE = "Add at least one photo"
 
 // ---------- события ----------
 
-sealed interface BuilderEvent {
+internal sealed interface BuilderEvent {
     data class ItemTapped(val id: String) : BuilderEvent
     data class ItemPressed(val id: String, val bringToFront: Boolean) : BuilderEvent
     data class PointerEditFinished(val cancelled: Boolean) : BuilderEvent
@@ -111,7 +111,7 @@ sealed interface BuilderEvent {
 
 // ---------- состояние ----------
 
-data class BuilderUiState(
+internal data class BuilderUiState(
     val revision: Long = 0,
     val comboId: String? = null,
     val name: String = "",
