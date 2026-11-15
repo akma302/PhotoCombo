@@ -8,6 +8,7 @@ import com.combo.data.PhotoEntity
 import com.combo.domain.BitmapSource
 import com.combo.domain.PhotoAssets
 import com.combo.domain.PhotoRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,11 +37,14 @@ class PhotoViewerViewModel(
 
     /** Битмапы и их учёт — в общем кэше; окно `index±1` и 2048 остаются политикой экрана. */
     private val assets = PhotoAssets(photoRepo, bitmapSource)
+    private var loadJob: Job? = null
+    private var requestedPage: Int? = null
 
     init {
         viewModelScope.launch {
             photoRepo.all().collect { list ->
                 _state.update { it.copy(photos = list) }
+                requestedPage?.let(::ensureLoaded)
             }
         }
         // `State.images` — зеркало `assets.bitmaps`: источник правды один, а поле
@@ -57,15 +61,13 @@ class PhotoViewerViewModel(
      * результата раньше, чем пользователь до неё долистает.
      */
     fun ensureLoaded(index: Int) {
+        requestedPage = index
         val photos = _state.value.photos
-        if (photos.isEmpty()) return
-        val keepIds = ((index - 1)..(index + 1)).mapNotNull { photos.getOrNull(it)?.id }.toSet()
-
+        val page = index.coerceIn(0, photos.lastIndex.coerceAtLeast(0))
+        val keepIds = (page - 1..page + 1).mapNotNull { photos.getOrNull(it)?.id }.toSet()
+        loadJob?.cancel()
         assets.evictExcept(keepIds)
-
-        viewModelScope.launch {
-            // Уже загруженные в окне повторно не декодируются: правило пропуска по
-            // размеру живёт в PhotoAssets, здесь остаётся только сам обход окна.
+        loadJob = viewModelScope.launch {
             for (id in keepIds) assets.ensureBitmap(id, VIEWER_PX)
         }
     }

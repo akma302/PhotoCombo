@@ -72,7 +72,7 @@ internal fun PhotoViewerContent(
         scale = 1f
         offset = Offset.Zero
     }
-    LaunchedEffect(pagerState.currentPage, state.photos.size) {
+    LaunchedEffect(pagerState.currentPage) {
         ensureLoaded(pagerState.currentPage)
     }
 

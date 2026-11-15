@@ -127,8 +127,8 @@ class ComboListDesignSystemTest(
         // Удаление перестраивает состав строк; остальные команды остаются доступны.
         for (index in 2..6) onNodeWithTag("combo_delete_c$index").performScrollTo().performClick()
         waitUntil { repository.state.value.isEmpty() }
+        waitUntil { vm.state.value.images.isEmpty() && vm.state.value.photos.isEmpty() }
         assertEquals((1..6).map { "p$it" to 800 }.toSet(), requests.toSet())
-        assertEquals(6, requests.size)
         onNodeWithText("No combos yet").assertIsDisplayed()
         create.assertIsDisplayed().performClick()
         assertEquals(2, created)

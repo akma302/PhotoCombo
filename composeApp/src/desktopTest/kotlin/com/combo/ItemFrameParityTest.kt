@@ -32,7 +32,7 @@ import org.junit.Test
 
 /**
  * ПАРИТЕТ кадра рамки между двумя путями отрисовки: редактор (`ComboBuilderViewModel.frameFor`)
- * и превью списка (`ComboListViewModel.framesFor`).
+ * и превью списка (`ComboListViewModel.State.framesFor`).
  *
  * Оба собирают кадр через общую фабрику `buildItemFrame`, но у каждого свои адаптеры
  * входных данных (драфты или Room-сущности). Тест гарантирует, что при одинаковом комбо
@@ -170,10 +170,10 @@ class ItemFrameParityTest {
             exportPng = { null },
         )
         dispatcher.scheduler.advanceUntilIdle()
-        vm.ensureAssetsFor(combo)
+        vm.setVisibleCombos(setOf(combo.combo.id))
         awaitBitmaps("списка", { vm.state.value.images }, 2)
 
-        val frames = vm.framesFor(combo)
+        val frames = vm.state.value.framesFor(combo)
         assertEquals(2, frames.size)
         return frames
     }

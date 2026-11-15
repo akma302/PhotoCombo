@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -64,6 +65,21 @@ class LruBitmapSourceTest {
         advanceUntilIdle()
 
         assertSame(first.await(), second.await())
+        assertEquals(1, codec.decodeCalls)
+    }
+
+    @Test
+    fun `cancelling one waiter keeps the shared decode available`() = runTest {
+        val dao = FakePhotoDao().apply { rows["p1"] = photo("p1") }
+        val (lru, codec) = source(dao, StandardTestDispatcher(testScheduler))
+        val expected = ImageBitmap(8, 8)
+        codec.result = { expected }
+
+        val cancelled = async(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) { lru.get("p1", 100) }
+        val remaining = async(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) { lru.get("p1", 100) }
+        cancelled.cancelAndJoin()
+
+        assertSame(expected, remaining.await())
         assertEquals(1, codec.decodeCalls)
     }
 
