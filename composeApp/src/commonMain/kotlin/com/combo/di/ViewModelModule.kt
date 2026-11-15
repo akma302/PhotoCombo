@@ -5,6 +5,7 @@ import com.combo.domain.ComboPngExporter
 import com.combo.feature.builder.ComboBuilderViewModel
 import com.combo.feature.combo_list.ComboListViewModel
 import com.combo.feature.library.LibraryViewModel
+import com.combo.feature.viewer.ComboViewerViewModel
 import com.combo.feature.viewer.PhotoViewerViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -38,6 +39,8 @@ val viewModelModule = module {
     }
 
     viewModel { PhotoViewerViewModel(SavedStateHandle(), photoRepo = get(), bitmapSource = get()) }
+
+    viewModel { ComboViewerViewModel(comboRepo = get(), photoRepo = get(), bitmapSource = get()) }
 
     viewModel { (args: EntryArgs) ->
         ComboBuilderViewModel(

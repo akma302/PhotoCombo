@@ -6,10 +6,8 @@ import com.combo.domain.GalleryKind
 import com.combo.ui.common.GalleryScaleState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.combo.core.render.ItemFrame
 import com.combo.data.ComboWithItems
 import com.combo.data.PhotoEntity
-import com.combo.data.toItemFrame
 import com.combo.domain.BitmapSource
 import com.combo.domain.ComboRepository
 import com.combo.domain.PhotoAssets
@@ -45,14 +43,7 @@ class ComboListViewModel(
         val images: Map<String, ImageBitmap> = emptyMap(),
         val exportingComboId: String? = null,
         val exportMessage: String? = null,
-    ) {
-        fun framesFor(combo: ComboWithItems): List<ItemFrame> =
-            combo.items.sortedBy { it.zIndex }.mapNotNull { item ->
-                val image = images[item.photoId] ?: return@mapNotNull null
-                val photo = photos[item.photoId] ?: return@mapNotNull null
-                item.toItemFrame(image, photo)
-            }
-    }
+    )
 
     private val _state = MutableStateFlow(State())
     internal val state: StateFlow<State> = _state.asStateFlow()
@@ -70,9 +61,7 @@ class ComboListViewModel(
                 updatePreviewWindow()
             }
         }
-        // `State.photos`/`State.images` — зеркала `assets`. Источник правды один
-        // (PhotoAssets), а поля состояния остаются: от них зависят ключи `remember` в
-        // превью, фон и `framesFor`. Синхронизация ровно одна и ровно здесь.
+        // PhotoAssets supplies the metadata and bitmaps used by the previews.
         viewModelScope.launch {
             assets.photos.collect { meta -> _state.update { it.copy(photos = meta) } }
         }

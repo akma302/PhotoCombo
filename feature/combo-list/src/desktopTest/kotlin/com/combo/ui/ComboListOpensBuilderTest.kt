@@ -38,6 +38,7 @@ class ComboListOpensBuilderTest : UiTestBase() {
                 ComboListScreen(
                     onOpenBuilder = { opened = it },
                     onCreateCombo = { createRequested++ },
+                    onOpenViewer = {},
                     vm = vm,
                 )
             }
@@ -65,7 +66,7 @@ class ComboListOpensBuilderTest : UiTestBase() {
         waitForIdle()
         assertEquals(2, createRequested)
 
-        // Карточка комбо открывает редактор; кнопки воспроизведения в списке нет.
+        // Редактирование доступно через отдельное действие карточки.
         onNodeWithContentDescription("Edit").performClick()
         waitForIdle()
         assertEquals("c1", opened)
