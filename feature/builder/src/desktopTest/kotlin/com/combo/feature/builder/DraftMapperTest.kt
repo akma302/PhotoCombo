@@ -53,7 +53,7 @@ class DraftMapperTest {
 
         val reloaded = ComboWithItems(
             combo = comboEntity("c1"),
-            items = before.toEntities("c1"),
+            items = before.map { it.toSnap() }.toEntities("c1"),
         ).toDrafts()
 
         assertField("число рамок", before.size, reloaded.size)
@@ -87,7 +87,7 @@ class DraftMapperTest {
             fullDraft("c", zIndex = 2, photoId = "p1"),
         )
 
-        val entities = drafts.toEntities("c1")
+        val entities = drafts.map { it.toSnap() }.toEntities("c1")
 
         assertField("число сущностей равно числу рамок", 3, entities.size)
         assertField("фото рамок", listOf("p1", "p2", "p1"), entities.map { it.photoId })

@@ -30,11 +30,12 @@ import com.combo.domain.PhotoRepository
 import com.combo.feature.builder.draft.ComboSnap
 import com.combo.feature.builder.draft.DraftEditor
 import com.combo.feature.builder.draft.FitPreset
+import com.combo.feature.builder.draft.cropBounds
+import com.combo.feature.builder.draft.cropTo
 import com.combo.feature.builder.draft.toDraft
 import com.combo.feature.builder.draft.toDrafts
 import com.combo.feature.builder.draft.toEntities
 import com.combo.feature.builder.draft.toSnap
-import com.combo.feature.builder.draft.trimmedToPhotos
 import com.combo.feature.builder.history.DraftHistory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -526,13 +527,7 @@ class ComboBuilderViewModel(
 
     // ---------- snapshots / undo ----------
 
-    /** Холст целиком: размеры, фон и рамки. Поля рамок — через `ItemDraft.toSnap()`. */
-    private fun snapshot() = ComboSnap(
-        canvasW = _state.value.canvasW,
-        canvasH = _state.value.canvasH,
-        background = _state.value.background,
-        items = draftItems.map { it.toSnap() },
-    )
+    private fun snapshot(): ComboSnap = _state.value.canvasSnapshot()
 
     private fun restore(snap: ComboSnap) {
         draftItems = snap.items.map { it.toDraft() }
@@ -560,9 +555,8 @@ class ComboBuilderViewModel(
             return
         }
         _state.update { it.copy(saving = true) }
-        // Драфты мутабельны и мутируются на главном потоке — читаем их ЗДЕСЬ, до ухода
-        // на IO, иначе в комбо может попасть полу-изменённая рамка.
-        val draft = snapshot().trimmedToPhotos(s.photos)
+        val snapshot = s.canvasSnapshot()
+        val draft = snapshot.cropTo(snapshot.cropBounds(s.photos))
         val id = s.comboId ?: ids.newId()
         val now = clock.nowMillis()
         val created = if (createdAt > 0) createdAt else now
@@ -577,7 +571,7 @@ class ComboBuilderViewModel(
         )
         // Поля рамок и фото собирает `toEntities()`: enum'ы — через `.name` (enum'ы в базе
         // хранятся строками), zIndex — по индексу в списке.
-        val items = draft.items.map { it.toDraft() }.toEntities(id)
+        val items = draft.items.toEntities(id)
         viewModelScope.launch(ioDispatcher) {
             try {
                 comboRepo.saveCombo(combo, items)
@@ -588,14 +582,13 @@ class ComboBuilderViewModel(
                 // Показываем ошибку пользователю: необработанное исключение в
                 // корутине уронило бы процесс.
                 _state.update { it.copy(saving = false) }
-                _messages.send("Failed to save combo: ${e.message ?: e::class.java.simpleName}")
+                val detail = e.message?.takeIf { it.isNotBlank() }
+                _messages.send(if (detail == null) "Failed to save combo" else "Failed to save combo: $detail")
             }
         }
     }
 
     // ---------- misc ----------
-
-    private fun selected(): String? = _state.value.selectedItemId
 
     private inline fun withItem(id: String?, block: (ItemDraft) -> Unit) {
         val item = draftItems.firstOrNull { it.id == id } ?: return
