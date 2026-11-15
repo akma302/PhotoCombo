@@ -45,6 +45,12 @@ composeApp → feature/* → domain → data → core
   The exact module graph is enforced by `verifyModuleGraph` and package boundaries by
   `ArchitectureRulesTest`; do not weaken either check to accommodate a dependency.
 
+Flag reasons to revisit an architecture constraint or either check, such as a proposed
+module boundary change, a false positive, or a missed violation. Tell the owner which
+rule is affected, what evidence supports the proposal, and what the change would
+improve and cost. Wait for the owner's explicit approval before editing an architecture
+constraint or either check.
+
 ### Domain and persistence
 
 `domain` repository contracts use Room types from `data`, such as `PhotoEntity` and
