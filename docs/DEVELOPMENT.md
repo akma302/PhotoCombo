@@ -53,3 +53,6 @@ Tests use personal photos only when the owner explicitly selects them:
   The PR description covers resulting behavior, verification, and limitations.
 - After merge confirmation, switch to a clean main and run `git pull --ff-only`.
   Do not automatically delete local branches.
+
+Read [Dependent PR stacks](DEPENDENT_PR_STACKS.md) only when the owner explicitly
+asks for a long autonomous task with multiple dependent branches and chained PRs.
