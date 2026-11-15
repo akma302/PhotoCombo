@@ -45,6 +45,14 @@ composeApp → feature/* → domain → data → core
   The exact module graph is enforced by `verifyModuleGraph` and package boundaries by
   `ArchitectureRulesTest`; do not weaken either check to accommodate a dependency.
 
+### Domain and persistence
+
+`domain` repository contracts use Room types from `data`, such as `PhotoEntity` and
+`ComboWithItems`. The same shapes currently serve storage and application logic, so
+separate models and mappers would duplicate them. Revisit this when schema changes
+need to stay local to storage, or when application logic or an external document
+format needs a model that evolves independently of Room.
+
 ## Constraints to preserve
 
 - Original photos remain unchanged. User file layout and persisted enum names must remain
