@@ -17,6 +17,7 @@ import com.combo.data.PhotoEntity
 import com.combo.feature.builder.BuilderEvent
 import com.combo.feature.builder.ComboBuilderViewModel
 import com.combo.feature.builder.GesturePhase
+import com.combo.feature.builder.frameFor
 import com.combo.feature.builder.draft.FitPreset
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
@@ -183,7 +184,7 @@ class AutoFitTest {
 
     private fun drawnScale(vm: ComboBuilderViewModel, itemId: String): Float? =
         vm.state.value.items.firstOrNull { it.id == itemId }
-            ?.let { vm.frameFor(it) }?.content?.scale
+            ?.let { vm.state.value.frameFor(it, vm.bitmaps.value) }?.content?.scale
 
     @Test
     fun `new frames default to FREE`() {
@@ -204,7 +205,7 @@ class AutoFitTest {
         val expected = TransformMath.fitScale(item.border(), Size(1200f, 800f))
         assertEquals(expected, fitScaleOf(vm), 1e-6f)
         assertEquals(expected, drawnScale(vm, itemId)!!, 1e-6f)
-        assertEquals(0f, vm.frameFor(item)!!.content.pan.x, 0f)
+        assertEquals(0f, vm.state.value.frameFor(item, vm.bitmaps.value)!!.content.pan.x, 0f)
     }
 
     /**
@@ -309,7 +310,8 @@ class AutoFitTest {
 
         assertEquals(FramingMode.FREE, vm.state.value.items.single().framingMode)
         assertEquals("картинка обязана остаться на месте", before, drawnScale(vm, itemId)!!, 1e-6f)
-        assertEquals(0f, vm.frameFor(vm.state.value.items.single())!!.content.pan.x, 0f)
+        val state = vm.state.value
+        assertEquals(0f, state.frameFor(state.items.single(), vm.bitmaps.value)!!.content.pan.x, 0f)
     }
 
     /**

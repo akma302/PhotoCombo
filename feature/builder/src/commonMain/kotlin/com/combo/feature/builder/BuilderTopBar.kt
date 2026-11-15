@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.combo.feature.builder.draft.ComboSnap
-import com.combo.feature.builder.draft.toSnap
 import com.combo.feature.builder.draft.trimmedToPhotos
 import com.combo.ui.common.designsystem.components.PcButton
 import com.combo.ui.common.designsystem.components.PcButtonVariant
@@ -68,7 +67,7 @@ internal fun BuilderTopBar(state: BuilderUiState, wide: Boolean, onBack: () -> U
 }
 
 private fun BuilderUiState.hasMarginsToTrim(): Boolean {
-    val draft = ComboSnap(canvasW, canvasH, background, items.map { it.toSnap() })
+    val draft = ComboSnap(canvasW, canvasH, background, items)
     val cropped = draft.trimmedToPhotos(photos)
     return cropped.canvasW != canvasW || cropped.canvasH != canvasH
 }

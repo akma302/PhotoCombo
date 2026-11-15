@@ -15,6 +15,7 @@ import com.combo.data.ComboWithItems
 import com.combo.data.PhotoEntity
 import com.combo.data.toItemFrame
 import com.combo.feature.builder.ComboBuilderViewModel
+import com.combo.feature.builder.frameFor
 import com.combo.ui.FakeComboRepository
 import com.combo.ui.FakePhotoRepository
 import com.combo.ui.StubBitmapSource
@@ -156,9 +157,10 @@ class ItemFrameParityTest {
         vm.refreshBitmaps(immediate = true)
         awaitBitmaps("билдера", { vm.bitmaps.value }, 2)
 
-        val drafts = vm.state.value.items.sortedBy { it.zIndex }
+        val state = vm.state.value
+        val drafts = state.items.sortedBy { it.zIndex }
         assertEquals(2, drafts.size)
-        return drafts.map { vm.frameFor(it) }
+        return drafts.map { state.frameFor(it, vm.bitmaps.value) }
     }
 
     private fun savedFrames(): List<ItemFrame> {

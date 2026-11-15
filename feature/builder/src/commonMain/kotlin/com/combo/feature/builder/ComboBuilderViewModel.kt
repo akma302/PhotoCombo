@@ -12,11 +12,9 @@ import com.combo.core.platform.IdGenerator
 import com.combo.core.platform.WallClock
 import com.combo.core.render.ItemDraft
 import com.combo.core.render.Border
-import com.combo.core.render.ItemFrame
 import com.combo.core.render.ItemGestures
 import com.combo.core.render.Viewport
 import com.combo.core.render.TransformMath
-import com.combo.core.render.buildItemFrame
 import com.combo.core.render.minBorderSize
 import com.combo.core.render.relayout
 import com.combo.core.render.snap.FrameSnap
@@ -32,7 +30,6 @@ import com.combo.domain.PhotoRepository
 import com.combo.feature.builder.draft.ComboSnap
 import com.combo.feature.builder.draft.DraftEditor
 import com.combo.feature.builder.draft.FitPreset
-import com.combo.feature.builder.draft.frameContent
 import com.combo.feature.builder.draft.toDraft
 import com.combo.feature.builder.draft.toDrafts
 import com.combo.feature.builder.draft.toEntities
@@ -61,8 +58,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * Что где живёт: контракт (события, состояние, фазы жеста, testTag'и) — `BuilderContract.kt`,
  * фазы жеста и undo-стек — [DraftHistory], операции над драфтами и раскладка нового комбо —
  * [DraftEditor], зум вида — `Viewport.zoomedAround`, сборка кадра — `buildItemFrame`,
- * метаданные и битмапы — [PhotoAssets]. Здесь осталось только то, что знает про состояние
- * экрана: `revision`, `isDirty` и флаги undo.
+ * метаданные и битмапы — [PhotoAssets]. Мутабельные рамки принадлежат ViewModel.
  *
  * Время, id и IO-диспетчер приходят параметрами: commonMain не знает ни
  * `System.currentTimeMillis`, ни `UUID`, ни `Dispatchers.IO`.
@@ -78,6 +74,7 @@ class ComboBuilderViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BuilderUiState())
+    private var draftItems = emptyList<ItemDraft>()
     internal val state: StateFlow<BuilderUiState> = _state.asStateFlow()
     internal val selectedPhotoSize: StateFlow<PhotoSize?> = state
         .map { it.selectedPhotoSize() }
@@ -97,7 +94,7 @@ class ComboBuilderViewModel(
     /**
      * История правок холста. Класс ничего не знает ни про ViewModel, ни про состояние
      * экрана: снимок и откат приходят лямбдами, поэтому фазы жеста проверяются обычным
-     * JVM-тестом. Про `isDirty`/`revision` знает только вызывающий — по [DraftHistory.end].
+     * JVM-тестом. Вызывающий выставляет `isDirty` по результату [DraftHistory.end].
      */
     private val history = DraftHistory(snapshot = ::snapshot, restore = ::restore)
 
@@ -138,16 +135,15 @@ class ComboBuilderViewModel(
     private suspend fun loadExisting(comboId: String) {
         val loaded = comboRepo.get(comboId) ?: return
         createdAt = loaded.combo.createdAt
-        val items = loaded.toDrafts()
-        ensurePhotoMeta(items)
-        _state.update {
+        draftItems = loaded.toDrafts()
+        ensurePhotoMeta(draftItems)
+        publishDraft {
             it.copy(
                 comboId = comboId,
                 name = loaded.combo.name,
                 canvasW = loaded.combo.canvasWidth.toFloat(),
                 canvasH = loaded.combo.canvasHeight.toFloat(),
                 background = loaded.combo.background,
-                items = items,
                 isDirty = false,
                 loaded = true,
             )
@@ -163,13 +159,13 @@ class ComboBuilderViewModel(
         // Раскладка (включая пустой набор — комбо без рамок) и начальное выделение целиком
         // принадлежат редактору драфтов.
         val drafts = DraftEditor.newComboDrafts(photos, canvasW, canvasH, ids::newId)
-        ensurePhotoMeta(drafts.items)
-        _state.update {
+        draftItems = drafts.items
+        ensurePhotoMeta(draftItems)
+        publishDraft {
             it.copy(
                 name = "Combo",
                 canvasW = canvasW,
                 canvasH = canvasH,
-                items = drafts.items,
                 selectedItemId = drafts.selectedItemId,
                 isDirty = true,
                 loaded = true,
@@ -192,9 +188,7 @@ class ComboBuilderViewModel(
      * [history]. Здесь остаётся политика экрана: что публиковать в состояние и когда
      * перезагружать битмапы.
      *
-     * Тела мутаций жестов намеренно остаются здесь, а не в helper'ах: видно, где именно
-     * происходит [emitRevision], и видно, что при отсутствии активного фото не будет ни
-     * мутации, ни ревизии.
+     * После мутации публикуется отдельный снимок рамок для UI.
      */
     internal fun onEvent(e: BuilderEvent) {
         when (e) {
@@ -208,7 +202,7 @@ class ComboBuilderViewModel(
                 gesture(if (e.cancelled) GesturePhase.CANCEL else GesturePhase.END) {}
             }
             BuilderEvent.CanvasTapped -> _state.update {
-                it.copy(selectedItemId = null, revision = it.revision + 1)
+                it.copy(selectedItemId = null)
             }
             BuilderEvent.ToggleMode -> _state.update {
                 it.copy(mode = if (it.mode == EditMode.EDIT) EditMode.BORDER else EditMode.EDIT)
@@ -217,7 +211,7 @@ class ComboBuilderViewModel(
                 gesture(e.phase) {
                     val s = _state.value
                     ItemGestures.dragItem(item, e.delta, currentVs(), s.canvasW, s.canvasH)
-                    emitRevision()
+                    publishDraft()
                 }
             }
             is BuilderEvent.SnapDrag -> withItem(e.id) { item -> moveWithSnap(item, e) }
@@ -227,7 +221,7 @@ class ComboBuilderViewModel(
                 gesture(e.phase) {
                     val minSize = minBorderSize(_state.value.canvasW, _state.value.canvasH)
                     ItemGestures.pinchItem(item, e.factor, minSize)
-                    emitRevision()
+                    publishDraft()
                 }
             }
             is BuilderEvent.ContentPan -> withItem(e.id) { item ->
@@ -238,7 +232,7 @@ class ComboBuilderViewModel(
                 gesture(e.phase) {
                     val src = _state.value.photos[item.photoId]?.srcSize() ?: return@gesture
                     ItemGestures.panContent(item, e.delta, currentVs(), item.border(), src)
-                    emitRevision()
+                    publishDraft()
                 }
             }
             is BuilderEvent.ContentZoom -> withItem(e.id) { item ->
@@ -248,14 +242,14 @@ class ComboBuilderViewModel(
                 gesture(e.phase, refreshOnEnd = true) {
                     val src = _state.value.photos[item.photoId]?.srcSize() ?: return@gesture
                     ItemGestures.zoomContent(item, e.factor, src)
-                    emitRevision()
+                    publishDraft()
                 }
             }
             is BuilderEvent.BorderResize -> withItem(e.id) { item ->
                 gesture(e.phase) {
                     val minSize = minBorderSize(_state.value.canvasW, _state.value.canvasH)
                     ItemGestures.resizeBorder(item, e.edge, e.delta, currentVs(), minSize)
-                    emitRevision()
+                    publishDraft()
                 }
             }
             is BuilderEvent.AddItems -> addItems(e.photoIds)
@@ -272,13 +266,12 @@ class ComboBuilderViewModel(
                 // Рамки следуют за холстом пропорционально, а фото внутри FREE-рамок
                 // сохраняют приближение относительно заполнения. Один чистый relayout,
                 // чтобы undo/redo и отрисовка видели одно и то же.
-                relayout(s.items, s.canvasW, s.canvasH, e.w.toFloat(), e.h.toFloat(), ::photoSrcSize)
-                _state.update { it.copy(canvasW = e.w.toFloat(), canvasH = e.h.toFloat()) }
-                markDirtyAndEmit()
+                relayout(draftItems, s.canvasW, s.canvasH, e.w.toFloat(), e.h.toFloat(), ::photoSrcSize)
+                publishEdit { it.copy(canvasW = e.w.toFloat(), canvasH = e.h.toFloat()) }
             }
-            is BuilderEvent.SetBackground -> withCheckpoint {
-                // Фон теперь входит в undo (см. ComboSnap.background).
-                _state.update { it.copy(background = e.spec) }
+            is BuilderEvent.SetBackground -> {
+                checkpointForEdit()
+                publishEdit { it.copy(background = e.spec) }
             }
             is BuilderEvent.SetName -> _state.update { it.copy(name = e.name, isDirty = true) }
             is BuilderEvent.ViewportPan -> _state.update {
@@ -301,8 +294,7 @@ class ComboBuilderViewModel(
             BuilderEvent.ResetViewport -> _state.update { it.copy(viewport = Viewport()) }
                 .also { refreshBitmaps() }
             is BuilderEvent.SetScreenSize -> _state.update { it.copy(screenW = e.w, screenH = e.h) }
-            // Пустой стек — не ошибка: событие тогда не публикует ревизию и не помечает
-            // комбо изменённым, поэтому проверка раннего выхода остаётся в [onEvent].
+            // Пустой стек не должен помечать комбо изменённым.
             BuilderEvent.Undo -> if (history.canUndo) undoRedo(history::undo)
             BuilderEvent.Redo -> if (history.canRedo) undoRedo(history::redo)
             BuilderEvent.Save -> save()
@@ -330,18 +322,17 @@ class ComboBuilderViewModel(
         val meta = knownPhotos(photoIds)
         val photos = photoIds.mapNotNull { meta[it] }
         val s = _state.value
-        val added = DraftEditor.addItems(s.items, photos, s.canvasW, s.canvasH, ::checkpointForEdit, ids::newId)
+        val added = DraftEditor.addItems(draftItems, photos, s.canvasW, s.canvasH, ::checkpointForEdit, ids::newId)
             ?: return
-        val usedIds = added.items.map { it.photoId }.toSet()
-        _state.update {
+        draftItems = added.items
+        val usedIds = draftItems.map { it.photoId }.toSet()
+        publishEdit {
             it.copy(
-                items = added.items,
                 selectedItemId = added.addedIds.last(),
                 photos = it.photos + meta.filterKeys { id -> id in usedIds },
             )
         }
         viewModelScope.launch { assets.ensureMeta(usedIds) }
-        markDirtyAndEmit()
         refreshBitmaps(immediate = true)
     }
 
@@ -354,9 +345,8 @@ class ComboBuilderViewModel(
         val photo = knownPhotos(listOf(photoId))[photoId] ?: return
         val changed = DraftEditor.replacePhoto(item, photo, photoSrcSize(photoId) ?: photo.srcSize(), ::checkpointForEdit)
         if (!changed) return
-        _state.update { it.copy(photos = it.photos + (photoId to photo)) }
+        publishEdit { it.copy(photos = it.photos + (photoId to photo)) }
         viewModelScope.launch { assets.ensureMeta(listOf(photoId)) }
-        markDirtyAndEmit()
         refreshBitmaps(immediate = true)
     }
 
@@ -365,7 +355,7 @@ class ComboBuilderViewModel(
         val changed = DraftEditor.applyPreset(
             item, preset, ::photoSrcSize, ::photoOf, ::checkpointForEdit,
         )
-        if (changed) markDirtyAndEmit()
+        if (changed) publishEdit()
     }
 
     /**
@@ -382,24 +372,19 @@ class ComboBuilderViewModel(
         if (item.framingMode == mode) return
         checkpointForEdit()
         DraftEditor.applyFramingMode(item, mode, ::photoOf)
-        markDirtyAndEmit()
+        publishEdit()
     }
 
     private fun selectItem(id: String, bringToFront: Boolean = false) {
         val s = _state.value
-        val index = s.items.indexOfFirst { it.id == id }
+        val index = draftItems.indexOfFirst { it.id == id }
         if (index < 0) return
         val reordered = if (bringToFront && !s.saving) {
-            DraftEditor.moveToFront(s.items, index)
+            DraftEditor.moveToFront(draftItems, index)
         } else null
         if (reordered == null && s.selectedItemId == id) return
-        _state.update {
-            it.copy(
-                items = reordered ?: it.items,
-                selectedItemId = id,
-                revision = it.revision + 1,
-            )
-        }
+        if (reordered != null) draftItems = reordered
+        publishDraft { it.copy(selectedItemId = id) }
     }
 
     private fun moveWithSnap(item: ItemDraft, event: BuilderEvent.SnapDrag) {
@@ -414,7 +399,7 @@ class ComboBuilderViewModel(
                 val photo = Border(frame.centerX + item.panX, frame.centerY + item.panY, size.width, size.height)
                 SnapSession(item.id, kind, FrameSnap.photo(frame, photo), FrameSnapState(photo))
             } else {
-                val targets = s.items.filter { it.id != item.id }.sortedBy { it.id }.map { it.border() }
+                val targets = draftItems.filter { it.id != item.id }.sortedBy { it.id }.map { it.border() }
                 val engine = if (kind is SnapDragKind.Resize) {
                     FrameSnap.resize(
                         s.canvasW, s.canvasH, frame, targets, kind.edge,
@@ -449,7 +434,7 @@ class ComboBuilderViewModel(
             item.width = placed.width
             item.height = placed.height
         }
-        _state.update { it.copy(snapGuides = step.guides, revision = it.revision + 1) }
+        publishDraft { it.copy(snapGuides = step.guides) }
     }
 
     private fun clearSnap() {
@@ -458,31 +443,15 @@ class ComboBuilderViewModel(
     }
 
     private fun deleteItem(id: String) {
-        val s = _state.value
-        val left = DraftEditor.deleteItem(s.items, id, ::checkpointForEdit) ?: return
-        _state.update {
-            it.copy(
-                items = left,
-                selectedItemId = if (it.selectedItemId == id) null else it.selectedItemId,
-            )
-        }
-        markDirtyAndEmit()
+        draftItems = DraftEditor.deleteItem(draftItems, id, ::checkpointForEdit) ?: return
+        publishEdit { it.copy(selectedItemId = it.selectedItemId.takeUnless { selected -> selected == id }) }
         refreshBitmaps(immediate = true)
     }
 
-    /** Undo/Redo: откат, затем флаги и публикация. */
     private fun undoRedo(apply: () -> Unit) {
         apply()
-        publishUndoFlags()
-        markDirtyAndEmit()
+        _state.update { it.copy(isDirty = true) }
         refreshBitmaps()
-    }
-
-    /** Checkpoint перед дискретной мутацией, сама мутация, затем публикация. */
-    private inline fun withCheckpoint(edit: () -> Unit) {
-        checkpointForEdit()
-        edit()
-        markDirtyAndEmit()
     }
 
     // ---------- жесты: фазы ----------
@@ -504,55 +473,36 @@ class ComboBuilderViewModel(
             GesturePhase.START -> history.begin()
             GesturePhase.CHANGE -> onChange()
             GesturePhase.END -> finishGesture(refreshOnEnd)
-            GesturePhase.CANCEL -> {
-                history.cancel()
-                emitRevision()
-            }
+            GesturePhase.CANCEL -> history.cancel()
         }
     }
 
     /**
-     * END: undo-шаг, ревизия и `isDirty` — только если жест что-то изменил; пустой шаг
+     * END: undo-шаг и `isDirty` — только если жест что-то изменил; пустой шаг
      * уже отфильтрован в [DraftHistory.end]. Перезагрузка битмапов — политика экрана,
      * поэтому [refreshOnEnd] проверяется здесь, а не в истории.
      */
     private fun finishGesture(refreshOnEnd: Boolean) {
         if (history.end()) {
-            publishUndoFlags()
-            emitRevision()
-            markDirty()
+            _state.update { it.copy(isDirty = true, canUndo = history.canUndo, canRedo = history.canRedo) }
         }
         if (refreshOnEnd) refreshBitmaps()
     }
 
-    /** Checkpoint перед дискретной мутацией холста: снимок «до» + обновление флагов undo. */
+    /** Снимок перед дискретной мутацией. Флаги undo публикуются вместе с правкой. */
     private fun checkpointForEdit() {
         history.checkpoint()
-        publishUndoFlags()
     }
 
-    private fun publishUndoFlags() = _state.update {
-        it.copy(canUndo = history.canUndo, canRedo = history.canRedo)
+    private inline fun publishDraft(update: (BuilderUiState) -> BuilderUiState = { it }) {
+        val items = draftItems.map { it.toSnap() }
+        _state.update { state ->
+            update(state).copy(items = items, canUndo = history.canUndo, canRedo = history.canRedo)
+        }
     }
 
-    private fun markDirty() = _state.update { it.copy(isDirty = true) }
-
-    private fun markDirtyAndEmit() = _state.update {
-        it.copy(isDirty = true, revision = it.revision + 1)
-    }
-
-    private fun emitRevision() = _state.update { it.copy(revision = it.revision + 1) }
-
-    // ---------- frames for rendering ----------
-
-    internal fun frameFor(item: ItemDraft): ItemFrame? {
-        val photo = _state.value.photos[item.photoId] ?: return null
-        val image = assets.bitmaps.value[item.photoId] ?: return null
-        return buildItemFrame(
-            border = item.border(),
-            mode = item.framingMode,
-            content = item.frameContent(image, photo),
-        )
+    private inline fun publishEdit(update: (BuilderUiState) -> BuilderUiState = { it }) {
+        publishDraft { update(it).copy(isDirty = true) }
     }
 
     // ---------- bitmaps ----------
@@ -581,20 +531,19 @@ class ComboBuilderViewModel(
         canvasW = _state.value.canvasW,
         canvasH = _state.value.canvasH,
         background = _state.value.background,
-        items = _state.value.items.map { it.toSnap() },
+        items = draftItems.map { it.toSnap() },
     )
 
     private fun restore(snap: ComboSnap) {
-        val items = snap.items.map { it.toDraft() }
-        _state.update { s ->
+        draftItems = snap.items.map { it.toDraft() }
+        publishDraft { s ->
             s.copy(
                 canvasW = snap.canvasW,
                 canvasH = snap.canvasH,
                 background = snap.background,
-                items = items,
                 // После undo/redo выделенной рамки может не быть в наборе: сбрасываем
                 // выделение, чтобы selectedItemId не указывал на несуществующую рамку.
-                selectedItemId = s.selectedItemId?.takeIf { sel -> items.any { it.id == sel } },
+                selectedItemId = s.selectedItemId?.takeIf { sel -> draftItems.any { it.id == sel } },
             )
         }
     }
@@ -649,7 +598,7 @@ class ComboBuilderViewModel(
     private fun selected(): String? = _state.value.selectedItemId
 
     private inline fun withItem(id: String?, block: (ItemDraft) -> Unit) {
-        val item = _state.value.items.firstOrNull { it.id == id } ?: return
+        val item = draftItems.firstOrNull { it.id == id } ?: return
         block(item)
     }
 
