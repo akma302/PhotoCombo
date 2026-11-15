@@ -47,10 +47,12 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** testTag ячейки сетки: `PHOTO_CELL_TAG_PREFIX + photo.id`. */
 const val PHOTO_CELL_TAG_PREFIX = "library_photo_"
-internal const val LIB_SELECT_TAG = "library_action_select"
+/** Entry to selection mode, used by the app's navigation test. */
+const val LIB_SELECT_TAG = "library_action_select"
+/** Action that opens the Builder, used by the app's navigation test. */
+const val LIB_CREATE_COMBO_TAG = "library_action_create_combo"
 internal const val LIB_CANCEL_TAG = "library_action_cancel"
 internal const val LIB_DELETE_TAG = "library_action_delete"
-internal const val LIB_CREATE_COMBO_TAG = "library_action_create_combo"
 internal const val LIB_IMPORT_TAG = "library_action_import"
 
 @Composable
